@@ -23,7 +23,7 @@ irm https://phantom-core.org/install.ps1 | iex
 ### 2. Python Environment Setup
 ```bash
 git clone https://github.com/FreakyAdy/Solution-is-all-You-need.git
-cd Solution-is-all-You-need/phantom-core
+cd Solution-is-all-You-need
 pip install -e python/
 ```
 
