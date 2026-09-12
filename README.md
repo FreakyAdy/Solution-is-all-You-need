@@ -30,7 +30,7 @@
 <br>
 
 <p align="center">
-  <img src="docs/phantom_dashboard.svg" alt="PHANTOM Real-Time Model Runtime Web Dashboard — 2D Layer Residency Map &amp; Hardware Telemetry" width="100%" style="border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+  <img src="docs/phantom_ui_demo.gif" alt="PHANTOM Real-Time Model Runtime Web Studio &amp; Telemetry Dashboard" width="100%" style="border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.4);">
 </p>
 
 > **👻 Hardware-Transcendent Inference** — Zero external dependencies on `llama.cpp`. PHANTOM enables consumer laptops and single GPUs (6GB–8GB VRAM) to run 70B+ parameter models (LLaMA-3 70B, Qwen2 72B, Mixtral MoE) with long context windows by orchestrating a 3-tier memory hierarchy (VRAM $\to$ RAM $\to$ NVMe) with predictive prefetching, spectral coefficient quantization, and autoencoded KV compression.

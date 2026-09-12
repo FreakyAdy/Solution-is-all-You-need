@@ -93,32 +93,32 @@
 }
 
 body {
-  background-color: var(--bg-window);
+  background-color: var(--bg-app);
   color: var(--text-main);
   font-family: var(--font-sans);
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
   -webkit-font-smoothing: antialiased;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* App Container (Browser Window Mockup) */
+/* App Container (Full Window Edge-to-Edge) */
 .browser-window {
-  width: 100%;
-  max-width: 1440px;
-  height: 900px;
-  max-height: 94vh;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
   background: var(--bg-app);
-  border-radius: 16px;
-  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-window);
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   position: relative;
-  transition: all 0.3s ease;
 }
 
 /* Window Titlebar */
