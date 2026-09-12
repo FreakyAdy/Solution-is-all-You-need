@@ -5,9 +5,9 @@
 
 **Ollama runs the model that fits your GPU. PHANTOM runs the model that doesn't.**
 
-[![CI Pipeline](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
-[![Audit Status](https://img.shields.io/badge/audit-SHIP%20IT%20(100%25)-brightgreen.svg)](tests/audit_suite.py)
-[![Benchmarks Passing](https://img.shields.io/badge/benchmarks-8%2F8%20passed%20(100%25)-brightgreen.svg)](tests/benchmarks/)
+[![Audit Suite CI](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
+[![Audit Status](https://img.shields.io/badge/audit-SHIP%20IT%20(100%25)-brightgreen.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
+[![Benchmarks Passing](https://img.shields.io/badge/benchmarks-8%2F8%20passed%20(100%25)-brightgreen.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
 [![Hardware Ceiling Lift](https://img.shields.io/badge/ceiling%20lift-%2B10.6%C3%97%20capacity-purple.svg)](#-empirical-systems-audit--8-benchmarks-verified)
 [![Web Dashboard](https://img.shields.io/badge/web%20dashboard-live%20%3A11411%2Fui-blue.svg)](#step-3-launch-the-api-gateway--web-studio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -154,6 +154,10 @@ phantom pull bartowski/Meta-Llama-3-70B-Instruct-GGUF --quant Q4_K_M
 ## 🧭 Navigation Guide: Unified Terminal CLI & Interactive REPL
 
 Alongside the self-hosted [Web Studio](#step-3-launch-the-api-gateway--web-studio) (`http://localhost:11411/ui`), PHANTOM provides an interactive, zero-delay terminal CLI:
+
+<p align="center">
+  <img src="docs/phantom_terminal_demo.gif" alt="PHANTOM Real-Time Terminal CLI Execution Demo" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+</p>
 
 ```bash
 # 1. Pre-flight Resource Planner (Zero-Memory Static Calculation)

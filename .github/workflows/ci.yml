@@ -1,4 +1,4 @@
-name: PHANTOM Platform CI
+name: Audit Suite
 
 on:
   push:
@@ -36,6 +36,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install numpy pytest fastapi uvicorn httpx structlog pillow
+          pip install -e python/
 
       - name: Build Web UI Dashboard Bundle
         working-directory: ui/web
