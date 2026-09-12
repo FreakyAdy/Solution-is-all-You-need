@@ -1,24 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 :root {
-  --bg-primary: #07090e;
-  --bg-secondary: #0d111a;
-  --panel-bg: rgba(16, 21, 33, 0.75);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --panel-hover: rgba(255, 255, 255, 0.12);
+  /* Light Theme (Default inspired by Script UI) */
+  --bg-window: #eceef2;
+  --bg-app: #ffffff;
+  --bg-sidebar: #f8fafc;
+  --bg-panel: #ffffff;
+  --bg-input: #ffffff;
+  --bg-hover: #f1f5f9;
+  --bg-active: #e2e8f0;
+
+  --border-window: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.07);
+  --border-input: rgba(0, 0, 0, 0.12);
+  --border-focus: #f59e0b;
+
+  --text-main: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-input: 0 4px 20px rgba(0, 0, 0, 0.06);
 
   --accent-amber: #f59e0b;
-  --accent-amber-glow: rgba(245, 158, 11, 0.35);
-  --accent-blue: #3b82f6;
-  --accent-blue-glow: rgba(59, 130, 246, 0.35);
-  --accent-green: #10b981;
-  --accent-green-glow: rgba(16, 185, 129, 0.4);
-  --accent-slate: #334155;
+  --accent-amber-light: #fffbeb;
+  --accent-amber-text: #b45309;
 
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
+  --accent-blue: #0ea5e9;
+  --accent-blue-light: #f0f9ff;
+  --accent-blue-text: #0369a1;
+
+  --accent-green: #10b981;
+  --accent-green-light: #ecfdf5;
+  --accent-green-text: #047857;
+
+  --accent-purple: #ec4899;
+  --accent-purple-light: #fdf2f8;
+  --accent-purple-text: #be185d;
+
+  --accent-dark-btn: #09090b;
+  --accent-dark-btn-text: #ffffff;
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+[data-theme='dark'] {
+  --bg-window: #07090e;
+  --bg-app: #0f121a;
+  --bg-sidebar: #0b0d13;
+  --bg-panel: #131722;
+  --bg-input: #151a27;
+  --bg-hover: #1e2433;
+  --bg-active: #272f42;
+
+  --border-window: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-input: rgba(255, 255, 255, 0.14);
+  --border-focus: #f59e0b;
+
+  --text-main: #f8fafc;
+  --text-secondary: #cbd5e1;
   --text-muted: #64748b;
 
-  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-input: 0 4px 24px rgba(0, 0, 0, 0.45);
+
+  --accent-amber-light: rgba(245, 158, 11, 0.15);
+  --accent-amber-text: #fbbf24;
+
+  --accent-blue-light: rgba(14, 165, 233, 0.15);
+  --accent-blue-text: #38bdf8;
+
+  --accent-green-light: rgba(16, 185, 129, 0.15);
+  --accent-green-text: #34d399;
+
+  --accent-purple-light: rgba(236, 72, 153, 0.15);
+  --accent-purple-text: #f472b6;
+
+  --accent-dark-btn: #ffffff;
+  --accent-dark-btn-text: #09090b;
 }
 
 * {
@@ -28,74 +93,178 @@
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--bg-window);
+  color: var(--text-main);
   font-family: var(--font-sans);
   min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
   -webkit-font-smoothing: antialiased;
-  background-image: 
-    radial-gradient(circle at 15% 15%, rgba(245, 158, 11, 0.04) 0%, transparent 40%),
-    radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.04) 0%, transparent 40%);
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button {
-  font-family: var(--font-sans);
-  cursor: pointer;
-  border: none;
-  outline: none;
-}
-
-.glass-panel {
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+/* App Container (Browser Window Mockup) */
+.browser-window {
+  width: 100%;
+  max-width: 1440px;
+  height: 900px;
+  max-height: 94vh;
+  background: var(--bg-app);
   border-radius: 16px;
-  transition: all 0.2s ease-in-out;
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-window);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+/* Window Titlebar */
+.window-titlebar {
+  height: 48px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  user-select: none;
+}
+
+.window-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.window-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.dot-red { background: #ff5f56; border: 1px solid #e0443e; }
+.dot-yellow { background: #ffbd2e; border: 1px solid #dea123; }
+.dot-green { background: #27c93f; border: 1px solid #1aab29; }
+
+.window-address-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-app);
+  padding: 5px 16px;
+  border-radius: 20px;
+  border: 1px solid var(--border-subtle);
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  width: 320px;
+  justify-content: center;
+}
+
+/* Main Layout: 3 Columns */
+.app-layout {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Left Sidebar */
+.left-sidebar {
+  width: 240px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+/* Right Sidebar */
+.right-sidebar {
+  width: 290px;
+  background: var(--bg-sidebar);
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+/* Center Content */
+.center-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-app);
+  overflow-y: auto;
+  position: relative;
+}
+
+/* Glass panel utility */
+.glass-panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
 }
 
 .glass-panel:hover {
-  border-color: var(--panel-hover);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
-/* Animations */
-@keyframes pulse-green {
-  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-  70% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+[data-theme='dark'] .glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
-@keyframes blink-yellow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.35; }
+/* Pulsing AI Orb */
+.ai-orb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #38bdf8, #6366f1 60%, #a855f7 100%);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.45);
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  z-index: 100;
+  animation: orb-float 3s ease-in-out infinite alternate;
 }
 
-.pulsing-active {
-  animation: pulse-green 1.5s infinite;
+.ai-orb:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 22px rgba(99, 102, 241, 0.65);
 }
 
-.blinking-prefetch {
-  animation: blink-yellow 0.8s infinite;
+@keyframes orb-float {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-4px); }
 }
 
-/* Custom Scrollbar */
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--accent-slate);
-  border-radius: 3px;
+  background: var(--border-subtle);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
