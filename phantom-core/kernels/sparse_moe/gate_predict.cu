@@ -87,6 +87,53 @@ __global__ void gate_predict_kernel(
     }
 }
 
+/**
+ * @brief 16-Cluster Linear Probe Gate Prediction.
+ *
+ * Implements the 16-parameter cluster-level probe:
+ * Each of the 16 probe weights gates a contiguous cluster of D_ffn/16 neurons.
+ * This directly supports the 16-parameter cluster probe specified in the Master Prompt.
+ *
+ * @param input_summary   Pooled input activation summary [B, 16] in FP16
+ * @param cluster_weights 16-parameter cluster probe weights [16] in FP16
+ * @param cluster_bias    16-parameter cluster probe bias [16] in FP16
+ * @param active_mask     Output binary activation mask [B, D_ffn] in uint8
+ * @param active_count    Output: count of active neurons [B]
+ * @param B               Batch size
+ * @param D_ffn           FFN intermediate dimension
+ * @param threshold       Activation threshold (default 0.5)
+ */
+__global__ void clustered_gate_predict_kernel(
+    const half* __restrict__ input_summary,
+    const half* __restrict__ cluster_weights,
+    const half* __restrict__ cluster_bias,
+    uint8_t* __restrict__ active_mask,
+    int* __restrict__ active_count,
+    int B,
+    int D_ffn,
+    float threshold
+) {
+    int b = blockIdx.x;
+    int cluster_id = blockIdx.y * blockDim.x + threadIdx.x;
+    if (b >= B || cluster_id >= 16) return;
+
+    float probe_score = __half2float(cluster_bias[cluster_id]) + 
+                        __half2float(input_summary[b * 16 + cluster_id]) * __half2float(cluster_weights[cluster_id]);
+    float gate = 1.0f / (1.0f + expf(-probe_score));
+
+    int neurons_per_cluster = D_ffn / 16;
+    int start_neuron = cluster_id * neurons_per_cluster;
+    int end_neuron = (cluster_id == 15) ? D_ffn : start_neuron + neurons_per_cluster;
+
+    uint8_t is_active = (gate >= threshold) ? 1 : 0;
+    for (int n = start_neuron; n < end_neuron; n++) {
+        active_mask[(size_t)b * D_ffn + n] = is_active;
+    }
+    if (is_active) {
+        atomicAdd(&active_count[b], end_neuron - start_neuron);
+    }
+}
+
 // ============================================================================
 // KERNEL: COMPACT ACTIVE INDICES
 // ============================================================================

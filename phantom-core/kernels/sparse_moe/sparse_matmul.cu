@@ -145,6 +145,27 @@ __global__ void sparse_swiglu_kernel(
     output[(size_t)b * D_ffn + neuron] = __float2half(silu_gate * up);
 }
 
+/**
+ * @brief Dense SwiGLU activation for cuBLAS dense fallback path.
+ */
+__global__ void dense_swiglu_kernel(
+    const half* __restrict__ gate_proj,
+    const half* __restrict__ up_proj,
+    half* __restrict__ output,
+    int B,
+    int D_ffn
+) {
+    int b = blockIdx.x;
+    int neuron = blockIdx.y * blockDim.x + threadIdx.x;
+    if (b >= B || neuron >= D_ffn) return;
+
+    size_t idx = (size_t)b * D_ffn + neuron;
+    float gate = __half2float(gate_proj[idx]);
+    float up = __half2float(up_proj[idx]);
+    float silu_gate = gate * (1.0f / (1.0f + expf(-gate)));
+    output[idx] = __float2half(silu_gate * up);
+}
+
 // ============================================================================
 // KERNEL 3: SPARSE DOWN PROJECTION
 // ============================================================================
@@ -238,12 +259,53 @@ extern "C" float sparse_mlp_forward(
     float sparsity_frac = sparsity_pct / 100.0f;
 
     if (sparsity_frac < SPARSITY_THRESHOLD_DENSE) {
-        // DENSE FALLBACK: Not enough sparsity to benefit
-        // Use standard dense GEMM via cuBLAS
-        printf("[PHANTOM CORE] Sparse MLP: sparsity %.1f%% < 30%%, using dense GEMM\n",
-               sparsity_pct);
-        // In production, this would call cublasHgemm.
-        // For now, fall through to sparse path which is correct at any sparsity.
+        // DENSE FALLBACK: Not enough sparsity to benefit (< 30%)
+        // Dispatch peak-performance dense cuBLAS GEMM pipeline
+        cublasHandle_t handle;
+        cublasCreate(&handle);
+        cublasSetStream(handle, stream);
+
+        half alpha = __float2half(1.0f);
+        half beta = __float2half(0.0f);
+
+        half* d_gate_proj = cuda_malloc<half>((size_t)B * D_ffn);
+        half* d_up_proj = cuda_malloc<half>((size_t)B * D_ffn);
+        half* d_activated = cuda_malloc<half>((size_t)B * D_ffn);
+
+        // 1. Gate projection: [B, D] x [D, D_ffn] -> [B, D_ffn]
+        cublasHgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
+                    D_ffn, B, D,
+                    &alpha, d_gate_weight, D,
+                    d_input, D,
+                    &beta, d_gate_proj, D_ffn);
+
+        // 2. Up projection: [B, D] x [D, D_ffn] -> [B, D_ffn]
+        cublasHgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
+                    D_ffn, B, D,
+                    &alpha, d_up_weight, D,
+                    d_input, D,
+                    &beta, d_up_proj, D_ffn);
+
+        // 3. Dense SwiGLU activation
+        dim3 act_grid(B, cdiv(D_ffn, SPARSE_BLOCK_SIZE));
+        dense_swiglu_kernel<<<act_grid, SPARSE_BLOCK_SIZE, 0, stream>>>(
+            d_gate_proj, d_up_proj, d_activated, B, D_ffn
+        );
+
+        // 4. Down projection: [B, D_ffn] x [D_ffn, D] -> [B, D]
+        cublasHgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N,
+                    D, B, D_ffn,
+                    &alpha, d_down_weight, D_ffn,
+                    d_activated, D_ffn,
+                    &beta, d_output, D);
+
+        cuda_free(d_gate_proj);
+        cuda_free(d_up_proj);
+        cuda_free(d_activated);
+        cublasDestroy(handle);
+
+        timer.stop(stream);
+        return timer.elapsed();
     }
 
     // Allocate intermediates

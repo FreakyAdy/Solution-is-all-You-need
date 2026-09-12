@@ -89,7 +89,7 @@ async def gateway_security_and_logging(request: Request, call_next):
 
     # 2. Auth check (skip for health, metrics, UI, and tags)
     path = request.url.path
-    is_public = path in ("/v1/health", "/phantom/hardware", "/api/tags", "/v1/models") or path.startswith("/ui")
+    is_public = path in ("/v1/health", "/v1/metrics", "/metrics", "/phantom/hardware", "/api/tags", "/v1/models") or path.startswith("/ui")
 
     if state.auth_token and not is_public:
         auth_header = request.headers.get("Authorization", "")
@@ -183,6 +183,45 @@ async def get_metrics():
         "queued_requests": state.queue_depth,
         "hardware_tier": hw.tier,
     }
+
+
+@gateway_app.get("/metrics", response_class=Response)
+async def get_prometheus_metrics():
+    """Prometheus exposition format for Grafana dashboards."""
+    m = await get_metrics()
+    body = f"""# HELP phantom_vram_used_mb Current VRAM memory used in megabytes
+# TYPE phantom_vram_used_mb gauge
+phantom_vram_used_mb {m['vram_mb']}
+
+# HELP phantom_ram_used_mb Current RAM memory used in megabytes
+# TYPE phantom_ram_used_mb gauge
+phantom_ram_used_mb {m['ram_mb']}
+
+# HELP phantom_nvme_used_mb Current NVMe swap memory used in megabytes
+# TYPE phantom_nvme_used_mb gauge
+phantom_nvme_used_mb {m['nvme_mb']}
+
+# HELP phantom_wraith_accuracy_percent Wraith LSTM prefetch accuracy percentage
+# TYPE phantom_wraith_accuracy_percent gauge
+phantom_wraith_accuracy_percent {m['wraith_accuracy_pct']}
+
+# HELP phantom_kv_compression_ratio Neural Cache KV compression ratio
+# TYPE phantom_kv_compression_ratio gauge
+phantom_kv_compression_ratio {m['kv_compression_ratio']}
+
+# HELP phantom_sparsity_percent Active compute routing neuron sparsity percentage
+# TYPE phantom_sparsity_percent gauge
+phantom_sparsity_percent {m['active_sparsity_pct']}
+
+# HELP phantom_tokens_per_second Current generation speed in tokens per second
+# TYPE phantom_tokens_per_second gauge
+phantom_tokens_per_second {m['tok_per_sec']}
+
+# HELP phantom_queued_requests Number of pending inference requests in FIFO queue
+# TYPE phantom_queued_requests gauge
+phantom_queued_requests {m['queued_requests']}
+"""
+    return Response(content=body, media_type="text/plain; version=0.0.4")
 
 
 @gateway_app.get("/phantom/hardware")
