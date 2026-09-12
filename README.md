@@ -9,7 +9,7 @@
 [![Audit Status](https://img.shields.io/badge/audit-SHIP%20IT%20(100%25)-brightgreen.svg)](tests/audit_suite.py)
 [![Benchmarks Passing](https://img.shields.io/badge/benchmarks-8%2F8%20passed%20(100%25)-brightgreen.svg)](tests/benchmarks/)
 [![Hardware Ceiling Lift](https://img.shields.io/badge/ceiling%20lift-%2B10.6%C3%97%20capacity-purple.svg)](#-empirical-systems-audit--8-benchmarks-verified)
-[![Web Dashboard](https://img.shields.io/badge/web%20dashboard-live%20%3A11411%2Fui-blue.svg)](#-navigation-guide-web-studio--unified-cli)
+[![Web Dashboard](https://img.shields.io/badge/web%20dashboard-live%20%3A11411%2Fui-blue.svg)](#step-3-launch-the-api-gateway--web-studio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![CUDA 12.x](https://img.shields.io/badge/CUDA-12.x%20Ampere%2FAda-green.svg)](kernels/)
@@ -19,7 +19,7 @@
 <p align="center">
   <a href="#-quick-installation"><b>🚀 Quick Installation</b></a> •
   <a href="#-how-to-install--run-offline-models"><b>📦 Offline Models</b></a> •
-  <a href="#-navigation-guide-web-studio--unified-cli"><b>🧭 Navigation Guide</b></a> •
+  <a href="#-navigation-guide-unified-terminal-cli--interactive-repl"><b>🧭 Navigation Guide</b></a> •
   <a href="#-what-phantom-offers-complete-feature-suite"><b>✨ What PHANTOM Offers</b></a> •
   <a href="#-how-to-use-phantom-to-the-fullest"><b>⚡ Power User Guide</b></a> •
   <a href="#-rigorous-audit-hardening--resolved-errors"><b>🛡️ Audit Hardening</b></a> •
@@ -151,67 +151,9 @@ phantom pull bartowski/Meta-Llama-3-70B-Instruct-GGUF --quant Q4_K_M
 
 ---
 
-## 🧭 Navigation Guide: Web Studio & Unified CLI
+## 🧭 Navigation Guide: Unified Terminal CLI & Interactive REPL
 
-PHANTOM gives you two interchangeable interfaces: an **Apple-grade edge-to-edge Web Studio** and an **engineering terminal CLI**.
-
-### 1. The Modern Web Studio (`http://localhost:11411/ui`)
-
-Start the background server and open the browser studio:
-```bash
-phantom serve --port 11411
-# Opens automatically at http://localhost:11411/ui/
-```
-
-```
-┌───────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ [🔴 🟡 🟢]  < >                    🔒 phantom.local:11411 🔄                         [Share] [+]      │
-├───────────────────┬─────────────────────────────────────────────────────────────┬─────────────────────┤
-│ ⚡ PHANTOM        │ AI Chat & Studio               [⚡ Transcend Limits] [PORT]  │ Models & Hardware(7)│
-│ [Search     ⌘K]   ├─────────────────────────────────────────────────────────────┤                     │
-│                   │                                                             │ + Pull New Model    │
-│ 💬 AI Chat        │                     Welcome to PHANTOM                      │                     │
-│ 📊 Dashboard      │     Run models that don't fit your GPU. Zero llama.cpp.     │ [●] Meta LLaMA 3 70B│
-│ 📦 Models         │                                                             │     80 layers 3-Tier│
-│ 🗺️ Layer Map      │  ┌───────────────────────┐   ┌───────────────────────────┐  │ [ ] Mistral NeMo 22B│
-│ 📈 Telemetry      │  │ ⚡ Run 70B Model      +│   │ 🗺️ Layer Residency Map   +│  │ [ ] Qwen 2.5 72B    │
-│ 🔌 Plugins  [NEW] │  └───────────────────────┘   └───────────────────────────┘  │ [ ] DeepSeek V3 MLA │
-│                   │  ┌───────────────────────┐   ┌───────────────────────────┐  │                     │
-│ [⚙️ Settings]     │  │ 🚀 Compare vs Ollama +│   │ 🧩 Tool Router & MCP     +│  │ 3-Tier Allocation   │
-│ [❓ Help & Docs]   │  └───────────────────────┘   └───────────────────────────┘  │ VRAM ████████░ 5.8GB│
-│                   │                                                             │ RAM  ██████░░ 18.4GB│
-│ [☀️ Light | 🌙 Dark│  ┌───────────────────────────────────────────────────────┐  │ NVMe ████░░░░ 22.1GB│
-│ [GPU RTX 4050 6GB]│  │ Ask anything, execute commands, or run model...       │  │                     │
-│                   │  │ [📎 Attach] [⚡ 3-Tier] [🧭 Browse Prompts]    24/3000 🚀│  │       (●) AI    │
-│                   │  └───────────────────────────────────────────────────────┘  │           Orb   │
-└───────────────────┴─────────────────────────────────────────────────────────────┴─────────────────────┘
-```
-
-#### Studio Ergonomics:
-* **Top Titlebar**: Embedded browser controls, direct SSL address `phantom.local:11411`, `"⚡ Transcend Limits"` hardware booster, and live port indicator.
-* **Left Sidebar**:
-  * **Search (`⌘K`)**: Instant search across local models, layers, and MCP tools.
-  * **Navigation Tabs**: *AI Chat*, *Dashboard* (Ceiling Lift), *Models* (Pull & Convert), *Layer Map* (2D Heatmap), *Telemetry* (Metrics), and *Plugins* (with `NEW` badge).
-  * **Dual Light / Dark Capsule Toggle**: Instant one-click theme switching between crisp Apple-grade light mode and obsidian dark mode.
-  * **Hardware Profile Badge**: Displays detected GPU, VRAM capacity, and runtime status.
-* **Center Studio**:
-  * **Hero Welcome Area**: Clean typography and prompt guidance.
-  * **4 Quick Action Cards (2×2 Grid)**:
-    1. ⚡ **Run 70B Model**: One-click deployment into 3-tier memory.
-    2. 🗺️ **Layer Residency Map**: Inspect active VRAM, RAM, and NVMe layer distribution.
-    3. 🚀 **Compare vs Ollama**: Instant side-by-side benchmark comparison.
-    4. 🧩 **Tool Router & MCP**: Dispatch Model Context Protocol tools and Python callables.
-  * **Floating Bottom Input Card**: Rounded floating card with inner action toolbar (`Attach`, `3-Tier Turbo`, `Browse Prompts`, token counter, and send trigger).
-* **Right Sidebar**:
-  * **Active Models List**: Manage active models, layer depths, and switch models in $<400\text{ ms}$.
-  * **Live 3-Tier Resource Meters**: Real-time progress bars for VRAM (`5.8/6.0 GB`), System RAM (`18.4/24.0 GB`), and NVMe Swap (`22.1 GB`).
-* **Floating Pulsating AI Orb**: Bottom-right glowing concentric orb reflecting real-time engine activity.
-
----
-
-### 2. The Unified Terminal CLI & Interactive REPL
-
-The CLI provides instant, zero-delay terminal control:
+Alongside the self-hosted [Web Studio](#step-3-launch-the-api-gateway--web-studio) (`http://localhost:11411/ui`), PHANTOM provides an interactive, zero-delay terminal CLI:
 
 ```bash
 # 1. Pre-flight Resource Planner (Zero-Memory Static Calculation)
