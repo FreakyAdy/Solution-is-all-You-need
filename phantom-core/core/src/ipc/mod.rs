@@ -8,6 +8,9 @@ use interprocess::local_socket::{tokio::LocalSocketStream, NameTypeSupport};
 use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 
+pub mod server;
+pub use server::IpcServer;
+
 /// IPC Message payload format.
 #[derive(Debug, Serialize, Deserialize)]
 pub enum IpcMessage {

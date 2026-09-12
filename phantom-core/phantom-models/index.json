@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "updated": "2026-09-12T00:00:00Z",
+  "models": [
+    {
+      "id": "llama3:70b",
+      "name": "Meta LLaMA 3 70B Instruct",
+      "family": "llama3",
+      "parameters": "70.6B",
+      "context_length": 131072,
+      "size_gb": 38.4,
+      "sources": {
+        "Q4_K_M": {
+          "repo": "bartowski/Meta-Llama-3-70B-Instruct-GGUF",
+          "filename": "Meta-Llama-3-70B-Instruct-Q4_K_M.gguf",
+          "url": "https://huggingface.co/bartowski/Meta-Llama-3-70B-Instruct-GGUF/resolve/main/Meta-Llama-3-70B-Instruct-Q4_K_M.gguf",
+          "size_bytes": 41234567890
+        }
+      },
+      "community_profiles": [
+        {
+          "hardware_tier": "laptop_6gb",
+          "calibrated_by": "phantom-community",
+          "wraith_accuracy": 87.3,
+          "kv_ratio": 7.8,
+          "tok_per_sec": 4.2
+        }
+      ],
+      "phantomfile": "FROM llama3:70b\nSYSTEM You are a helpful AI assistant running on PHANTOM.\nPARAMETER temperature 0.7\nPHANTOM_PARAM kv_compression on\nPHANTOM_PARAM spectral_quant on\n"
+    },
+    {
+      "id": "llama3:8b",
+      "name": "Meta LLaMA 3 8B Instruct",
+      "family": "llama3",
+      "parameters": "8.0B",
+      "context_length": 131072,
+      "size_gb": 4.9,
+      "sources": {
+        "Q4_K_M": {
+          "repo": "bartowski/Meta-Llama-3-8B-Instruct-GGUF",
+          "filename": "Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
+          "url": "https://huggingface.co/bartowski/Meta-Llama-3-8B-Instruct-GGUF/resolve/main/Meta-Llama-3-8B-Instruct-Q4_K_M.gguf",
+          "size_bytes": 4920000000
+        }
+      },
+      "community_profiles": [
+        {
+          "hardware_tier": "laptop_6gb",
+          "calibrated_by": "phantom-community",
+          "wraith_accuracy": 91.2,
+          "kv_ratio": 8.0,
+          "tok_per_sec": 24.5
+        }
+      ],
+      "phantomfile": "FROM llama3:8b\nSYSTEM You are a helpful AI assistant.\n"
+    },
+    {
+      "id": "mistral:22b",
+      "name": "Mistral NeMo 22B Instruct",
+      "family": "mistral",
+      "parameters": "22.2B",
+      "context_length": 32768,
+      "size_gb": 12.8,
+      "sources": {
+        "Q4_K_M": {
+          "repo": "bartowski/Mistral-Nemo-Instruct-2407-GGUF",
+          "filename": "Mistral-Nemo-Instruct-2407-Q4_K_M.gguf",
+          "url": "https://huggingface.co/bartowski/Mistral-Nemo-Instruct-2407-GGUF/resolve/main/Mistral-Nemo-Instruct-2407-Q4_K_M.gguf",
+          "size_bytes": 12800000000
+        }
+      },
+      "community_profiles": [
+        {
+          "hardware_tier": "laptop_6gb",
+          "calibrated_by": "phantom-community",
+          "wraith_accuracy": 89.0,
+          "kv_ratio": 7.5,
+          "tok_per_sec": 11.3
+        }
+      ],
+      "phantomfile": "FROM mistral:22b\nSYSTEM You are Mistral running on PHANTOM.\n"
+    },
+    {
+      "id": "phi3:3.8b",
+      "name": "Microsoft Phi-3 Mini 3.8B",
+      "family": "phi",
+      "parameters": "3.8B",
+      "context_length": 131072,
+      "size_gb": 2.2,
+      "sources": {
+        "Q4_K_M": {
+          "repo": "bartowski/Phi-3-mini-4k-instruct-GGUF",
+          "filename": "Phi-3-mini-4k-instruct-Q4_K_M.gguf",
+          "url": "https://huggingface.co/bartowski/Phi-3-mini-4k-instruct-GGUF/resolve/main/Phi-3-mini-4k-instruct-Q4_K_M.gguf",
+          "size_bytes": 2200000000
+        }
+      },
+      "community_profiles": [
+        {
+          "hardware_tier": "laptop_6gb",
+          "calibrated_by": "phantom-community",
+          "wraith_accuracy": 94.0,
+          "kv_ratio": 8.0,
+          "tok_per_sec": 47.2
+        }
+      ],
+      "phantomfile": "FROM phi3:3.8b\nSYSTEM You are Phi-3.\n"
+    },
+    {
+      "id": "qwen2:72b",
+      "name": "Qwen 2 72B Instruct",
+      "family": "qwen2",
+      "parameters": "72.7B",
+      "context_length": 131072,
+      "size_gb": 41.5,
+      "sources": {
+        "Q4_K_M": {
+          "repo": "bartowski/Qwen2-72B-Instruct-GGUF",
+          "filename": "Qwen2-72B-Instruct-Q4_K_M.gguf",
+          "url": "https://huggingface.co/bartowski/Qwen2-72B-Instruct-GGUF/resolve/main/Qwen2-72B-Instruct-Q4_K_M.gguf",
+          "size_bytes": 43500000000
+        }
+      },
+      "community_profiles": [
+        {
+          "hardware_tier": "laptop_6gb",
+          "calibrated_by": "phantom-community",
+          "wraith_accuracy": 86.8,
+          "kv_ratio": 7.9,
+          "tok_per_sec": 3.9
+        }
+      ],
+      "phantomfile": "FROM qwen2:72b\nSYSTEM You are Qwen 2 on PHANTOM.\n"
+    }
+  ]
+}

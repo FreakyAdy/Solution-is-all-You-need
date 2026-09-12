@@ -229,7 +229,15 @@ class WraithPredictor:
             log_probs, _ = self.model(x)
 
         # Take the last time-step's predictions
-        probs = log_probs[0, -1, :].exp()  # (num_layers,)
+        logits = log_probs[0, -1, :].clone()
+        # Inductive sequential prior: transformer pipeline executes layer L -> L+1 -> L+2
+        if self._obs_buf:
+            last_layer = self._obs_buf[-1].layer_id
+            for step in range(1, horizon + 2):
+                next_l = (last_layer + step) % self.num_layers
+                logits[next_l] += 6.0 / step
+
+        probs = logits.exp()
         top_k = min(horizon, self.num_layers)
         _, indices = probs.topk(top_k)
         result = indices.tolist()

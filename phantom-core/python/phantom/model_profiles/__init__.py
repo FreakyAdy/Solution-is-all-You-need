@@ -1,21 +1,29 @@
-"""Model profiles subpackage.
-
-Provides automatic detetcion of model architecture and hardware tier,
-plus hand-curated example profiles for common model families.
+"""
+PHANTOM CORE — Model Profiles Package
+=======================================
+Architecture-specific layer maps and hardware detection utilities.
 """
 
-from __future__ import annotations
-
-from phantom.model_profiles.auto_detect import detect_model
+from phantom.model_profiles.auto_detect import (
+    ModelArchitecture,
+    LayerSpec,
+    detect_architecture,
+)
 from phantom.model_profiles.hardware_detect import (
-    HardwareProfile,
+    HardwareTierProfile,
+    GPUInfo,
+    SystemInfo,
     detect_hardware,
-    hardware_tier_name,
+    print_hardware_report,
 )
 
 __all__ = [
-    "HardwareProfile",
+    "ModelArchitecture",
+    "LayerSpec",
+    "detect_architecture",
+    "HardwareTierProfile",
+    "GPUInfo",
+    "SystemInfo",
     "detect_hardware",
-    "detect_model",
-    "hardware_tier_name",
+    "print_hardware_report",
 ]

@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phantom-runtime"
+version = "1.0.0"
+description = "Universal Hardware-Transcendent LLM Inference Engine & Runtime Platform"
+readme = "README.md"
+authors = [{ name = "PHANTOM Team" }]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0.0",
+    "numpy>=1.24.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.22.0",
+    "pydantic>=2.0.0",
+    "structlog>=23.1.0",
+]
+
+[project.scripts]
+phantom = "phantom.phantom_cli:main"
+
+[tool.setuptools.packages.find]
+where = ["python"]
