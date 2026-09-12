@@ -22,6 +22,7 @@
   <a href="#-navigation-guide-web-studio--unified-cli"><b>🧭 Navigation Guide</b></a> •
   <a href="#-what-phantom-offers-complete-feature-suite"><b>✨ What PHANTOM Offers</b></a> •
   <a href="#-how-to-use-phantom-to-the-fullest"><b>⚡ Power User Guide</b></a> •
+  <a href="#-rigorous-audit-hardening--resolved-errors"><b>🛡️ Audit Hardening</b></a> •
   <a href="#-the-7-core-innovations">7 Innovations</a> •
   <a href="#%EF%B8%8F-ecosystem-comparison-matrix">Comparison Matrix</a>
 </p>
@@ -67,6 +68,9 @@ cd ui/web && npm install && npm run build && cd ../..
 
 # 4. Run system pre-flight verification
 phantom doctor
+
+# 5. Run master platform audit suite (S1–S8 verification)
+python tests/audit_suite.py
 ```
 
 ```text
@@ -412,6 +416,27 @@ $ python tests/benchmarks/bench_full_pipeline.py
 
 ---
 
+## 🛡️ Rigorous Audit Hardening & Resolved Errors
+
+Following rigorous technical peer audits and architectural red-teaming of the codebase, every superficial test assertion, mock fallback, testing shortcut, and documentation gap was surfaced and systematically resolved. PHANTOM is engineered to enterprise-grade verification standards where every claim is backed by real execution, captured output streams, AST source inspection, and zero-stub validation:
+
+### Audit Findings & Architectural Resolutions Matrix
+
+| Audit Domain | Flagged Error / Superficial Check | Root Cause & Quality / Verification Risk | Hardened Engineering Resolution | Verification Mechanism |
+| :--- | :--- | :--- | :--- | :--- |
+| **S3: CLI Interface Execution** | Exit-code-only assertion (`assert res == 0`). | A process returning exit code 0 does not verify that memory calculations (layer residency, ceiling lift) or diagnostic tables were computed or printed correctly. | **Full Output Stream Inspection**: Switched to `io.StringIO` and `contextlib.redirect_stdout` to capture and inspect CLI stdout. Asserts presence of layer residency breakdown table, token speed estimate (`tok/sec`), hardware ceiling lift multiplier (`Ceiling Lift`), and diagnostic metrics. | [`tests/audit_suite.py::audit_section_3`](tests/audit_suite.py) |
+| **S3: Innovation Benchmark CLI** | Missing native `phantom benchmark` CLI command. | Users previously had to locate and manually invoke benchmark scripts in `tests/benchmarks/` rather than verifying the engine directly from the unified CLI. | **Native Benchmark Subcommand**: Added `cmd_benchmark` directly into `PhantomCLI` (`phantom benchmark [model]`), executing and tabulating latency, compression ratios, and speedups across all 8 innovations in a styled terminal report. | `phantom benchmark` & [`tests/audit_suite.py`](tests/audit_suite.py) |
+| **S5: Tool Router & Interoperability** | Tool router only supported local in-process Python callables (`@phantom_tool`). | Incapable of orchestrating external tools, distributed agent frameworks, or standard Model Context Protocol (MCP) servers. | **MCP JSON-RPC 2.0 & Webhook Dispatch**: Upgraded `ToolRouterPlugin` with full Model Context Protocol (MCP) client support (`tools/list`, `tools/call`) over HTTP/JSON-RPC 2.0, plus external HTTP webhook dispatch. | [`tests/audit_suite.py::audit_section_5`](tests/audit_suite.py) & [`python/phantom/plugins/tool_router/`](python/phantom/plugins/tool_router/) |
+| **S7: Web Dashboard Verification** | Surface file-existence checking on disk (`p.exists()`). | Merely checking if a `.tsx` file exists allows empty stub files, broken imports, or missing component exports to slip through tests undetected. | **Static AST & Production Bundle Inspection**: Inspects component source code to assert real exports (`CeilingLift`, `LayerMap`, `PullProgress`, `CompareOllama`), substantive source size (`> 500` bytes), and asserts production Vite distribution bundle existence (`ui/web/dist/index.html` and `ui/web/dist/assets/*.js`). | [`tests/audit_suite.py::audit_section_7`](tests/audit_suite.py) |
+| **S7: Web Studio UI Ergonomics** | Centered floating frame with margin/corner gaps and static SVG graphic. | Felt like a prototype widget rather than a native, edge-to-edge desktop studio application. | **Full Viewport Studio & Animated Demo**: Converted `index.css` and `App.css` to a borderless `100vw × 100vh` window layout, added Light/Dark capsule toggle, quick-action navigation cards, and replaced static SVG with live recording `docs/phantom_ui_demo.gif`. | Browser subagent validation & [`ui/web/src/`](ui/web/src/) |
+| **S8: Documentation Integrity & Stubs** | Test suite dynamically created missing docs on the fly (`with open(...) as f: write(...)`). | Self-passing tests allowed missing architectural specifications and documentation gaps to pass CI without actual documentation being authored. | **Zero-Stub Enforcement**: Completely eliminated file creation cheats from `tests/audit_suite.py`. Added strict validation requiring substantive length (`> 400` bytes) and domain-specific architectural keywords across all 8 core specification docs. | [`tests/audit_suite.py::audit_section_8`](tests/audit_suite.py) |
+| **S8: Ollama Migration Specifications** | `docs/OLLAMA_MIGRATION.md` lacked a line-by-line syntax conversion table. | Developers migrating complex Ollama `Modelfile` setups had no clear mapping for directives like `FROM`, `PARAMETER`, `SYSTEM`, and `TEMPLATE`. | **Modelfile to Phantomfile Migration Table**: Authored a comprehensive directive mapping table in `docs/OLLAMA_MIGRATION.md` detailing parameter translations, hardware tuning (`PHANTOM_PARAM`), and middleware plugins (`PLUGIN`). | [`docs/OLLAMA_MIGRATION.md`](docs/OLLAMA_MIGRATION.md) & S8 audit |
+| **Automated Testing & CI Pipeline** | Static CI badges in README with no underlying GitHub Actions workflow. | Regressions could be introduced without detection on pull requests or multi-platform environments. | **Multi-OS GitHub Actions CI Matrix**: Implemented `.github/workflows/ci.yml` running across Ubuntu and Windows matrices on Python 3.10 and 3.11, building the Vite Web Studio, running the complete master audit suite, and executing pipeline benchmarks. | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) |
+| **Production Telemetry & Observability** | Prometheus endpoint lacked an out-of-the-box visualization dashboard. | Users had to manually construct Grafana panels to visualize VRAM/RAM/NVMe tiering, prefetch hit rates, and token throughput. | **Pre-configured Grafana Dashboard**: Created `docs/grafana_dashboard.json` ready for 1-click import into Grafana, mapping live metrics (`phantom_tokens_per_second`, `phantom_vram_used_mb`, tier ratios). | [`docs/grafana_dashboard.json`](docs/grafana_dashboard.json) |
+| **Developer Experience & Test Execution** | Running `python tests/audit_suite.py` required manual `PYTHONPATH` environment configuration. | New contributors running tests without setting `PYTHONPATH=python` encountered `ModuleNotFoundError: No module named 'phantom'`. | **Zero-Config Self-Bootstrapping Test Suite**: Embedded automatic repository root resolution into `tests/audit_suite.py` via `sys.path.insert(0, str(Path(__file__).parents[1] / "python"))`, enabling out-of-the-box execution on any shell or platform. | `python tests/audit_suite.py` |
+
+---
+
 ## 🧪 Master Platform Audit Suite: S1–S8 Status
 
 The comprehensive master audit suite ([`tests/audit_suite.py`](tests/audit_suite.py)) validates end-to-end functionality across all 8 architectural domains:
@@ -513,6 +538,9 @@ PHANTOM is open-source under the MIT License. We welcome contributions, kernel o
 * **[Plugin Development](docs/PLUGINS.md)**: Tutorial on writing custom middleware interceptors.
 * **[Ollama Migration Guide](docs/OLLAMA_MIGRATION.md)**: Step-by-step instructions for switching from Ollama to PHANTOM.
 * **[Native GGUF Support](docs/GGUF_SUPPORT.md)**: Pure SIMD dequantization specifications.
+* **[Master Audit Test Suite](tests/audit_suite.py)**: End-to-end verification harness across S1–S8.
+* **[Grafana Telemetry Dashboard](docs/grafana_dashboard.json)**: Ready-to-import Prometheus monitoring configuration.
+* **[Continuous Integration Matrix](.github/workflows/ci.yml)**: Automated cross-platform GitHub Actions testing pipeline.
 
 ---
 
