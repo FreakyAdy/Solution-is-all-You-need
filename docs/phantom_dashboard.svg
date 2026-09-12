@@ -1,0 +1,372 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="100%" height="100%" style="background:#070b14; font-family:'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif;">
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#070b14"/>
+      <stop offset="50%" stop-color="#0d1527"/>
+      <stop offset="100%" stop-color="#0a0f1d"/>
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#111827" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.8"/>
+    </linearGradient>
+    <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#0f172a" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#311042" stop-opacity="0.7"/>
+    </linearGradient>
+
+    <!-- Accent Gradients -->
+    <linearGradient id="purplePinkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="vramGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+    <linearGradient id="ramGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="nvmeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="activeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="prefetchGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#c026d3"/>
+      <stop offset="100%" stop-color="#e879f9"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="subtleGlow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas Background -->
+  <rect width="1200" height="675" fill="url(#bgGrad)"/>
+
+  <!-- Window Frame Border -->
+  <rect x="1" y="1" width="1198" height="673" rx="14" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <rect x="1" y="1" width="1198" height="52" rx="14" fill="#0b1120" fill-opacity="0.95"/>
+  <line x1="1" y1="53" x2="1199" y2="53" stroke="#1e293b" stroke-width="1"/>
+
+  <!-- Window Controls (macOS style dots) -->
+  <circle cx="28" cy="26" r="6" fill="#ef4444" opacity="0.85"/>
+  <circle cx="48" cy="26" r="6" fill="#f59e0b" opacity="0.85"/>
+  <circle cx="68" cy="26" r="6" fill="#10b981" opacity="0.85"/>
+
+  <!-- Brand & Logo -->
+  <g transform="translate(100, 16)">
+    <text x="0" y="17" font-size="16" font-weight="800" fill="#f8fafc" letter-spacing="0.5">👻 PHANTOM</text>
+    <rect x="100" y="3" width="76" height="18" rx="9" fill="#1e293b" stroke="#334155" stroke-width="0.8"/>
+    <text x="138" y="16" font-size="9.5" font-weight="700" fill="#94a3b8" text-anchor="middle">v1.0.0-core</text>
+  </g>
+
+  <!-- URL Bar Simulation -->
+  <g transform="translate(305, 14)">
+    <rect width="270" height="24" rx="6" fill="#070b14" stroke="#1e293b" stroke-width="1"/>
+    <circle cx="16" cy="12" r="3.5" fill="#10b981"/>
+    <text x="30" y="16" font-size="11" fill="#94a3b8" font-family="'JetBrains Mono', monospace">http://localhost:11411/ui</text>
+  </g>
+
+  <!-- Navigation Tabs -->
+  <g transform="translate(605, 17)">
+    <!-- Dashboard (Active) -->
+    <rect x="0" y="0" width="86" height="26" rx="6" fill="#1e293b" stroke="#38bdf8" stroke-opacity="0.5" stroke-width="1"/>
+    <text x="43" y="17" font-size="12" font-weight="700" fill="#38bdf8" text-anchor="middle">Dashboard</text>
+
+    <!-- Models -->
+    <text x="125" y="17" font-size="12" font-weight="500" fill="#94a3b8" text-anchor="middle">Models</text>
+
+    <!-- Chat Studio -->
+    <text x="195" y="17" font-size="12" font-weight="500" fill="#94a3b8" text-anchor="middle">Chat Studio</text>
+
+    <!-- Layer Map -->
+    <text x="275" y="17" font-size="12" font-weight="500" fill="#94a3b8" text-anchor="middle">Layer Map</text>
+
+    <!-- Metrics -->
+    <text x="345" y="17" font-size="12" font-weight="500" fill="#94a3b8" text-anchor="middle">Metrics</text>
+
+    <!-- Plugins -->
+    <text x="405" y="17" font-size="12" font-weight="500" fill="#94a3b8" text-anchor="middle">Plugins</text>
+  </g>
+
+  <!-- Top Right Hardware Status Badge -->
+  <g transform="translate(1060, 15)">
+    <rect width="116" height="22" rx="11" fill="#064e3b" stroke="#059669" stroke-width="0.8"/>
+    <circle cx="12" cy="11" r="3.5" fill="#34d399" filter="url(#subtleGlow)"/>
+    <text x="22" y="15" font-size="10" font-weight="700" fill="#6ee7b7">ENGINE ACTIVE</text>
+  </g>
+
+  <!-- ================= 1. HERO CEILING LIFT BANNER ================= -->
+  <g transform="translate(24, 68)">
+    <rect width="1152" height="96" rx="12" fill="url(#heroGrad)" stroke="#334155" stroke-width="1.2"/>
+
+    <!-- Left Info -->
+    <text x="24" y="28" font-size="11" font-weight="800" fill="#818cf8" letter-spacing="1.2">HARDWARE CEILING LIFT — MULTIPLIER ENGINE</text>
+    <text x="24" y="58" font-size="22" font-weight="800" fill="#ffffff">LLaMA-3 70B Instruct running on LAPTOP Hardware</text>
+    <text x="24" y="80" font-size="12.5" font-weight="500" fill="#94a3b8">80 Layers • 70.6B Parameters • FP8 Spectral DCT • 96K Active Context (8× Neural Cache) • RTX 4050 6GB</text>
+
+    <!-- Right Capacity Pill & Lift Stats -->
+    <g transform="translate(860, 16)">
+      <rect width="268" height="64" rx="10" fill="#0f172a" fill-opacity="0.9" stroke="#6366f1" stroke-width="1.2" filter="url(#subtleGlow)"/>
+      <text x="134" y="32" font-size="26" font-weight="900" fill="url(#purplePinkGrad)" text-anchor="middle" letter-spacing="0.5">+10.6× CAPACITY</text>
+      <text x="134" y="52" font-size="10.5" font-weight="600" fill="#94a3b8" text-anchor="middle">Native Limit: 9.6B  ➔  PHANTOM: 101.3B</text>
+    </g>
+  </g>
+
+  <!-- ================= 2. MID LEFT: 3-TIER MEMORY GAUGES ================= -->
+  <g transform="translate(24, 178)">
+    <rect width="564" height="176" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
+
+    <!-- Header -->
+    <text x="20" y="26" font-size="12" font-weight="800" fill="#f8fafc" letter-spacing="0.5">MULTI-TIER MEMORY HIERARCHY (ZERO-MEMORY ALLOCATION)</text>
+    <line x1="20" y1="36" x2="544" y2="36" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- Tier 1: VRAM -->
+    <g transform="translate(20, 48)">
+      <text x="0" y="12" font-size="11" font-weight="700" fill="#fbbf24">VRAM (GPU)</text>
+      <text x="524" y="12" font-size="11" font-weight="700" fill="#fbbf24" text-anchor="end">5.8 / 6.0 GB (96.7%)</text>
+      <rect x="0" y="18" width="524" height="8" rx="4" fill="#1e293b"/>
+      <rect x="0" y="18" width="506" height="8" rx="4" fill="url(#vramGrad)" filter="url(#subtleGlow)"/>
+      <text x="0" y="38" font-size="10" fill="#94a3b8">Layers 00–17 Resident (18 layers locked for zero-latency execution)</text>
+    </g>
+
+    <!-- Tier 2: System RAM -->
+    <g transform="translate(20, 94)">
+      <text x="0" y="12" font-size="11" font-weight="700" fill="#38bdf8">System RAM</text>
+      <text x="524" y="12" font-size="11" font-weight="700" fill="#38bdf8" text-anchor="end">18.2 / 24.0 GB (75.8%)</text>
+      <rect x="0" y="18" width="524" height="8" rx="4" fill="#1e293b"/>
+      <rect x="0" y="18" width="397" height="8" rx="4" fill="url(#ramGrad)"/>
+      <text x="0" y="38" font-size="10" fill="#94a3b8">Layers 18–59 Staged (Hot memory pool awaiting predictive prefetch)</text>
+    </g>
+
+    <!-- Tier 3: NVMe Gen4 -->
+    <g transform="translate(20, 138)">
+      <text x="0" y="12" font-size="11" font-weight="700" fill="#c084fc">NVMe Gen4 SSD</text>
+      <text x="524" y="12" font-size="11" font-weight="700" fill="#c084fc" text-anchor="end">162 / 500 GB (1.43 GB/s)</text>
+      <rect x="0" y="18" width="524" height="8" rx="4" fill="#1e293b"/>
+      <rect x="0" y="18" width="170" height="8" rx="4" fill="url(#nvmeGrad)"/>
+      <text x="0" y="38" font-size="10" fill="#94a3b8">Layers 60–79 Paged in 64MB FP8 DCT + LZ4 tiles (43.6 ms swap time)</text>
+    </g>
+  </g>
+
+  <!-- ================= 3. MID RIGHT: ACTIVE ENGINE TELEMETRY ================= -->
+  <g transform="translate(612, 178)">
+    <rect width="564" height="176" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
+
+    <!-- Header -->
+    <text x="20" y="26" font-size="12" font-weight="800" fill="#f8fafc" letter-spacing="0.5">ACTIVE ENGINE TELEMETRY (200ms WEBSOCKET STREAM)</text>
+    <line x1="20" y1="36" x2="544" y2="36" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- 4 Telemetry Metric Boxes -->
+    <!-- Box 1: Wraith Predictor -->
+    <g transform="translate(20, 48)">
+      <rect width="252" height="52" rx="8" fill="#070b14" stroke="#1e293b" stroke-width="1"/>
+      <text x="14" y="20" font-size="10" font-weight="700" fill="#94a3b8">WRAITH PREDICTOR</text>
+      <text x="14" y="42" font-size="20" font-weight="800" fill="#34d399">100.0% <tspan font-size="11" font-weight="600" fill="#6ee7b7">HITS</tspan></text>
+      <text x="238" y="34" font-size="10" fill="#94a3b8" text-anchor="end">0.487 ms (CPU)</text>
+    </g>
+
+    <!-- Box 2: Neural Cache KV -->
+    <g transform="translate(292, 48)">
+      <rect width="252" height="52" rx="8" fill="#070b14" stroke="#1e293b" stroke-width="1"/>
+      <text x="14" y="20" font-size="10" font-weight="700" fill="#94a3b8">NEURAL CACHE KV</text>
+      <text x="14" y="42" font-size="20" font-weight="800" fill="#38bdf8">8.0× <tspan font-size="11" font-weight="600" fill="#7dd3fc">RATIO</tspan></text>
+      <text x="238" y="34" font-size="10" fill="#94a3b8" text-anchor="end">1.18% error (96K)</text>
+    </g>
+
+    <!-- Box 3: Adaptive Sparsity -->
+    <g transform="translate(20, 110)">
+      <rect width="252" height="52" rx="8" fill="#070b14" stroke="#1e293b" stroke-width="1"/>
+      <text x="14" y="20" font-size="10" font-weight="700" fill="#94a3b8">ADAPTIVE SPARSITY</text>
+      <text x="14" y="42" font-size="20" font-weight="800" fill="#a855f7">61.2% <tspan font-size="11" font-weight="600" fill="#c084fc">SKIPPED</tspan></text>
+      <text x="238" y="34" font-size="10" fill="#94a3b8" text-anchor="end">6.9× speedup</text>
+    </g>
+
+    <!-- Box 4: Generation Speed -->
+    <g transform="translate(292, 110)">
+      <rect width="252" height="52" rx="8" fill="#070b14" stroke="#1e293b" stroke-width="1"/>
+      <text x="14" y="20" font-size="10" font-weight="700" fill="#94a3b8">GENERATION SPEED</text>
+      <text x="14" y="42" font-size="20" font-weight="800" fill="#fbbf24">4.2 <tspan font-size="11" font-weight="600" fill="#fde68a">TOK/S</tspan></text>
+      <text x="238" y="34" font-size="10" fill="#94a3b8" text-anchor="end">67°C (Nominal)</text>
+    </g>
+  </g>
+
+  <!-- ================= 4. BOTTOM CARD: 2D LAYER RESIDENCY HEATMAP (80 LAYERS) ================= -->
+  <g transform="translate(24, 368)">
+    <rect width="1152" height="286" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
+
+    <!-- Heatmap Header & Legend -->
+    <text x="20" y="26" font-size="12" font-weight="800" fill="#f8fafc" letter-spacing="0.5">2D LAYER RESIDENCY HEATMAP (80 LAYERS) — REAL-TIME EXECUTION &amp; PREFETCH</text>
+
+    <!-- Legend -->
+    <g transform="translate(620, 16)">
+      <!-- VRAM -->
+      <rect x="0" y="3" width="10" height="10" rx="2" fill="#d97706"/>
+      <text x="14" y="12" font-size="10" font-weight="600" fill="#fbbf24">VRAM (00–17)</text>
+
+      <!-- RAM -->
+      <rect x="95" y="3" width="10" height="10" rx="2" fill="#0284c7"/>
+      <text x="109" y="12" font-size="10" font-weight="600" fill="#38bdf8">RAM (18–59)</text>
+
+      <!-- NVMe -->
+      <rect x="185" y="3" width="10" height="10" rx="2" fill="#334155"/>
+      <text x="199" y="12" font-size="10" font-weight="600" fill="#94a3b8">NVMe (60–79)</text>
+
+      <!-- Active -->
+      <rect x="280" y="3" width="10" height="10" rx="2" fill="#10b981"/>
+      <text x="294" y="12" font-size="10" font-weight="700" fill="#34d399">ACTIVE (L21)</text>
+
+      <!-- Prefetch -->
+      <rect x="375" y="3" width="10" height="10" rx="2" fill="#c026d3"/>
+      <text x="389" y="12" font-size="10" font-weight="700" fill="#e879f9">PREFETCH</text>
+    </g>
+
+    <line x1="20" y1="36" x2="1132" y2="36" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- 80-CELL GRID (4 rows of 20 columns) -->
+    <!-- Row 1: Layers 00–19 -->
+    <g transform="translate(20, 48)">
+      <text x="0" y="24" font-size="10.5" font-weight="700" fill="#64748b" font-family="'JetBrains Mono', monospace">00–19</text>
+      <!-- Layers 00 to 17 (VRAM) -->
+      <!-- Repeat 18 times: i=0 to 17 -->
+      <g transform="translate(50, 6)">
+        <!-- L00 --> <rect x="0" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="24" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">00</text>
+        <!-- L01 --> <rect x="54" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="78" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">01</text>
+        <!-- L02 --> <rect x="108" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="132" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">02</text>
+        <!-- L03 --> <rect x="162" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="186" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">03</text>
+        <!-- L04 --> <rect x="216" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="240" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">04</text>
+        <!-- L05 --> <rect x="270" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="294" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">05</text>
+        <!-- L06 --> <rect x="324" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="348" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">06</text>
+        <!-- L07 --> <rect x="378" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="402" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">07</text>
+        <!-- L08 --> <rect x="432" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="456" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">08</text>
+        <!-- L09 --> <rect x="486" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="510" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">09</text>
+        <!-- L10 --> <rect x="540" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="564" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">10</text>
+        <!-- L11 --> <rect x="594" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="618" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">11</text>
+        <!-- L12 --> <rect x="648" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="672" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">12</text>
+        <!-- L13 --> <rect x="702" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="726" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">13</text>
+        <!-- L14 --> <rect x="756" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="780" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">14</text>
+        <!-- L15 --> <rect x="810" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="834" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">15</text>
+        <!-- L16 --> <rect x="864" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="888" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">16</text>
+        <!-- L17 --> <rect x="918" y="0" width="48" height="28" rx="5" fill="#d97706" fill-opacity="0.8" stroke="#fbbf24" stroke-width="1"/><text x="942" y="18" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">17</text>
+        <!-- L18 (RAM) --> <rect x="972" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="996" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">18</text>
+        <!-- L19 (RAM) --> <rect x="1026" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="1050" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">19</text>
+      </g>
+    </g>
+
+    <!-- Row 2: Layers 20–39 -->
+    <g transform="translate(20, 88)">
+      <text x="0" y="24" font-size="10.5" font-weight="700" fill="#64748b" font-family="'JetBrains Mono', monospace">20–39</text>
+      <g transform="translate(50, 6)">
+        <!-- L20 (RAM) --> <rect x="0" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="24" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">20</text>
+        <!-- L21 (ACTIVE RUNNING) -->
+        <rect x="54" y="0" width="48" height="28" rx="5" fill="url(#activeGrad)" stroke="#6ee7b7" stroke-width="1.8" filter="url(#glow)"/>
+        <text x="78" y="18" font-size="11" font-weight="900" fill="#064e3b" text-anchor="middle" font-family="'JetBrains Mono', monospace">21 ▶</text>
+        <!-- L22 (PREFETCH) -->
+        <rect x="108" y="0" width="48" height="28" rx="5" fill="url(#prefetchGrad)" stroke="#f0abfc" stroke-width="1.5" filter="url(#subtleGlow)"/>
+        <text x="132" y="18" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">22 ·</text>
+        <!-- L23 (PREFETCH) -->
+        <rect x="162" y="0" width="48" height="28" rx="5" fill="url(#prefetchGrad)" stroke="#f0abfc" stroke-width="1.5" filter="url(#subtleGlow)"/>
+        <text x="186" y="18" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">23 ·</text>
+        <!-- L24 (PREFETCH) -->
+        <rect x="216" y="0" width="48" height="28" rx="5" fill="url(#prefetchGrad)" stroke="#f0abfc" stroke-width="1.5" filter="url(#subtleGlow)"/>
+        <text x="240" y="18" font-size="11" font-weight="800" fill="#ffffff" text-anchor="middle" font-family="'JetBrains Mono', monospace">24 ·</text>
+        <!-- L25 to L39 (RAM) -->
+        <rect x="270" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="294" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">25</text>
+        <rect x="324" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="348" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">26</text>
+        <rect x="378" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="402" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">27</text>
+        <rect x="432" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="456" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">28</text>
+        <rect x="486" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="510" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">29</text>
+        <rect x="540" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="564" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">30</text>
+        <rect x="594" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="618" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">31</text>
+        <rect x="648" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="672" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">32</text>
+        <rect x="702" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="726" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">33</text>
+        <rect x="756" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="780" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">34</text>
+        <rect x="810" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="834" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">35</text>
+        <rect x="864" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="888" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">36</text>
+        <rect x="918" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="942" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">37</text>
+        <rect x="972" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="996" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">38</text>
+        <rect x="1026" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="1050" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">39</text>
+      </g>
+    </g>
+
+    <!-- Row 3: Layers 40–59 (RAM) -->
+    <g transform="translate(20, 128)">
+      <text x="0" y="24" font-size="10.5" font-weight="700" fill="#64748b" font-family="'JetBrains Mono', monospace">40–59</text>
+      <g transform="translate(50, 6)">
+        <rect x="0" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="24" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">40</text>
+        <rect x="54" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="78" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">41</text>
+        <rect x="108" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="132" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">42</text>
+        <rect x="162" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="186" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">43</text>
+        <rect x="216" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="240" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">44</text>
+        <rect x="270" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="294" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">45</text>
+        <rect x="324" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="348" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">46</text>
+        <rect x="378" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="402" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">47</text>
+        <rect x="432" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="456" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">48</text>
+        <rect x="486" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="510" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">49</text>
+        <rect x="540" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="564" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">50</text>
+        <rect x="594" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="618" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">51</text>
+        <rect x="648" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="672" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">52</text>
+        <rect x="702" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="726" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">53</text>
+        <rect x="756" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="780" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">54</text>
+        <rect x="810" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="834" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">55</text>
+        <rect x="864" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="888" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">56</text>
+        <rect x="918" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="942" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">57</text>
+        <rect x="972" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="996" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">58</text>
+        <rect x="1026" y="0" width="48" height="28" rx="5" fill="#0369a1" fill-opacity="0.7" stroke="#38bdf8" stroke-width="1"/><text x="1050" y="18" font-size="11" font-weight="600" fill="#e0f2fe" text-anchor="middle" font-family="'JetBrains Mono', monospace">59</text>
+      </g>
+    </g>
+
+    <!-- Row 4: Layers 60–79 (NVMe Paged) -->
+    <g transform="translate(20, 168)">
+      <text x="0" y="24" font-size="10.5" font-weight="700" fill="#64748b" font-family="'JetBrains Mono', monospace">60–79</text>
+      <g transform="translate(50, 6)">
+        <rect x="0" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="24" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">60</text>
+        <rect x="54" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="78" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">61</text>
+        <rect x="108" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="132" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">62</text>
+        <rect x="162" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="186" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">63</text>
+        <rect x="216" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="240" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">64</text>
+        <rect x="270" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="294" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">65</text>
+        <rect x="324" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="348" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">66</text>
+        <rect x="378" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="402" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">67</text>
+        <rect x="432" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="456" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">68</text>
+        <rect x="486" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="510" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">69</text>
+        <rect x="540" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="564" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">70</text>
+        <rect x="594" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="618" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">71</text>
+        <rect x="648" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="672" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">72</text>
+        <rect x="702" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="726" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">73</text>
+        <rect x="756" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="780" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">74</text>
+        <rect x="810" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="834" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">75</text>
+        <rect x="864" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="888" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">76</text>
+        <rect x="918" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="942" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">77</text>
+        <rect x="972" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="996" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">78</text>
+        <rect x="1026" y="0" width="48" height="28" rx="5" fill="#1e293b" fill-opacity="0.8" stroke="#475569" stroke-width="1"/><text x="1050" y="18" font-size="11" font-weight="600" fill="#94a3b8" text-anchor="middle" font-family="'JetBrains Mono', monospace">79</text>
+      </g>
+    </g>
+
+    <!-- Heatmap Footer Status Bar -->
+    <g transform="translate(20, 246)">
+      <rect width="1112" height="26" rx="6" fill="#070b14" stroke="#1e293b" stroke-width="1"/>
+      <circle cx="16" cy="13" r="3.5" fill="#10b981" filter="url(#subtleGlow)"/>
+      <text x="30" y="17" font-size="10.5" font-weight="600" fill="#94a3b8" font-family="'JetBrains Mono', monospace">
+        [Layer 21 Executing: 18.2ms]  ➔  [Prefetching Layers 22, 23, 24 via Wraith LSTM from RAM]  ➔  [Zero PCIe Stalls Detected]
+      </text>
+      <text x="1098" y="17" font-size="10.5" font-weight="600" fill="#38bdf8" text-anchor="end">💡 Click any layer cell to lock residency into VRAM</text>
+    </g>
+  </g>
+</svg>

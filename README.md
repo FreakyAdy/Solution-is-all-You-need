@@ -29,20 +29,9 @@
 
 <br>
 
-```text
-┌───────────────────────────────────────────────────────────────────────────────────────┐
-│                               PHANTOM RUNTIME STATUS                                  │
-├───────────────────────────────────────────────────────────────────────────────────────┤
-│  Hardware Tier:      LAPTOP (6.0 GB VRAM | 23.8 GB RAM | 500 GB NVMe Gen4)           │
-│  Model Loaded:       LLaMA-3 70B Instruct (70.6B parameters | FP8 Spectral)          │
-│  Active Sparsity:    61.2% neurons routed                                             │
-│  Wraith Accuracy:    100.0% layer prefetch hits (0.487 ms CPU latency)                │
-│  KV Compression:     8.0× memory reduction (Neural Cache Autoencoder)                 │
-│  Context Support:    96,000 tokens active                                             │
-│  Throughput:         4.2 tok/sec conversational generation                            │
-│  Ceiling Lift:       +10.6× capacity beyond physical hardware limit                   │
-└───────────────────────────────────────────────────────────────────────────────────────┘
-```
+<p align="center">
+  <img src="docs/phantom_dashboard.svg" alt="PHANTOM Real-Time Model Runtime Web Dashboard — 2D Layer Residency Map &amp; Hardware Telemetry" width="100%" style="border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+</p>
 
 > **👻 Hardware-Transcendent Inference** — Zero external dependencies on `llama.cpp`. PHANTOM enables consumer laptops and single GPUs (6GB–8GB VRAM) to run 70B+ parameter models (LLaMA-3 70B, Qwen2 72B, Mixtral MoE) with long context windows by orchestrating a 3-tier memory hierarchy (VRAM $\to$ RAM $\to$ NVMe) with predictive prefetching, spectral coefficient quantization, and autoencoded KV compression.
 
@@ -310,6 +299,10 @@ phantom convert model.gguf --output ./calibrated_model
 ## 🖥️ Interactive Web Dashboard & Telemetry Stream
 
 PHANTOM includes a self-hosted, real-time web dashboard served out-of-the-box at `http://localhost:11411/ui`:
+
+<p align="center">
+  <img src="docs/phantom_dashboard.svg" alt="PHANTOM Real-Time Web Dashboard" width="95%" style="border-radius: 10px; box-shadow: 0 8px 30px rgba(0,0,0,0.5);">
+</p>
 
 * **Ceiling Lift Hero**: Live capacity comparison between native hardware limit and PHANTOM.
 * **2D Layer Residency Heatmap**: 80-layer interactive grid updating every 200ms via WebSocket (`/phantom/metrics/stream`) with color-coded tiers:
