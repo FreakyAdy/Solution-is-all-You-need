@@ -31,3 +31,12 @@ Thumbs.db
 # Local runtime data
 ~/.phantom/
 *.log
+
+# Prompt, planning, and audit specification files
+CLAUDE*.md
+CLAUDE (1).md
+PHANTOM_CORE_MASTER_PROMPT.md
+PHANTOM_PLATFORM_BUILD_PROMPT.md
+audit.md
+implementation_plan.md
+toolextensio.md
