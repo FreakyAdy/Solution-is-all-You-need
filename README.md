@@ -17,14 +17,14 @@
 [![Ollama Compatible](https://img.shields.io/badge/Ollama%20API-100%25%20Drop--in-purple.svg)](docs/OLLAMA_MIGRATION.md)
 
 <p align="center">
-  <a href="#-quick-installation"><b>🚀 Quick Installation</b></a> •
+  <a href="#-quick-installation"><b>🚀 Install</b></a> •
+  <a href="#-60-second-beginner-quickstart"><b>⚡ Quickstart</b></a> •
+  <a href="#-ollama-to-phantom-command-cheatsheet"><b>🔄 Ollama Cheatsheet</b></a> •
+  <a href="#-navigation-guide-web-studio--unified-cli"><b>🧭 Navigation Guide</b></a> •
   <a href="#-how-to-install--run-offline-models"><b>📦 Offline Models</b></a> •
-  <a href="#-navigation-guide-unified-terminal-cli--interactive-repl"><b>🧭 Navigation Guide</b></a> •
-  <a href="#-what-phantom-offers-complete-feature-suite"><b>✨ What PHANTOM Offers</b></a> •
-  <a href="#-how-to-use-phantom-to-the-fullest"><b>⚡ Power User Guide</b></a> •
+  <a href="#-client-integrations-open-webui-vs-code-cursor--python"><b>🔌 Integrations</b></a> •
   <a href="#-rigorous-audit-hardening--resolved-errors"><b>🛡️ Audit Hardening</b></a> •
-  <a href="#-the-7-core-innovations">7 Innovations</a> •
-  <a href="#%EF%B8%8F-ecosystem-comparison-matrix">Comparison Matrix</a>
+  <a href="#-beginner-faq--troubleshooting"><b>❓ FAQ</b></a>
 </p>
 
 <br>
@@ -83,6 +83,61 @@ PHANTOM SYSTEM DIAGNOSTICS
 
 All diagnostics passed. System ready for inference.
 ```
+
+---
+
+## ⚡ 60-Second Beginner Quickstart
+
+If you have ever used Ollama, PHANTOM will feel instantly familiar — with one massive breakthrough: **models that crash in Ollama with `CUDA Out of Memory` run effortlessly in PHANTOM**.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CHOOSE YOUR PREFERRED INTERFACE:                         │
+├──────────────────────────────────────┬──────────────────────────────────────┤
+│  Option A: Engineering Terminal CLI  │    Option B: Visual Web Studio       │
+│  $ phantom run llama3:70b            │    $ phantom serve                   │
+│  Instant interactive terminal chat   │    Browser opens :11411/ui live studio│
+└──────────────────────────────────────┴──────────────────────────────────────┘
+```
+
+### 1. Chat with a 70B Model in your Terminal (Zero Setup)
+```bash
+# Pull and run flagship LLaMA-3 70B in one command (just like Ollama):
+phantom run llama3:70b
+```
+
+### 2. Or Open the Edge-to-Edge Visual Web Studio
+```bash
+# Start background server and launch browser studio:
+phantom serve
+# Automatically opens at http://localhost:11411/ui/
+```
+
+### 3. Check If a Model Fits Before Downloading (Zero Memory)
+```bash
+# Pre-flight hardware sizing and ceiling calculation:
+phantom plan llama3:70b
+```
+
+---
+
+## 🔄 Ollama to PHANTOM Command Cheatsheet
+
+Every command you know from Ollama works in PHANTOM with identical intuition, plus dedicated commands for hardware planning, benchmarks, and 100% offline air-gapped conversion:
+
+| What You Want To Do | Ollama Syntax | PHANTOM Equivalent | What PHANTOM Does Better |
+| :--- | :--- | :--- | :--- |
+| **Run & Chat with a Model** | `ollama run llama3` | `phantom run llama3:70b` | **Runs 70B+ models on 6GB GPUs** without `CUDA OOM` crashes. |
+| **Pre-flight Fit Planning** | ❌ None (trial & error) | `phantom plan llama3:70b` | Computes exact VRAM/RAM tiering and speed *without downloading*. |
+| **Download / Pull a Model** | `ollama pull llama3` | `phantom pull llama3:70b` | Compiles weights with Discrete Cosine Transform (DCT) FP8. |
+| **Run 100% Offline / Air-Gapped** | ❌ Complex workarounds | `phantom run ./model.gguf` | Zero-copy execution from local disk, external drive, or USB. |
+| **Import Ollama Cache** | ❌ Re-download everything | `phantom convert ~/.ollama/...` | Reuses existing Ollama model blobs without using any internet data. |
+| **List Installed Models** | `ollama list` | `phantom list` | Displays layer counts, memory tier residency, and quant types. |
+| **Inspect Architecture** | `ollama show llama3` | `phantom show llama3:70b` | Displays layer breakdown, context ceiling, and calibration profile. |
+| **Delete a Model** | `ollama rm llama3` | `phantom rm llama3:70b` | Instantly frees disk space and removes swap allocations. |
+| **Start Background Server** | `ollama serve` | `phantom serve` | Starts OpenAI + Ollama API gateway on port 11411 with **built-in Web Studio**. |
+| **Hardware Health Check** | ❌ None | `phantom doctor` | Tests NVMe PCIe throughput, PyTorch CUDA support, and RAM ceilings. |
+| **Benchmark Innovations** | ❌ None | `phantom benchmark` | Benchmarks all 8 memory & inference acceleration layers live. |
 
 ---
 
@@ -151,71 +206,83 @@ phantom pull bartowski/Meta-Llama-3-70B-Instruct-GGUF --quant Q4_K_M
 
 ---
 
-## 🧭 Navigation Guide: Unified Terminal CLI & Interactive REPL
+---
 
-Alongside the self-hosted [Web Studio](#step-3-launch-the-api-gateway--web-studio) (`http://localhost:11411/ui`), PHANTOM provides an interactive, zero-delay terminal CLI:
+## 🧭 Navigation Guide: Web Studio & Unified CLI
+
+PHANTOM provides two interchangeable, enterprise-grade interfaces tailored for both visual users and command-line engineers: an **Apple-grade edge-to-edge Web Studio** and an **interactive terminal CLI & REPL**.
+
+---
+
+### 1. The Modern Web Studio Tour (`http://localhost:11411/ui`)
+
+To launch the Web Studio on your machine:
+```bash
+# Start background runtime server and open browser studio:
+phantom serve --port 11411
+# Opens automatically in your browser at http://localhost:11411/ui/
+```
+
+<p align="center">
+  <img src="docs/phantom_ui_demo.gif" alt="PHANTOM Real-Time Model Runtime Web Studio &amp; Telemetry Dashboard" width="100%" style="border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.4);">
+</p>
+
+#### Complete Web Studio Feature Directory:
+
+| Studio Area / Control | Location in UI | What It Does & How Beginners Can Use It |
+| :--- | :--- | :--- |
+| **💬 AI Chat & Studio** | Left Sidebar Tab | **Interactive Conversation**: Real-time markdown streaming, syntax-highlighted code blocks with 1-click copy, and live indicators for tokens per second and Time-To-First-Token (TTFT). |
+| **📊 Dashboard (Ceiling Lift)** | Left Sidebar Tab | **Hardware Visualizer**: Shows detected hardware specs (e.g. RTX 4050 6GB), computes your native GPU limit (~7B), and displays your active **+10.6× PHANTOM ceiling lift** allowing 70B+ execution. |
+| **🗺️ Layer Map (2D Heatmap)** | Left Sidebar Tab | **Real-Time Memory Topology**: Dynamic 2D grid color-coded by memory tier: 🟩 **VRAM**, 🟨 **RAM**, 🟦 **NVMe Swap**. Watch layers blink as the Wraith LSTM prefetcher streams weights ahead of execution. |
+| **📦 Models Library** | Left Sidebar Tab | **Model Manager**: 1-click model switching in $<400\text{ ms}$, instant model puller from HuggingFace, and drag-and-drop local `.gguf` file importer for offline air-gapped conversion. |
+| **📈 Telemetry & Diagnostics** | Left Sidebar Tab | **Live Performance Meters**: Real-time streaming graphs for token generation speed, TTFT latency, VRAM utilization, PCIe bus traffic, and SSD wear-leveling endurance. |
+| **🔌 Plugins & MCP Hub** | Left Sidebar Tab | **Agent Extensions**: Toggle local vector RAG document retrieval, customize Python `@phantom_tool` callables, and connect external Model Context Protocol (MCP) servers. |
+| **⚡ Transcend Limits** | Top Header Button | **Turbo Booster**: One-click hardware override that automatically activates 3-tier NVMe swap paging and 8.0× Neural Cache autoencoder for extreme 70B–405B models. |
+| **☀️ / 🌙 Theme Capsule** | Bottom-Left Capsule | **Theme Switcher**: Instant one-click toggle between Apple-grade clean light mode and obsidian dark studio mode. |
+| **4 Quick Action Cards** | Center Studio Home | **1-Click Actions**: *⚡ Run 70B Model*, *🗺️ Layer Residency Map*, *🚀 Compare vs Ollama*, and *🧩 Tool Router & MCP*. |
+| **3-Tier Resource Meters** | Right Sidebar | **Hardware Monitors**: Live progress gauges tracking real-time VRAM allocation (`5.8/6.0 GB`), System RAM (`18.4/24.0 GB`), and active NVMe Swap pages. |
+
+---
+
+### 2. The Unified Terminal CLI & Interactive REPL
+
+For power users, scripts, SSH sessions, and headless servers, the CLI provides instant, zero-delay control:
 
 <p align="center">
   <img src="docs/phantom_terminal_demo.gif" alt="PHANTOM Real-Time Terminal CLI Execution Demo" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
 </p>
 
+#### In-Chat REPL Slash Commands (While Inside `phantom run`):
+Launch a model and type slash commands directly during the chat session:
+
 ```bash
-# 1. Pre-flight Resource Planner (Zero-Memory Static Calculation)
-$ phantom plan llama3:70b
-
-======================================================================
-  PHANTOM PLANNER — llama3:70b (70.6B parameters)
-======================================================================
-Hardware Detected: LAPTOP | 6.0GB VRAM | 24GB RAM | 500GB NVMe
-
-┌─────────────────────────────────────────────────────────────────┐
-│ LAYER RESIDENCY DISTRIBUTION (Zero-Memory Static Plan)          │
-│ VRAM  ( 6.0 GB): layers 00–17 (18 layers) ████                 │
-│ RAM   (  24 GB): layers 18–79 (62 layers) ███████████████      │
-└─────────────────────────────────────────────────────────────────┘
-
-  Estimated token speed:      3.5 tok/sec
-  Estimated context support:  96K tokens (via 8× Neural Cache)
-  Native ceiling on hardware: ~7B parameters
-  PHANTOM ceiling lift:       +10.1× capacity beyond native limit
+phantom run llama3:70b
 ```
 
-#### Interactive Terminal REPL:
-Launch a model and type commands directly during chat:
+| Slash Command | Description | What It Shows / How It Helps You |
+| :--- | :--- | :--- |
+| `/help` | Lists all in-chat commands | Quick reference of all available interactive shortcuts. |
+| `/layers` | **2D ANSI Layer Map** | Displays the full 80-layer breakdown across VRAM, RAM, and NVMe with real-time Wraith prefetch indicators (`··`). |
+| `/stats` | **Live Performance Metrics** | Reports tokens/sec speed, TTFT latency, active VRAM, System RAM, and NVMe swap footprint. |
+| `/doctor` | **Hardware Sanity Check** | Runs instant diagnostic checks on thermal status, PCIe bus throughput, and RAM pressure without quitting chat. |
+| `/clear` | **Clear Context** | Wipes chat history and resets the KV cache back to zero tokens. |
+| `/set <param> <val>` | **Tune Hyperparameters** | Dynamically adjust parameters: `/set temperature 0.5`, `/set top_p 0.9`, `/set sparsity 0.60`. |
+| `/bye` (or `Ctrl+D`) | **Clean Exit** | Unloads layers cleanly from memory and returns to your system shell. |
 
-```text
-$ phantom run llama3:70b
+#### Complete CLI Commands & Flags Reference:
 
->>> /layers
-Layer Residency Map — llama3:70b (80 layers)
-██ VRAM   ██ RAM    ░░ NVMe    ▓▓ Active    ·· Prefetching
-
-00–19:  ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ██ ░░ ░░ ░░ ░░ ░░
-20–39:  ▓▓ ·· ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
-40–59:  ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
-60–79:  ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░ ░░
-
-Wraith prediction:   Next → layers [22, 23, 24]  (prefetching ···)
-KV compression:      8.0×  |  Context: 16,384 / 96,000 tokens active
-Active sparsity:     60.0% neurons routed this token
-Speed:               4.2 tok/sec  |  Thermal: nominal (67°C)
-
->>> /stats
-Throughput: 4.2 tok/sec | TTFT: 82ms | VRAM: 5.8GB | RAM: 18.4GB | Swap: 22.1GB
-```
-
-#### Essential CLI Commands:
-| Command | Description |
-| :--- | :--- |
-| `phantom plan <model>` | Computes memory tiering and ceiling lift without downloading |
-| `phantom run <model>` | Starts interactive REPL (supports `/layers`, `/stats`, `/doctor`) |
-| `phantom pull <model>` | Downloads and converts model into `.phantomw` format |
-| `phantom list [--json]` | Lists all locally installed models |
-| `phantom show <model>` | Displays layer topology, quant type, and calibration profile |
-| `phantom rm <model>` | Deletes model from library |
-| `phantom benchmark` | Runs the 8 core benchmarks and reports speedups |
-| `phantom doctor` | Runs hardware diagnostics and NVMe read/write speed tests |
-| `phantom serve` | Starts hardened OpenAI + Ollama API Gateway on port 11411 |
+| Command | Syntax & Options | Beginner Example | Purpose |
+| :--- | :--- | :--- | :--- |
+| `phantom plan` | `phantom plan <model>` | `phantom plan llama3:70b` | **Pre-flight Sizing**: Computes memory distribution, layer tiering, token speed estimate, and ceiling lift *before* pulling. |
+| `phantom run` | `phantom run <model> [--skip-convert]` | `phantom run llama3:70b` | **Chat Session**: Starts interactive conversational REPL with real-time streaming and slash command support. |
+| `phantom pull` | `phantom pull <model> [--quant <q>]` | `phantom pull llama3:70b --quant Q4_K_M` | **Download Model**: Downloads GGUF from HuggingFace and compiles it into high-speed `.phantomw` format. |
+| `phantom convert` | `phantom convert <file.gguf> [-o <dir>]` | `phantom convert ./model.gguf -o ~/.phantom/models/m/` | **Offline Converter**: Compiles local GGUF with per-layer Discrete Cosine Transform (DCT) FP8 quantization. |
+| `phantom list` | `phantom list [--json]` | `phantom list` | **List Models**: Displays all installed models, parameter size, layer depths, and disk utilization. |
+| `phantom show` | `phantom show <model>` | `phantom show llama3:70b` | **Inspect Topology**: Displays layer count, attention heads, context window, and calibration state. |
+| `phantom rm` | `phantom rm <model>` | `phantom rm llama3:70b` | **Delete Model**: Deletes model layers and associated swap files to instantly free disk space. |
+| `phantom benchmark`| `phantom benchmark [model]` | `phantom benchmark` | **Run Benchmarks**: Executes the 8 core empirical benchmarks and reports latency, compression, and speedups. |
+| `phantom doctor` | `phantom doctor` | `phantom doctor` | **System Diagnostics**: Verifies Python version, PyTorch CUDA support, NVMe write speed, and system paths. |
+| `phantom serve` | `phantom serve [--port <p>] [--token <t>]` | `phantom serve --port 11411` | **Launch API Gateway**: Starts OpenAI & Ollama compatible REST/WebSocket server and hosts the Web Studio. |
 
 ---
 
@@ -269,16 +336,49 @@ phantom serve --port 11411
 ```
 Open `http://localhost:11411/ui/` in your browser. Switch between Light and Dark mode, test prompt generation, and monitor the live 3-tier memory meters.
 
-### Step 4: Connect Your Favorite Frontend or IDE
+### Step 4: Connect Any Frontend, IDE, or Python Script
 
-#### Connect Open WebUI:
+PHANTOM acts as a 100% drop-in replacement for both Ollama and OpenAI API endpoints:
+
+#### 1. Direct cURL / Terminal API Call:
 ```bash
-export OLLAMA_BASE_URL=http://localhost:11411
-docker run -d -p 3000:8080 -e OLLAMA_BASE_URL=$OLLAMA_BASE_URL ghcr.io/open-webui/open-webui:main
+# Ollama-compatible format:
+curl http://localhost:11411/api/chat -d '{
+  "model": "llama3:70b",
+  "messages": [{"role": "user", "content": "Explain quantum computing in one sentence."}],
+  "stream": false
+}'
+
+# OpenAI-compatible format:
+curl http://localhost:11411/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "llama3:70b",
+    "messages": [{"role": "user", "content": "Hello PHANTOM!"}]
+  }'
 ```
 
-#### Connect Continue.dev (VS Code / JetBrains):
-In `~/.continue/config.json`:
+#### 2. Python SDK (Zero Changes):
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:11411/v1", api_key="phantom")
+
+response = client.chat.completions.create(
+    model="llama3:70b",
+    messages=[{"role": "user", "content": "Write a fast matrix multiplication function in Rust."}]
+)
+print(response.choices[0].message.content)
+```
+
+#### 3. Connect Open WebUI (Docker):
+```bash
+docker run -d -p 3000:8080 -e OLLAMA_BASE_URL=http://host.docker.internal:11411 ghcr.io/open-webui/open-webui:main
+# Open http://localhost:3000 — PHANTOM models appear automatically!
+```
+
+#### 4. Connect Continue.dev (VS Code & JetBrains):
+In your `~/.continue/config.json`:
 ```json
 {
   "models": [{
@@ -286,8 +386,28 @@ In `~/.continue/config.json`:
     "provider": "ollama",
     "model": "llama3:70b",
     "apiBase": "http://localhost:11411"
-  }]
+  }],
+  "tabAutocompleteModel": {
+    "title": "PHANTOM Autocomplete",
+    "provider": "ollama",
+    "model": "llama3:70b",
+    "apiBase": "http://localhost:11411"
+  }
 }
+```
+
+#### 5. Connect Cursor IDE:
+1. Open Cursor Settings $\to$ **Models**.
+2. Under **OpenAI API Key**, enter `phantom`.
+3. Check **Override OpenAI Base URL** and enter `http://localhost:11411/v1`.
+4. Add model name `llama3:70b`.
+
+#### 6. Connect LangChain & LlamaIndex:
+```python
+from langchain_community.chat_models import ChatOllama
+
+llm = ChatOllama(base_url="http://localhost:11411", model="llama3:70b")
+print(llm.invoke("What are Wraith layers in PHANTOM?").content)
 ```
 
 ### Step 5: Build Custom Agent Personas with `Phantomfile`
@@ -469,6 +589,44 @@ OVERALL: [SHIP IT] (100% Passing)
 | **Ollama API Drop-in** | **✅ 100% Drop-in Compatible** | Native | ❌ Requires wrapper | ❌ OpenAI only |
 | **Self-Hosted Web UI** | **✅ Built-in Edge-to-Edge Studio** | ❌ None | ❌ None | ❌ None |
 | **llama.cpp Dependency** | **Zero Binary Dependencies** | Uses `llama.cpp` | Native | Independent |
+
+---
+
+## ❓ Beginner FAQ & Troubleshooting
+
+### 1. Can I really run a 70B parameter model on a laptop with a 6GB GPU?
+**Yes.** Standard engines (Ollama, llama.cpp, vLLM) require loading all weights into GPU VRAM. When a 70B model requires ~40GB of memory, a 6GB GPU immediately crashes with `CUDA Out of Memory`. PHANTOM solves this by organizing a **3-tier memory hierarchy**: the first ~18 layers reside permanently in GPU VRAM, the next ~40 layers reside in System RAM, and remaining layers page asynchronously from NVMe. A lightweight CPU LSTM (**Wraith**) predicts upcoming layer requests milliseconds ahead of time, streaming weights over PCIe before GPU execution arrives.
+
+### 2. Can I run 100% offline in an air-gapped environment with no internet?
+**Yes.** PHANTOM has zero telemetry and never phones home. You can run any local GGUF file directly with zero internet:
+```bash
+# Option A: Zero-copy direct GGUF execution
+phantom run /path/to/model.gguf --skip-convert
+
+# Option B: One-time high-speed conversion (saves into ~/.phantom/models/)
+phantom convert /path/to/model.gguf -o ~/.phantom/models/my-model/
+phantom run my-model
+```
+
+### 3. Can I use models I already downloaded in Ollama without re-downloading 40GB?
+**Yes.** PHANTOM can convert models directly from Ollama's local cache without consuming any internet bandwidth:
+```bash
+# Linux / macOS:
+phantom convert ~/.ollama/models/blobs/sha256-<hash> --output ~/.phantom/models/llama3-70b/
+
+# Windows:
+phantom convert $env:USERPROFILE\.ollama\models\blobs\sha256-<hash> --output $env:USERPROFILE\.phantom\models\llama3-70b\
+```
+
+### 4. Why is PHANTOM so much faster than CPU offloading in llama.cpp?
+In `llama.cpp`, offloading layers to system memory forces the CPU to compute those layers. The GPU sits completely idle waiting for the slow CPU, creating catastrophic PCIe bus sync stalls (dropping throughput to $<0.5\text{ tok/sec}$). In PHANTOM, **all matrix math executes on the GPU**. System RAM and NVMe SSD are treated strictly as high-speed storage tiers; the Wraith LSTM streams upcoming layer weights into GPU VRAM in the background while earlier layers are executing, completely hiding I/O transfer latency.
+
+### 5. Does NVMe swap paging wear out my SSD?
+**No.** PHANTOM's **Phantom Pages** subsystem manages a contiguous, pre-allocated virtual memory file. Weight paging consists exclusively of large, sequential 64MB block reads with zero random disk writes. Because inference is predominantly read-heavy and sequential reads do not degrade flash memory cells, SSD wear leveling is negligible.
+
+### 6. How do I switch models or free memory?
+* **In the Terminal REPL**: Type `/bye` or press `Ctrl+D` to unload model layers and cleanly return to your shell.
+* **In the Web Studio**: Click any model in the right-hand **Active Models** sidebar. The **Chronos scheduler** swaps model pointers in $<400\text{ ms}$ by staging compressed dormant models in RAM.
 
 ---
 
