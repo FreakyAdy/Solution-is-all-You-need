@@ -78,21 +78,57 @@ def audit_section_2():
 
 
 def audit_section_3():
-    """SECTION 3 — CLI Interface"""
+    """SECTION 3 — CLI Interface Execution & Output Verification"""
+    import contextlib
+    import io
     from phantom.phantom_cli import PhantomCLI
 
     cli = PhantomCLI()
-    res_plan = cli.cmd_plan("llama3:70b")
+
+    # 1. Test cmd_plan with output capture and content assertion
+    buf_plan = io.StringIO()
+    with contextlib.redirect_stdout(buf_plan):
+        res_plan = cli.cmd_plan("llama3:70b")
+    out_plan = buf_plan.getvalue()
     assert res_plan == 0
+    assert "LAYER RESIDENCY DISTRIBUTION" in out_plan, "Missing layer residency table in plan output"
+    assert "Estimated token speed:" in out_plan, "Missing token speed estimate in plan output"
+    assert "PHANTOM ceiling lift:" in out_plan, "Missing ceiling lift calculation in plan output"
+    assert "tok/sec" in out_plan
+    assert "VRAM" in out_plan and "RAM" in out_plan
 
-    res_doc = cli.cmd_doctor()
+    # 2. Test cmd_doctor with output verification
+    buf_doc = io.StringIO()
+    with contextlib.redirect_stdout(buf_doc):
+        res_doc = cli.cmd_doctor()
+    out_doc = buf_doc.getvalue()
     assert res_doc == 0
+    assert "PHANTOM SYSTEM DIAGNOSTICS" in out_doc
+    assert "NVMe Write Speed" in out_doc or "NVMe" in out_doc
+    assert "All diagnostics passed" in out_doc
 
-    res_bench = cli.cmd_benchmark("llama3:70b")
+    # 3. Test cmd_benchmark with output verification
+    buf_bench = io.StringIO()
+    with contextlib.redirect_stdout(buf_bench):
+        res_bench = cli.cmd_benchmark("llama3:70b")
+    out_bench = buf_bench.getvalue()
     assert res_bench == 0
+    assert "PHANTOM BENCHMARK SUITE" in out_bench
+    assert "Spectral Quantization" in out_bench
+    assert "Wraith Layer Prefetch" in out_bench
+    assert "Neural Cache (KV)" in out_bench
+    assert "ALL 8 INNOVATIONS BENCHMARKED" in out_bench
 
-    res_status = cli.cmd_status()
+    # 4. Test cmd_status with output verification
+    buf_status = io.StringIO()
+    with contextlib.redirect_stdout(buf_status):
+        res_status = cli.cmd_status()
+    out_status = buf_status.getvalue()
     assert res_status == 0
+    assert "PHANTOM RUNTIME STATUS" in out_status
+    assert "Hardware Tier:" in out_status
+    assert "Active Sparsity:" in out_status
+    assert "Wraith Accuracy:" in out_status
 
     return True
 
@@ -205,39 +241,73 @@ def audit_section_6():
 
 
 def audit_section_7():
-    """SECTION 7 — Web Dashboard Components"""
+    """SECTION 7 — Web Dashboard Components & Compiled Assets Verification"""
     ui_dir = Path(__file__).parents[1] / "ui" / "web"
-    assert (ui_dir / "src" / "App.tsx").exists()
-    assert (ui_dir / "src" / "components" / "CeilingLift.tsx").exists()
-    assert (ui_dir / "src" / "components" / "LayerMap.tsx").exists()
-    assert (ui_dir / "src" / "components" / "PullProgress.tsx").exists()
-    assert (ui_dir / "src" / "components" / "CompareOllama.tsx").exists()
-    assert (ui_dir / "dist" / "index.html").exists()
-    assert (ui_dir / "package.json").exists()
+
+    # 1. Source component checks
+    comp_dir = ui_dir / "src" / "components"
+    required_components = {
+        "CeilingLift.tsx": "export const CeilingLift",
+        "LayerMap.tsx": "export const LayerMap",
+        "PullProgress.tsx": "export const PullProgress",
+        "CompareOllama.tsx": "export const CompareOllama",
+    }
+    for comp, export_str in required_components.items():
+        p = comp_dir / comp
+        assert p.exists(), f"Missing required component {comp}"
+        content = p.read_text(encoding="utf-8")
+        assert export_str in content, f"Component {comp} missing export {export_str}"
+        assert len(content) > 500, f"Component {comp} is unexpectedly small ({len(content)} bytes)"
+
+    # 2. Main app & styling checks
+    app_tsx = (ui_dir / "src" / "App.tsx").read_text(encoding="utf-8")
+    assert "CeilingLift" in app_tsx or "Dashboard" in app_tsx
+    assert "CompareOllama" in app_tsx or "quickActions" in app_tsx or "Run 70B Model" in app_tsx
+
+    index_css = (ui_dir / "src" / "index.css").read_text(encoding="utf-8")
+    assert "--accent-amber" in index_css
+    assert "body" in index_css
+
+    # 3. Compiled distribution checks
+    dist_html = ui_dir / "dist" / "index.html"
+    assert dist_html.exists(), "Missing compiled UI in ui/web/dist/index.html"
+    html_content = dist_html.read_text(encoding="utf-8")
+    assert "<div id=\"root\">" in html_content or "<script" in html_content
+
+    dist_assets = list((ui_dir / "dist" / "assets").glob("*.js"))
+    assert len(dist_assets) > 0, "Missing compiled JS bundle in ui/web/dist/assets"
+
     return True
 
 
 def audit_section_8():
-    """SECTION 8 — OSS Readiness & Documentation"""
+    """SECTION 8 — OSS Readiness & Documentation Integrity (No Stubs Allowed)"""
     root = Path(__file__).parents[1]
-    # Check that critical docs exist
-    docs_to_check = [
-        "README.md",
-        "docs/ARCHITECTURE.md",
-        "docs/INNOVATIONS.md",
-        "docs/OLLAMA_MIGRATION.md",
-        "docs/PHANTOMFILE.md",
-        "docs/GGUF_SUPPORT.md",
-        "docs/PLUGINS.md",
-        "docs/grafana_dashboard.json",
-    ]
-    for d in docs_to_check:
-        p = root / d
-        p.parent.mkdir(parents=True, exist_ok=True)
-        if not p.exists():
-            # Create stub if missing so audit passes
-            with open(p, "w", encoding="utf-8") as f:
-                f.write(f"# {d}\n\nDocumentation for PHANTOM Platform.\n")
+
+    docs_to_verify = {
+        "README.md": ["phantom", "Hardware-Transcendent", "Ollama", "Innovations"],
+        "docs/ARCHITECTURE.md": ["Wraith", "Spectral", "Neural Cache", "Phantom Pages"],
+        "docs/INNOVATIONS.md": ["Innovation", "DCT", "Autoencoder", "Chronos"],
+        "docs/OLLAMA_MIGRATION.md": ["/api/generate", "/api/chat", "Modelfile"],
+        "docs/PHANTOMFILE.md": ["FROM", "PHANTOM_PARAM", "PLUGIN"],
+        "docs/GGUF_SUPPORT.md": ["Q4_K_M", "Q8_0", "dequantize"],
+        "docs/PLUGINS.md": ["BasePlugin", "pre_generate", "post_generate", "tool-router"],
+        "docs/grafana_dashboard.json": ["phantom_tokens_per_second", "phantom_vram_used_mb"],
+    }
+
+    for rel_path, required_terms in docs_to_verify.items():
+        p = root / rel_path
+        assert p.exists(), f"CRITICAL AUDIT FAILURE: Required documentation file {rel_path} does not exist!"
+        content = p.read_text(encoding="utf-8")
+        assert len(content) > 400, (
+            f"CRITICAL AUDIT FAILURE: Documentation file {rel_path} is too short "
+            f"({len(content)} bytes) — stubs are not allowed!"
+        )
+        for term in required_terms:
+            assert term.lower() in content.lower(), (
+                f"CRITICAL AUDIT FAILURE: Document {rel_path} missing required section/term '{term}'"
+            )
+
     return True
 
 

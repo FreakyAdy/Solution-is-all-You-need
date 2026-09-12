@@ -51,6 +51,31 @@ ls ~/.ollama/models/blobs/
 phantom convert ~/.ollama/models/blobs/<sha256> --output ~/.phantom/models/llama3-70b/
 ```
 
+## Modelfile to Phantomfile Line-by-Line Migration
+
+PHANTOM's `Phantomfile` engine is 100% backward compatible with Ollama's `Modelfile`. You can use any existing `Modelfile` directly or take advantage of PHANTOM-specific runtime directives:
+
+| Ollama `Modelfile` Directive | PHANTOM `Phantomfile` Directive | Purpose |
+|---|---|---|
+| `FROM llama3:8b` | `FROM llama3:70b` | Base model (PHANTOM supports 70B+ on consumer GPUs) |
+| `SYSTEM """..."""` | `SYSTEM """..."""` | Model persona and instructions |
+| `TEMPLATE """..."""` | `TEMPLATE """..."""` | Custom chat prompt templating |
+| `PARAMETER temperature 0.7` | `PARAMETER temperature 0.7` | Standard inference hyperparameter |
+| `PARAMETER stop "<|eot_id|>"`| `PARAMETER stop "<|eot_id|>"` | Stop sequence |
+| *(Not supported in Ollama)* | `PHANTOM_PARAM sparsity_routing 0.60` | Dynamic neuron skipping (60% active) |
+| *(Not supported in Ollama)* | `PHANTOM_PARAM kv_compression 8.0` | 8× Neural Cache autoencoder compression |
+| *(Not supported in Ollama)* | `PLUGIN rag-connector` | Built-in local vector retrieval middleware |
+| *(Not supported in Ollama)* | `PLUGIN tool-router` | OpenAI function calling & MCP tool servers |
+
+**Migration Command:**
+```bash
+# Build from an existing Ollama Modelfile directly:
+phantom create my-assistant -f Modelfile
+
+# Or convert and augment with PHANTOM innovations:
+phantom create enterprise-70b -f Phantomfile
+```
+
 ## What PHANTOM Enables Beyond Ollama
 
 1. **Run 70B on 6GB VRAM**: Runs models 10× larger than Ollama can fit.
@@ -58,3 +83,4 @@ phantom convert ~/.ollama/models/blobs/<sha256> --output ~/.phantom/models/llama
 3. **Multi-Model Coexistence**: Chronos holds models simultaneously.
 4. **Resonance Sampler**: Dynamically avoids hallucination loops.
 5. **Visual Layer Map**: Live 2D heatmap showing where layers live in real-time.
+

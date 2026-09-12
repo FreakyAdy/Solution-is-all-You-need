@@ -5,6 +5,7 @@
 
 **Ollama runs the model that fits your GPU. PHANTOM runs the model that doesn't.**
 
+[![CI Pipeline](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
 [![Audit Status](https://img.shields.io/badge/audit-SHIP%20IT%20(100%25)-brightgreen.svg)](tests/audit_suite.py)
 [![Benchmarks Passing](https://img.shields.io/badge/benchmarks-8%2F8%20passed%20(100%25)-brightgreen.svg)](tests/benchmarks/)
 [![Hardware Ceiling Lift](https://img.shields.io/badge/ceiling%20lift-%2B10.6%C3%97%20capacity-purple.svg)](#-empirical-systems-audit--8-benchmarks-verified)
