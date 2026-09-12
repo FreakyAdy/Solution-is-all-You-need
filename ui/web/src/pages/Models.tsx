@@ -1,9 +1,11 @@
 import React, { useState } from "react";
+import { PullProgress } from "../components/PullProgress";
 
 export const Models: React.FC = () => {
   const [search, setSearch] = useState("");
   const [pulling, setPulling] = useState<string | null>(null);
   const [pullProgress, setPullProgress] = useState(0);
+  const [pullStage, setPullStage] = useState<"downloading" | "dequantizing" | "spectral_quant" | "wraith_calib" | "serializing" | "completed">("downloading");
 
   const installedModels = [
     { id: "llama3:70b", name: "Meta LLaMA 3 70B Instruct", size: "38.4 GB", quant: "SPECTRAL", speed: "4.2 tok/s", layers: 80 },
@@ -14,16 +16,30 @@ export const Models: React.FC = () => {
   const handlePull = (modelId: string) => {
     setPulling(modelId);
     setPullProgress(0);
+    setPullStage("downloading");
+
     const interval = setInterval(() => {
       setPullProgress((prev) => {
-        if (prev >= 100) {
+        const next = prev + 5;
+        if (next < 30) {
+          setPullStage("downloading");
+        } else if (next < 55) {
+          setPullStage("dequantizing");
+        } else if (next < 80) {
+          setPullStage("spectral_quant");
+        } else if (next < 95) {
+          setPullStage("wraith_calib");
+        } else if (next < 100) {
+          setPullStage("serializing");
+        } else {
+          setPullStage("completed");
           clearInterval(interval);
-          setPulling(null);
+          setTimeout(() => setPulling(null), 1500);
           return 100;
         }
-        return prev + 10;
+        return next;
       });
-    }, 400);
+    }, 300);
   };
 
   return (
@@ -61,6 +77,7 @@ export const Models: React.FC = () => {
               display: "flex",
               alignItems: "center",
               gap: "8px",
+              cursor: "pointer",
             }}
           >
             Pull Model
@@ -68,15 +85,16 @@ export const Models: React.FC = () => {
         </div>
 
         {pulling && (
-          <div style={{ marginTop: "20px", padding: "16px", background: "rgba(0,0,0,0.3)", borderRadius: "8px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "13px", marginBottom: "6px" }}>
-              <span>Pulling and converting <strong>{pulling}</strong>...</span>
-              <span style={{ fontFamily: "var(--font-mono)" }}>{pullProgress}%</span>
-            </div>
-            <div style={{ height: "6px", background: "rgba(255,255,255,0.06)", borderRadius: "3px", overflow: "hidden" }}>
-              <div style={{ width: `${pullProgress}%`, height: "100%", background: "var(--accent-amber)", transition: "width 0.3s" }}></div>
-            </div>
-          </div>
+          <PullProgress
+            modelId={pulling}
+            stage={pullStage}
+            progressPct={pullProgress}
+            speedMbps={52.4}
+            etaSeconds={Math.max(0, Math.round((100 - pullProgress) * 0.8))}
+            currentLayer={Math.round((pullProgress / 100) * 80)}
+            totalLayers={80}
+            onCancel={() => setPulling(null)}
+          />
         )}
       </div>
 

@@ -3,6 +3,7 @@ import { CeilingLift } from "../components/CeilingLift";
 import { LayerMap } from "../components/LayerMap";
 import { VRAMGauge } from "../components/VRAMGauge";
 import { ThermalMonitor } from "../components/ThermalMonitor";
+import { CompareOllama } from "../components/CompareOllama";
 
 export const Dashboard: React.FC<{ metrics: any; hardware: any }> = ({ metrics, hardware }) => {
   return (
@@ -24,6 +25,7 @@ export const Dashboard: React.FC<{ metrics: any; hardware: any }> = ({ metrics, 
           state={metrics?.thermal_state || "nominal"}
         />
       </div>
+      <CompareOllama currentVramGb={hardware?.vram_gb || 6.0} />
       <LayerMap
         activeLayer={metrics?.active_layer || 0}
         prefetchLayers={metrics?.prefetch_layers || [1, 2]}

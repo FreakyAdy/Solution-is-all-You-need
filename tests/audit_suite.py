@@ -88,6 +88,9 @@ def audit_section_3():
     res_doc = cli.cmd_doctor()
     assert res_doc == 0
 
+    res_bench = cli.cmd_benchmark("llama3:70b")
+    assert res_bench == 0
+
     res_status = cli.cmd_status()
     assert res_status == 0
 
@@ -152,6 +155,14 @@ def audit_section_5():
         post = await pipeline.run_post_generate(tool_resp, ctx)
         assert "[Tool Result: add] -> 5" in post
 
+        # Test MCP tool server registration and definition injection
+        router.register_mcp_server(
+            name="system-mcp",
+            endpoint="http://localhost:8080/mcp",
+            tools=[{"name": "mcp_ping", "description": "Ping MCP server"}],
+        )
+        assert "mcp_ping" in router.get_tool_definitions()
+
     asyncio.run(_test())
     return True
 
@@ -199,6 +210,9 @@ def audit_section_7():
     assert (ui_dir / "src" / "App.tsx").exists()
     assert (ui_dir / "src" / "components" / "CeilingLift.tsx").exists()
     assert (ui_dir / "src" / "components" / "LayerMap.tsx").exists()
+    assert (ui_dir / "src" / "components" / "PullProgress.tsx").exists()
+    assert (ui_dir / "src" / "components" / "CompareOllama.tsx").exists()
+    assert (ui_dir / "dist" / "index.html").exists()
     assert (ui_dir / "package.json").exists()
     return True
 
@@ -214,6 +228,8 @@ def audit_section_8():
         "docs/OLLAMA_MIGRATION.md",
         "docs/PHANTOMFILE.md",
         "docs/GGUF_SUPPORT.md",
+        "docs/PLUGINS.md",
+        "docs/grafana_dashboard.json",
     ]
     for d in docs_to_check:
         p = root / d
