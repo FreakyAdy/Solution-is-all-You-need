@@ -5,9 +5,9 @@
 
 **Ollama runs the model that fits your GPU. PHANTOM runs the model that doesn't.**
 
-[![Audit Suite CI](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
-[![Audit Status](https://img.shields.io/badge/audit-SHIP%20IT%20(100%25)-brightgreen.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
-[![Benchmarks Passing](https://img.shields.io/badge/benchmarks-8%2F8%20passed%20(100%25)-brightgreen.svg)](https://github.com/FreakyAdy/Solution-is-all-You-need/actions/workflows/ci.yml)
+[![Audit Suite CI](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml)
+[![Audit Status](https://img.shields.io/badge/audit-SHIP%20IT%20(100%25)-brightgreen.svg)](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml)
+[![Benchmarks Passing](https://img.shields.io/badge/benchmarks-8%2F8%20passed%20(100%25)-brightgreen.svg)](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml)
 [![Hardware Ceiling Lift](https://img.shields.io/badge/ceiling%20lift-%2B10.6%C3%97%20capacity-purple.svg)](#-empirical-systems-audit--8-benchmarks-verified)
 [![Web Dashboard](https://img.shields.io/badge/web%20dashboard-live%20%3A11411%2Fui-blue.svg)](#step-3-launch-the-api-gateway--web-studio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -57,8 +57,8 @@ irm https://phantom-core.org/install.ps1 | iex
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/FreakyAdy/Solution-is-all-You-need.git
-cd Solution-is-all-You-need
+git clone https://github.com/FreakyAdy/phantom.git
+cd phantom
 
 # 2. Install Python package in editable mode
 pip install -e python/
