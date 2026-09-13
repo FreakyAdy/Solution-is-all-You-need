@@ -27,6 +27,8 @@ from phantom.loader.gguf_loader import (
     GGUFMetadata,
     GGUFQuantType,
     GGUFTensorInfo,
+    dequantize_tensor_cuda,
+    patch_transformers_gguf_gpu,
 )
 from phantom.loader.safetensors_loader import SafetensorsLoader
 
@@ -226,6 +228,8 @@ __all__ = [
     "GGUFQuantType",
     "GGUFTensorInfo",
     "SafetensorsLoader",
+    "dequantize_tensor_cuda",
+    "patch_transformers_gguf_gpu",
     "detect_format",
     "detect_architecture_from_hf",
     "load_model_meta",

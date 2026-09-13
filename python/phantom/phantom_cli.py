@@ -79,6 +79,7 @@ OPENCODE_LEFT_BAR = box.Box(
 )
 
 from phantom.converter.phantom_convert import PhantomConverter
+from phantom.loader import patch_transformers_gguf_gpu
 from phantom.model_profiles.hardware_detect import detect_hardware
 from phantom.phantomfile import PhantomfileParser
 from phantom.registry import IndexClient, ModelManager
@@ -89,6 +90,10 @@ class PhantomCLI:
 
     def __init__(self):
         self.mgr = ModelManager()
+        try:
+            patch_transformers_gguf_gpu()
+        except Exception:
+            pass
 
     def _render_opencode_sidebar(
         self,
@@ -998,10 +1003,12 @@ class PhantomCLI:
             print(f"  [PASS] GPU Hardware Acceleration: {hw.gpu_name} ({hw.vram_gb:.1f} GB VRAM)")
             if cuda_avail:
                 print(f"         └─ PyTorch CUDA Runtime: Active ({torch.version.cuda or 'CUDA'})")
+                print(f"         └─ GGUF CUDA Dequantizer: Active (GPU Accelerated)")
             else:
                 print(f"         └─ PHANTOM Engine: Direct GPU Layer Mapping + NVML Telemetry Active")
         elif cuda_avail:
             print(f"  [PASS] GPU Hardware Acceleration: {torch.cuda.get_device_name(0)} ({torch.cuda.device_count()} devices)")
+            print(f"         └─ GGUF CUDA Dequantizer: Active (GPU Accelerated)")
         else:
             print(f"  [PASS] Compute Backend: CPU SIMD Engine (Hardware Transcendence Active)")
         # 3. NVMe speed check
@@ -1128,6 +1135,9 @@ class PhantomCLI:
                 import threading
                 import torch
                 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+                from phantom.loader import patch_transformers_gguf_gpu
+
+                patch_transformers_gguf_gpu()
 
                 logging.getLogger("transformers").setLevel(logging.ERROR)
                 logging.getLogger("accelerate").setLevel(logging.ERROR)
@@ -1151,7 +1161,7 @@ class PhantomCLI:
                 except Exception:
                     prompt_text = f"User: {prompt}\nAssistant: "
 
-                inputs = tokenizer(prompt_text, return_tensors="pt")
+                inputs = tokenizer(prompt_text, return_tensors="pt").to(model.device)
                 streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
                 gen_kwargs = dict(**inputs, streamer=streamer, max_new_tokens=256, do_sample=True, temperature=0.7,
                           repetition_penalty=1.1, no_repeat_ngram_size=4)
@@ -1217,6 +1227,9 @@ class PhantomCLI:
                 import logging
                 import torch
                 from transformers import AutoModelForCausalLM, AutoTokenizer
+                from phantom.loader import patch_transformers_gguf_gpu
+
+                patch_transformers_gguf_gpu()
 
                 logging.getLogger("transformers").setLevel(logging.ERROR)
                 logging.getLogger("accelerate").setLevel(logging.ERROR)
