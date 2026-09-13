@@ -592,7 +592,7 @@ class PhantomTUI:
         self.details_visible = False
         self.sidebar_visible = True
         self.variant_idx = 0
-        self.scroll_offset = 0
+        self.scroll_lines = 0
         self.slash_idx = 0
         self.slash_token = ""
         self.agents = self._load_agents()
@@ -833,23 +833,36 @@ class PhantomTUI:
 
         canvas = root["canvas"]
         prompt_h = self._prompt_height()
+        menu_h = self._slash_menu_height()
         parts: List[Layout] = [Layout(name="messages", ratio=1)]
-        matches = self._slash_matches() if not self.dialog and not self.generating else []
-        if matches:
-            parts.append(Layout(name="slash_menu", size=min(len(matches), 7) + 4))
+        if menu_h > 0:
+            parts.append(Layout(name="slash_menu", size=menu_h))
         parts.append(Layout(name="prompt_area", size=prompt_h))
         canvas.split_column(*parts)
         if self.dialog:
             canvas["messages"].update(Align.center(self._render_dialog_panel(), vertical="middle"))
         else:
-            canvas["messages"].update(self._render_messages())
-        if matches:
+            canvas["messages"].update(self._render_messages(self._messages_height()))
+        if menu_h > 0:
             canvas["slash_menu"].update(self._render_slash_menu())
         canvas["prompt_area"].update(self._render_prompt_card())
         return root
 
     # ------------------------------------------------------------ renderers
-    def _render_messages(self) -> Text:
+    def _text_width(self) -> int:
+        return max(40, (console.width or 80) - 30)
+
+    def _messages_height(self) -> int:
+        base = console.height if (console and console.height) else 30
+        return max(4, base - self._prompt_height() - self._slash_menu_height())
+
+    def _slash_menu_height(self) -> int:
+        if self.dialog or self.generating:
+            return 0
+        m = self._slash_matches()
+        return (min(len(m), 7) + 4) if m else 0
+
+    def _render_messages(self, avail: int = 0) -> Text:
         t = Text()
         if not self.turns:
             t = Text()
@@ -869,95 +882,69 @@ class PhantomTUI:
             t.append(" for commands.\n", style="dim")
             return t
 
-        visible = self._visible_turns()
-        for i, turn in enumerate(visible):
-            kind = turn.get("kind", "chat")
-            if kind == "notice":
-                t.append("  ", style="dim")
-                t.append(turn["prompt"], style=f"dim #{self.theme['dim']}")
-                t.append("\n")
-                continue
-            if kind == "tool":
-                self._render_tool(t, turn)
-                continue
-            if kind == "undo":
-                t.append("  ", style="dim")
-                t.append(f"✗ {turn['prompt']}", style=f"italic dim #{self.theme['dim']}")
-                t.append("\n")
-                continue
-            # user message
-            t.append("  ▌ ", style=f"bold #{self.theme['accent']}")
-            t.append(f"{turn['prompt']}\n", style="bold white")
-            # assistant
-            t.append("  ■ ", style=f"bold #{self.theme['accent']}")
-            t.append("Build", style="bold white")
-            t.append(" · ", style="dim")
-            t.append(self.model_id, style="bold white")
-            if self._current_agent()["name"] != "build":
-                t.append(" · " + self._current_agent()["name"], style="dim")
-            t.append("\n", style="dim")
-            if turn.get("thinking") and self.thinking_visible:
-                t.append("  ", style="dim")
-                t.append("Thinking…  ", style=f"italic dim #{self.theme['accent']}")
-                t.append(turn["thinking"], style=f"dim #{self.theme['dim']}")
-                t.append("\n")
-            if turn.get("response"):
-                for resp_line in turn["response"].split("\n"):
-                    t.append(f"  {resp_line}\n", style="white")
-            if self.details_visible and turn.get("meta"):
-                t.append(f"  {turn['meta']}\n", style=f"dim #{self.theme['dim']}")
-            if i < len(visible) - 1:
+        rows = self._conversation_rows(self._text_width())
+        avail = max(3, avail or self._messages_height())
+        max_scroll = max(0, len(rows) - avail)
+        self.scroll_lines = max(0, min(self.scroll_lines, max_scroll))
+        window = rows[self.scroll_lines:self.scroll_lines + avail]
+        for i, row in enumerate(window):
+            for seg, style in row:
+                if seg:
+                    t.append(seg, style=style)
+            if i < len(window) - 1:
                 t.append("\n")
         return t
 
-    def _render_tool(self, t: Text, turn: Dict[str, Any]) -> None:
-        t.append("  ▌ ", style=f"bold #{self.theme['accent']}")
-        t.append(f"{turn['prompt']}\n", style="bold white")
-        t.append("  ", style="dim")
-        t.append("> ", style=f"bold #{self.theme['ok']}")
-        t.append(f"bash: {turn['cmd']}", style=f"#{self.theme['ok']}")
-        t.append(f"   [{turn['elapsed']:.2f}s · exit {turn['rc']}]\n", style=f"dim #{self.theme['dim']}")
-        out = turn.get("response", "")
-        if out:
-            for line in out.split("\n")[:120]:
-                t.append(f"  {line}\n", style=f"#{self.theme['dim']}")
-            if out.count("\n") > 120:
-                t.append(f"  … {out.count(chr(10)) - 120} more lines\n", style=f"dim #{self.theme['dim']}")
-        t.append("\n")
-
-    def _visible_turns(self) -> List[Dict[str, Any]]:
-        if not self.turns:
-            return []
-        term_h = console.height if (console and console.height) else 30
-        max_avail = max(8, term_h - 10)
+    def _conversation_rows(self, width: int) -> List[List[Tuple[str, Optional[str]]]]:
+        """One entry per visual terminal row — scrolling is line-based like opencode."""
+        accent = f"bold #{self.theme['accent']}"
+        dim = f"dim #{self.theme['dim']}"
+        rows: List[List[Tuple[str, Optional[str]]]] = []
         n = len(self.turns)
-        # scroll_offset = number of turns scrolled back from the latest
-        off = max(0, min(self.scroll_offset, n - 1))
-        end = n - off
-        visible: List[Dict[str, Any]] = []
-        total = 0
-        i = end
-        while i > 0:
-            turn = self.turns[i - 1]
-            block = self._turn_height(turn)
-            if visible and total + block > max_avail:
-                break
-            visible.insert(0, turn)
-            total += block
-            i -= 1
-        return visible
-
-    @staticmethod
-    def _turn_height(turn: Dict[str, Any]) -> int:
-        kind = turn.get("kind", "chat")
-        if kind == "notice":
-            return 1
-        if kind == "tool":
-            lines = turn.get("response", "").count("\n") + 2
-            return min(lines, 124) + 2
-        if turn.get("response"):
-            return turn["response"].count("\n") + 4
-        return 3
+        for idx, turn in enumerate(self.turns):
+            kind = turn.get("kind", "chat")
+            if kind == "notice":
+                rows.append([("  ", dim), (str(turn["prompt"]), f"dim #{self.theme['dim']}")])
+                continue
+            if kind == "undo":
+                rows.append([("  ", dim), ("✗ ", f"italic dim #{self.theme['dim']}"),
+                             (str(turn["prompt"]), f"italic dim #{self.theme['dim']}")])
+                continue
+            if kind == "tool":
+                for pl in self._wrap(str(turn["prompt"]), width):
+                    rows.append([("▌ ", accent), (pl, "bold white")])
+                rows.append([("  ", dim), ("> ", f"bold #{self.theme['ok']}"),
+                             (f"bash: {turn.get('cmd', '')}", f"#{self.theme['ok']}"),
+                             (f"   [{turn.get('elapsed', 0.0):.2f}s · exit {turn.get('rc', '?')}]", dim)])
+                out = str(turn.get("response", ""))
+                if out:
+                    for line in out.split("\n")[:120]:
+                        for wl in self._wrap(line, width):
+                            rows.append([("  ", dim), (wl, f"#{self.theme['dim']}")])
+                    more = out.count("\n") - 120
+                    if more > 0:
+                        rows.append([("  ", dim), (f"… {more} more lines", dim)])
+            else:
+                for pl in self._wrap(str(turn["prompt"]), width):
+                    rows.append([("▌ ", accent), (pl, "bold white")])
+                rows.append([("■ ", accent), ("Build", "bold white"),
+                             (" · ", dim), (self.model_id, "bold white")])
+                if self._current_agent()["name"] != "build":
+                    rows[-1].append((" · ", dim))
+                    rows[-1].append((self._current_agent()["name"], "dim"))
+                if turn.get("thinking") and self.thinking_visible:
+                    rows.append([("  ", dim),
+                                 ("Thinking…  ", f"italic dim #{self.theme['accent']}"),
+                                 (str(turn["thinking"]), f"dim #{self.theme['dim']}")])
+                if turn.get("response"):
+                    for line in str(turn["response"]).split("\n"):
+                        for wl in self._wrap(line, width):
+                            rows.append([("  ", dim), (wl, "white")])
+                if self.details_visible and turn.get("meta"):
+                    rows.append([("  ", dim), (str(turn["meta"]), f"dim #{self.theme['dim']}")])
+            if idx < n - 1:
+                rows.append([("", "")])
+        return rows
 
     def _render_sidebar_content(self) -> Text:
         from phantom.model_profiles.hardware_detect import detect_hardware
@@ -1506,7 +1493,7 @@ class PhantomTUI:
                 if self._slash_active():
                     self._slash_cycle(-1)
                 elif not self.buffer.text:
-                    self._scroll_messages(-1)
+                    self._scroll_messages(1)
                 elif self.buffer.pos == 0 or "\n" not in self.buffer.text[:self.buffer.pos]:
                     self._history_prev()
                 else:
@@ -1515,7 +1502,7 @@ class PhantomTUI:
                 if self._slash_active():
                     self._slash_cycle(1)
                 elif not self.buffer.text:
-                    self._scroll_messages(1)
+                    self._scroll_messages(-1)
                 elif self.buffer.pos == len(self.buffer.text) or "\n" not in self.buffer.text[self.buffer.pos:]:
                     self._history_next()
                 else:
@@ -1527,15 +1514,21 @@ class PhantomTUI:
             return True
         if key.type == Key.K_SPECIAL:
             if key.data == "home":
-                self.buffer.home()
+                if self.buffer.text:
+                    self.buffer.home()
+                else:
+                    self._scroll_first()
             elif key.data == "end":
-                self.buffer.end()
+                if self.buffer.text:
+                    self.buffer.end()
+                else:
+                    self._scroll_last()
             elif key.data == "delete":
                 self.buffer.delete()
             elif key.data == "pageup":
-                self._scroll_messages(-12)
+                self._scroll_messages(max(6, self._messages_height() - 3))
             elif key.data == "pagedown":
-                self._scroll_messages(12)
+                self._scroll_messages(-max(6, self._messages_height() - 3))
             return True
         if key.type == Key.K_CTRL:
             d = key.data
@@ -1625,11 +1618,25 @@ class PhantomTUI:
         return sum(len(ln) for ln in lines[:y]) + x
 
     def _scroll_messages(self, delta: int) -> None:
+        """Line-based scroll like opencode: delta > 0 = back (up), < 0 = toward latest."""
         if not self.turns:
             return
-        limit = len(self.turns) - 1
-        # negative delta = scroll back (increase offset); positive delta = toward latest
-        self.scroll_offset = max(0, min(self.scroll_offset - delta, limit))
+        rows = len(self._conversation_rows(self._text_width()))
+        max_scroll = max(0, rows - self._messages_height())
+        self.scroll_lines = max(0, min(self.scroll_lines + delta, max_scroll))
+        self.refresh()
+
+    def _scroll_first(self) -> None:
+        if not self.turns:
+            return
+        rows = len(self._conversation_rows(self._text_width()))
+        self.scroll_lines = max(0, rows - self._messages_height())
+        self.refresh()
+
+    def _scroll_last(self) -> None:
+        if not self.turns:
+            return
+        self.scroll_lines = 0
         self.refresh()
 
     def _history_prev(self) -> None:
@@ -1997,7 +2004,7 @@ class PhantomTUI:
         self.tokens_count = 0
         self.undo_stack.clear()
         self.redo_stack.clear()
-        self.scroll_offset = 0
+        self.scroll_lines = 0
         self._push_turn("New session", f"Session {self.session_id} started. Let's go.", kind="notice")
         self.refresh()
 
@@ -2016,7 +2023,7 @@ class PhantomTUI:
         self.model_id = data.get("model", self.model_id)
         self.undo_stack.clear()
         self.redo_stack.clear()
-        self.scroll_offset = 0
+        self.scroll_lines = 0
         self.refresh()
 
     def _compact_session(self) -> None:
@@ -2533,7 +2540,7 @@ Add model personas with `Phantomfile` and pull weights with `phantom pull <model
     def _run_shell_turn(self, cmd: str) -> None:
         self.undo_stack.append(self._snapshot())
         self.redo_stack.clear()
-        self.scroll_offset = 0
+        self.scroll_lines = 0
         self._push_turn("!" + cmd, "", kind="chat")
         self.generating = True
         self.refresh()
@@ -2560,7 +2567,7 @@ Add model personas with `Phantomfile` and pull weights with `phantom pull <model
         self.redo_stack.clear()
         self.cancel_flag.clear()
         self.generating = True
-        self.scroll_offset = 0
+        self.scroll_lines = 0
         turn: Dict[str, Any] = {
             "prompt": text, "response": "", "kind": "chat",
             "thinking": None, "meta": "",
