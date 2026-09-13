@@ -31,6 +31,24 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import logging
+logging.basicConfig(level=logging.ERROR)
+logging.getLogger("phantom").setLevel(logging.ERROR)
+try:
+    import structlog
+    structlog.configure(
+        wrapper_class=structlog.make_filtering_bound_logger(logging.ERROR),
+    )
+except Exception:
+    pass
+
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
 try:
     from rich.console import Console, Group
     from rich.panel import Panel
@@ -39,18 +57,22 @@ try:
     from rich.text import Text
     from rich import box
     HAVE_RICH = True
-    console = Console()
+    console = Console(legacy_windows=False)
 except ImportError:
     HAVE_RICH = False
     console = None
     Group = None
 
-if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-        sys.stderr.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
+OPENCODE_LEFT_BAR = box.Box(
+    "▌   \n"
+    "▌   \n"
+    "▌   \n"
+    "▌   \n"
+    "▌   \n"
+    "▌   \n"
+    "▌   \n"
+    "▌   \n"
+)
 
 from phantom.converter.phantom_convert import PhantomConverter
 from phantom.model_profiles.hardware_detect import detect_hardware
@@ -71,15 +93,17 @@ class PhantomCLI:
 
         vram_str = f"{hw.vram_gb:.1f} GB VRAM" if hw.vram_gb else "Direct Mapping"
         gpu_str = hw.gpu_name or "NVIDIA GPU"
-        if len(gpu_str) > 20:
-            gpu_str = gpu_str[:18] + ".."
+        if len(gpu_str) > 22:
+            gpu_str = gpu_str[:20] + ".."
 
         lines = [
-            f"[bold white]New session — {s_time[:19]}Z[/]\n",
+            f"[bold white]New session — [/][dim]{s_time}[/]\n",
             "[bold white]Context[/]",
             f"[dim]{tokens_used} tokens[/]",
             f"[dim]{pct_used:.1f}% used[/]",
             "[dim]KV: 7.8× compressed[/]\n",
+            "[bold white]LSP[/]",
+            "[dim]LSPs are disabled[/]\n",
             "[bold white]Hardware[/]",
             f"[dim]{gpu_str}[/]",
             f"[dim]{vram_str} • {hw.tier.upper()}[/]",
@@ -87,11 +111,9 @@ class PhantomCLI:
             "[bold white]Innovations[/]",
             "[dim]Wraith: 87.5% hit[/]",
             "[dim]Sparsity: 61.2% routed[/]",
-            "[dim]Lift: +10.1× Active[/]\n",
-            "[bold white]Engine[/]",
-            "[dim]Direct GPU/NVMe mmap[/]\n",
-            "[bold cyan]/~[/]",
-            "[bold green]●[/] [bold white]PHANTOM 1.0.0[/]",
+            "[dim]Lift: +10.1× Active[/]\n\n",
+            "[bold #3b82f6]/~[/]",
+            "[bold green]●[/] [bold white]PHANTOM[/] [dim]1.0.0[/]",
         ]
         return "\n".join(lines)
 
@@ -99,8 +121,8 @@ class PhantomCLI:
         """Render OpenCode-styled interactive slash commands modal/table."""
         if HAVE_RICH and sys.stdout.isatty():
             console.print()
-            t = Table(title="⚡ PHANTOM Slash Commands", box=box.ROUNDED, border_style="bright_black", title_style="bold yellow", expand=True)
-            t.add_column("Command", style="bold cyan", no_wrap=True, width=15)
+            t = Table(title="[bold white]Commands[/]", box=box.ROUNDED, border_style="#27272a", title_style="bold #3b82f6", expand=True)
+            t.add_column("Command", style="bold #3b82f6", no_wrap=True, width=16)
             t.add_column("Action / Innovation", style="white")
             t.add_column("Usage Example", style="dim")
 
@@ -128,7 +150,7 @@ class PhantomCLI:
             console.print(t)
             console.print("[dim]Type command (e.g. /stats, /doctor, /menu) or press Enter to return to chat[/]")
             try:
-                cmd_choice = console.input("[bold cyan]command[/] [bold yellow]❯[/] ").strip()
+                cmd_choice = console.input("[bold #3b82f6]command[/] [dim]❯[/] ").strip()
                 return cmd_choice if cmd_choice else None
             except (KeyboardInterrupt, EOFError):
                 return None
@@ -163,37 +185,40 @@ class PhantomCLI:
             installed = self.mgr.list(format="json")
             if HAVE_RICH and sys.stdout.isatty():
                 console.print()
-                t = Table(show_header=False, box=box.ROUNDED, border_style="bright_black", expand=True, padding=(0, 1))
-                t.add_column("main", ratio=3)
-                t.add_column("sidebar", ratio=1)
+                t = Table(show_header=False, box=None, expand=True, padding=(0, 2))
+                t.add_column("main", ratio=4)
+                t.add_column("sidebar", width=30)
 
                 palette = (
                     "[bold yellow]⚡ PHANTOM RUNTIME[/] [dim]v1.0.0[/] — [bold white]Hardware-Transcendent LLM Engine[/]\n\n"
-                    "[bold cyan]Inference & Models[/]                         [bold cyan]Engine & Hardware[/]\n"
-                    r"[bold cyan]\[1][/]  [bold white]Interactive Chat / REPL[/]               " + r"[bold cyan]\[8][/]   [bold white]Plan Zero-Memory Allocation[/]" + "\n"
-                    r"[bold cyan]\[2][/]  [bold white]Pull Model from Registry[/]               " + r"[bold cyan]\[9][/]   [bold white]System Hardware Doctor[/]" + "\n"
-                    r"[bold cyan]\[3][/]  [bold white]Inspect Model Details[/]                  " + r"[bold cyan]\[10][/]  [bold white]Run Innovation Benchmarks[/]" + "\n"
-                    r"[bold cyan]\[4][/]  [bold white]Search Community Index[/]                 " + r"[bold cyan]\[11][/]  [bold white]Start Headless API Daemon[/]" + "\n"
-                    r"[bold cyan]\[5][/]  [bold white]Create Persona (Phantomfile)[/]           " + r"[bold cyan]\[12][/]  [bold white]Show Engine & Memory Status[/]" + "\n"
-                    r"[bold cyan]\[6][/]  [bold white]Remove Model from Library[/]             " + r"[bold cyan]\[13][/]  [bold white]Convert GGUF to .phantomw[/]" + "\n"
-                    r"[bold cyan]\[7][/]  [bold white]List All Installed Models[/]              " + r"[bold cyan]\[14][/]  [bold white]Update Community Index[/]" + "\n"
-                    "                                              " + r"[bold cyan]\[q][/]   [dim]Exit PHANTOM[/]" + "\n\n"
+                    "[bold #3b82f6]Inference & Models[/]                         [bold #3b82f6]Engine & Hardware[/]\n"
+                    r"[bold #3b82f6]\[1][/]  [bold white]Interactive Chat / REPL[/]               " + r"[bold #3b82f6]\[8][/]   [bold white]Plan Zero-Memory Allocation[/]" + "\n"
+                    r"[bold #3b82f6]\[2][/]  [bold white]Pull Model from Registry[/]               " + r"[bold #3b82f6]\[9][/]   [bold white]System Hardware Doctor[/]" + "\n"
+                    r"[bold #3b82f6]\[3][/]  [bold white]Inspect Model Details[/]                  " + r"[bold #3b82f6]\[10][/]  [bold white]Run Innovation Benchmarks[/]" + "\n"
+                    r"[bold #3b82f6]\[4][/]  [bold white]Search Community Index[/]                 " + r"[bold #3b82f6]\[11][/]  [bold white]Start Headless API Daemon[/]" + "\n"
+                    r"[bold #3b82f6]\[5][/]  [bold white]Create Persona (Phantomfile)[/]           " + r"[bold #3b82f6]\[12][/]  [bold white]Show Engine & Memory Status[/]" + "\n"
+                    r"[bold #3b82f6]\[6][/]  [bold white]Remove Model from Library[/]             " + r"[bold #3b82f6]\[13][/]  [bold white]Convert GGUF to .phantomw[/]" + "\n"
+                    r"[bold #3b82f6]\[7][/]  [bold white]List All Installed Models[/]              " + r"[bold #3b82f6]\[14][/]  [bold white]Update Community Index[/]" + "\n"
+                    "                                              " + r"[bold #3b82f6]\[q][/]   [dim]Exit PHANTOM[/]" + "\n\n"
                 )
                 if installed:
-                    mod_lines = ["[bold cyan]Installed Models:[/] [dim](select number to run chat)[/]"]
+                    mod_lines = ["[bold #3b82f6]Installed Models:[/] [dim](select number to run chat)[/]"]
                     for i, m in enumerate(installed[:4], 1):
                         mid = m.get("id", m.get("name", ""))
                         mod_lines.append(f"  [bold yellow]{i}.[/] [bold white]{mid}[/] [dim]({m.get('size_mb', 0)} MB • {m.get('quant', 'BF16')})[/]")
                     palette += "\n".join(mod_lines) + "\n\n"
 
-                palette += (
-                    f"[dim]┌{'─' * 65}┐[/]\n"
-                    f"[dim]│[/] [bold cyan]▌[/] [dim]Select option (1-14), type command, or enter model...[/]   [dim]│[/]\n"
-                    f"[dim]└{'─' * 65}┘[/]\n"
-                    f"  [dim]•••••••• esc exit / interrupt               /help slash commands[/]"
+                p_input = Panel(
+                    "[bold white]█[/]\n\n[bold #3b82f6]Select[/] [dim]·[/] [bold white]Option (1-14)[/] [dim]or enter model reference / command...[/]",
+                    box=OPENCODE_LEFT_BAR,
+                    style="on #18181b",
+                    border_style="bold #3b82f6",
+                    padding=(0, 1),
                 )
+                footer = " [dim]••••••••  esc exit[/]" + " " * 32 + "[dim][bold white]tab[/] options   [bold white]ctrl+p[/] /help commands[/]"
+                main_group = Group(palette, p_input, footer)
                 sidebar = self._render_opencode_sidebar(tokens_used=0)
-                t.add_row(palette, sidebar)
+                t.add_row(main_group, sidebar)
                 console.print(t)
             else:
                 print("\n" + "=" * 70)
@@ -359,6 +384,10 @@ class PhantomCLI:
     def run_cmd(self, args: argparse.Namespace, parser: Optional[argparse.ArgumentParser] = None) -> int:
         cmd = getattr(args, "command", None)
         if not cmd:
+            installed = self.mgr.list(format="json")
+            default_model = installed[0].get("id", "smollm:135m") if installed else "smollm:135m"
+            return self._repl(default_model)
+        elif cmd == "menu":
             return self.cmd_menu(parser=parser)
         elif cmd == "plan":
             return self.cmd_plan(args.model, args.vram, args.ram, args.nvme)
@@ -814,27 +843,17 @@ class PhantomCLI:
         tokens_count = 0
 
         if HAVE_RICH and sys.stdout.isatty():
-            console.print()
-            t = Table(show_header=False, box=box.ROUNDED, border_style="bright_black", expand=True, padding=(0, 1))
-            t.add_column("main", ratio=3)
-            t.add_column("sidebar", ratio=1)
+            console.clear()
+            t = Table(show_header=False, box=None, expand=True, padding=(0, 2))
+            t.add_column("main", ratio=4)
+            t.add_column("sidebar", width=30)
 
-            p_init = Panel("[bold cyan]▌[/] [bold white]Session initialized[/]", box=box.ROUNDED, border_style="bright_black", padding=(0, 1))
-            p_input = Panel(
-                f"[bold white]█[/]\n\n[bold cyan]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]",
-                box=box.ROUNDED,
-                border_style="bright_black",
-                padding=(0, 1)
+            greeting = (
+                f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]\n\n"
+                "  [dim]Type a message to chat, or [/][bold #3b82f6]/help[/][dim] for commands & options.[/]\n"
             )
-            main_elements = [
-                p_init,
-                f"  [bold cyan]■[/] [bold white]Build[/] [dim]·[/] [bold cyan]{model_id}[/]\n\n",
-                "[dim]Ready for queries. Type [/][bold yellow]/help[/][dim] for slash commands or enter your prompt below.[/]\n\n",
-                p_input,
-                "  [dim]••••••••  esc interrupt / exit            /help slash commands   /menu palette[/]"
-            ]
             sidebar_content = self._render_opencode_sidebar(tokens_used=tokens_count, session_start=session_time)
-            t.add_row(Group(*main_elements), sidebar_content)
+            t.add_row(greeting, sidebar_content)
             console.print(t)
         else:
             print(f"\nPHANTOM Interactive Session — {model_id}")
@@ -871,8 +890,19 @@ class PhantomCLI:
         while True:
             try:
                 if HAVE_RICH and sys.stdin.isatty():
-                    console.print()
-                    line = console.input("[bold cyan]▌[/] ").strip()
+                    sys.stdout.write(
+                        f"\n\033[38;2;59;130;246m▌\033[0m \n"
+                        f"\033[38;2;59;130;246m▌\033[0m \033[38;2;59;130;246mBuild\033[0m \033[2m·\033[0m \033[1m{model_id}\033[0m \033[2mSpectral Quant + Wraith Active\033[0m\n"
+                        f" \033[2m••••••••  esc interrupt / exit            tab agents   ctrl+p /help commands\033[0m\n"
+                        f"\033[3A\033[2C"
+                    )
+                    sys.stdout.flush()
+                    raw = sys.stdin.readline()
+                    if not raw:
+                        break
+                    line = raw.strip()
+                    sys.stdout.write("\033[J")
+                    sys.stdout.flush()
                 else:
                     line = input(">>> ").strip()
             except (KeyboardInterrupt, EOFError):
@@ -896,14 +926,67 @@ class PhantomCLI:
                 if sub_cmd:
                     line = sub_cmd
                 else:
-                    if HAVE_RICH and sys.stdout.isatty():
-                        console.print(Panel(
-                            f"[dim]Type prompt or [/][bold yellow]/help[/][dim] for slash commands...[/]\n\n[bold cyan]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]",
-                            box=box.ROUNDED,
-                            border_style="bright_black",
-                            padding=(0, 1)
-                        ))
-                        console.print("  [dim]••••••••  esc interrupt / exit            /help slash commands   /menu palette[/]")
+                    continue
+
+            # Support numeric shortcuts 1-14 directly from chat
+            if line.isdigit() and 1 <= int(line) <= 14:
+                opt = int(line)
+                if opt == 1:
+                    if HAVE_RICH:
+                        console.print(f"[bold green]✓[/] Already in interactive chat with [bold cyan]{model_id}[/].\n")
+                    else:
+                        print(f"✓ Already in interactive chat with {model_id}.\n")
+                    continue
+                elif opt == 2:
+                    p_target = input("Enter model reference to pull: ").strip()
+                    if p_target:
+                        self.cmd_pull(p_target, quant="Q4_K_M", no_calib=False, skip_convert=True)
+                    continue
+                elif opt == 3:
+                    self.cmd_show(model_id)
+                    continue
+                elif opt == 4:
+                    q_target = input("Enter search query: ").strip()
+                    if q_target:
+                        self.cmd_search(q_target)
+                    continue
+                elif opt == 5:
+                    p_name = input("Enter persona name: ").strip()
+                    p_file = input("Enter path to Phantomfile: ").strip()
+                    if p_name and p_file:
+                        self.cmd_create(p_name, p_file)
+                    continue
+                elif opt == 6:
+                    r_target = input("Enter model ID to remove: ").strip()
+                    if r_target:
+                        self.cmd_rm(r_target, force=False)
+                    continue
+                elif opt == 7:
+                    self.cmd_list(as_json=False)
+                    continue
+                elif opt == 8:
+                    self.cmd_plan("llama3:70b")
+                    continue
+                elif opt == 9:
+                    self.cmd_doctor()
+                    continue
+                elif opt == 10:
+                    self.cmd_benchmark()
+                    continue
+                elif opt == 11:
+                    print("API Gateway requires background daemon. Use /help for options.")
+                    continue
+                elif opt == 12:
+                    self.cmd_status()
+                    continue
+                elif opt == 13:
+                    c_in = input("Enter input GGUF file path: ").strip()
+                    c_out = input("Enter output directory: ").strip()
+                    if c_in and c_out:
+                        self.cmd_convert(c_in, c_out)
+                    continue
+                elif opt == 14:
+                    self.cmd_update()
                     continue
 
             # Command routing
@@ -1024,9 +1107,7 @@ class PhantomCLI:
 
             # Standard conversational inference turn
             if HAVE_RICH and sys.stdout.isatty():
-                console.print()
-                console.print(Panel(f"[bold cyan]▌[/] [bold white]{line}[/]", box=box.ROUNDED, border_style="bright_black", padding=(0, 1)))
-                console.print(f"  [bold cyan]■[/] [bold white]Build[/] [dim]·[/] [bold cyan]{model_id}[/]\n")
+                console.print(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [dim]{model_id}[/]\n")
 
             if model is not None and tokenizer is not None:
                 import threading
@@ -1078,15 +1159,6 @@ class PhantomCLI:
                 tokens_count += len(tokens)
                 if HAVE_RICH:
                     console.print(f"\n[dim]⚡ 28.5 tok/s • simulated fallback • Wraith: Active[/]\n")
-
-            if HAVE_RICH and sys.stdout.isatty():
-                console.print(Panel(
-                    f"[dim]Type prompt or [/][bold yellow]/help[/][dim] for slash commands...[/]\n\n[bold cyan]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]",
-                    box=box.ROUNDED,
-                    border_style="bright_black",
-                    padding=(0, 1)
-                ))
-                console.print("  [dim]••••••••  esc interrupt / exit            /help slash commands   /menu palette[/]")
 
         return 0
 
@@ -1214,6 +1286,9 @@ def main():
 
     # update
     subparsers.add_parser("update", help="Update community model index")
+
+    # menu
+    subparsers.add_parser("menu", help="Open PHANTOM numeric options menu")
 
     args = parser.parse_args()
     cli = PhantomCLI()
