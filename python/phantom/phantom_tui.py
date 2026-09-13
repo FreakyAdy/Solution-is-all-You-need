@@ -11,7 +11,7 @@ A faithful Python/Rich replica of the opencode CLI & TUI:
 * The standard opencode commands (`/help /init /new /undo /redo /share
   /unshare /sessions /models /themes /thinking /compact /details /editor
   /export /connect /exit`) plus the PHANTOM-specific commands (`/layers
-  /stats /plan /doctor /benchmark /pull /show /search /rm /list /set
+  /stats /plan /doctor /benchmark /pull /install /show /search /rm /list /set
   /system /save /load /serve /convert /create /update /menu`).
 
 Module is deliberately self-contained: phantom_cli.PhantomCLI owns all the
@@ -132,6 +132,7 @@ COMMANDS: List[Command] = [
     Command("doctor", "Run hardware diagnostic suite", group="phantom"),
     Command("benchmark", "Run innovation benchmarks", args=True, group="phantom"),
     Command("pull", "Download & quantize a model from Hugging Face", args=True, group="phantom"),
+    Command("install", "Browse the catalog and install a model from the TUI", args=False, group="phantom"),
     Command("show", "Inspect model manifest & calibration profile", args=True, group="phantom"),
     Command("search", "Search the community model index", args=True, group="phantom"),
     Command("rm", "Remove a model from the library", args=True, group="phantom"),
@@ -538,6 +539,25 @@ class Dialog:
         return lst[self.selected]
 
 
+class _CatalogRef:
+    """Duck-typed CatalogModel stand-in for free-form references (e.g. `/install owner/repo`)."""
+
+    __slots__ = ("repo", "alias", "quants")
+
+    def __init__(self, repo: str, alias: str) -> None:
+        self.repo = repo
+        self.alias = alias
+        try:
+            from phantom.registry.catalog import _qs
+            self.quants = _qs(4.0)
+        except Exception:
+            self.quants = {"Q4_K_M": 4.0, "Q5_K_M": 4.8, "Q8_0": 6.2}
+
+    @property
+    def id(self) -> str:
+        return self.alias
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # The TUI
 # ─────────────────────────────────────────────────────────────────────────────
@@ -608,6 +628,12 @@ class PhantomTUI:
         self.live: Optional[Live] = None
         self.exit_code = 0
         self._exit_requested = False
+
+        # Background model install (catalog installer)
+        self.install: Optional[Dict[str, Any]] = None
+        self.install_thread: Optional[threading.Thread] = None
+        self._install_throttle = 0.0
+        self._pending_install_model: Any = None
 
     # ------------------------------------------------------------------ utils
     def _request_exit(self) -> None:
@@ -762,6 +788,10 @@ class PhantomTUI:
             if args:
                 self.cli.cmd_search(args); return True
             return False
+        if name == "install":
+            if args:
+                self._plain_install(args); return True
+            return False
         if name == "rm":
             if args:
                 self.cli.cmd_rm(args, False); return True
@@ -786,6 +816,23 @@ class PhantomTUI:
             names = "/" + c.name + ("".join(f"/{a}" for a in c.aliases) if c.aliases else "")
             print(f"  {names:<40} {c.desc}")
         print()
+
+    def _plain_install(self, ref: str) -> None:
+        from phantom.registry.catalog import catalog_find, catalog_categories
+        m = catalog_find(ref)
+        if m is not None:
+            print(f"\nCatalog: {m.name} ({m.category})")
+            print(f"  repo:   {m.repo}")
+            print(f"  params: {m.params} · context {m.context} · ~{m.q4_gb:g} GB (Q4_K_M)")
+            print(f"  quants: {', '.join(m.quants)}")
+            print(f"\nInstall with:\n  phantom pull {m.repo} --quant Q4_K_M --skip-convert\n")
+            return
+        print(f"\n'{ref}' is not in the catalog — installing as a free-form reference.")
+        print(f"Install with:\n  phantom pull {ref} --quant Q4_K_M --skip-convert\n")
+        print("\nCatalog categories:")
+        for cat, n in catalog_categories():
+            print(f"  {cat:<18} {n} model{'s' if n != 1 else ''}")
+        print("Browse the full list with:\n  phantom catalog\n")
 
     def _plain_turn(self, line: str) -> None:
         if line.startswith("!"):
@@ -866,7 +913,13 @@ class PhantomTUI:
     def _render_messages(self, avail: int = 0) -> Text:
         t = Text()
         if not self.turns:
+            banner = self._install_banner_rows()
             t = Text()
+            for i, row in enumerate(banner):
+                for seg, style in row:
+                    if seg:
+                        t.append(seg, style=style)
+                t.append("\n")
             t.append("  ■ ", style=f"bold #{self.theme['accent']}")
             t.append("Build", style="bold white")
             t.append(" · ", style="dim")
@@ -884,7 +937,10 @@ class PhantomTUI:
             return t
 
         rows = self._conversation_rows(self._text_width())
-        avail = max(3, avail or self._messages_height())
+        banner = self._install_banner_rows()
+        if banner:
+            rows = banner + rows
+        avail = max(3, avail or self._messages_height()) - len(banner)
         max_scroll = max(0, len(rows) - avail)
         self.scroll_lines = max(0, min(self.scroll_lines, max_scroll))
         window = rows[self.scroll_lines:self.scroll_lines + avail]
@@ -945,6 +1001,28 @@ class PhantomTUI:
                     rows.append([("  ", dim), (str(turn["meta"]), f"dim #{self.theme['dim']}")])
             if idx < n - 1:
                 rows.append([("", "")])
+        return rows
+
+    def _install_banner_rows(self) -> List[List[Tuple[str, Optional[str]]]]:
+        """Progress banner pinned above the conversation while a catalog install runs."""
+        if not self.install or not self.install.get("running"):
+            return []
+        st = self.install
+        accent = f"bold #{self.theme['accent']}"
+        ok = f"bold #{self.theme['ok']}"
+        dim = f"dim #{self.theme['dim']}"
+        width = max(20, self._text_width() - 6)
+        pct = float(st.get("pct", 0.0))
+        fill = int(pct / 5)
+        bar = ("█" * fill) + ("░" * (20 - fill))
+        head = f"  ⬇  Installing {st.get('model', '')} · {st.get('quant', 'Q4_K_M')} ({st.get('repo', '')})"
+        prog = f"  [{bar}] {pct:5.1f}%  {st.get('stage', '')}  {st.get('detail', '')}"
+        rows: List[List[Tuple[str, Optional[str]]]] = [
+            [(head[:width], accent)],
+            [(prog[:width], ok)],
+            [("  [ctrl+c] cancel install", dim)],
+            [("", "")],
+        ]
         return rows
 
     def _render_sidebar_content(self) -> Text:
@@ -1077,7 +1155,8 @@ class PhantomTUI:
         if d.kind == "help":
             return self._render_help_panel()
         items = d.filtered()
-        if d.kind in ("palette", "models", "sessions", "themes", "agents", "files", "connect"):
+        if d.kind in ("palette", "models", "sessions", "themes", "agents", "files", "connect",
+                      "install_cat", "install_models", "install_quant"):
             body = Text()
             start, end = self._dialog_window(d, 20)
             for i in range(start, end):
@@ -1457,7 +1536,10 @@ class PhantomTUI:
             self._open_palette()
             return "continue"
         if key.type == Key.K_CTRL and key.data == "c":
-            if self.generating:
+            if self.install and self.install.get("running"):
+                self.install["cancel"] = True
+                self.refresh()
+            elif self.generating:
                 self.cancel_flag.set()
                 self.generating = False
                 self.refresh()
@@ -1886,6 +1968,15 @@ class PhantomTUI:
         if d.kind == "models":
             self._switch_model(item[2])
             return
+        if d.kind == "install_cat":
+            self._open_install_models(item[2])
+            return
+        if d.kind == "install_models":
+            self._open_install_quant(item[2])
+            return
+        if d.kind == "install_quant":
+            self._start_install(self._pending_install_model, item[2])
+            return
         if d.kind == "sessions":
             self._load_session(item[2])
             return
@@ -1918,6 +2009,7 @@ class PhantomTUI:
     def _open_models(self) -> None:
         installed = self.cli.mgr.list(format="json")
         items = [(m.get("id", m.get("name", "")), f"{m.get('size_mb', 0)} MB · {m.get('quant', 'BF16')}", m.get("id", m.get("name", ""))) for m in installed]
+        items.append(("───  Browse catalog & install…", "Large curated list of models", "__catalog__"))
         items.append(("───  Pull a new model…", "Download from Hugging Face", "__pull__"))
         self.dialog = Dialog("models", "Models", items)
         self.refresh()
@@ -2006,6 +2098,9 @@ class PhantomTUI:
     def _switch_model(self, mid: str) -> None:
         if mid == "__pull__":
             self._open_input_dialog("Pull model reference", "e.g. smollm:135m or owner/repo", self._do_pull)
+            return
+        if mid == "__catalog__":
+            self._open_install_catalog()
             return
         self.model_id = mid
         self.model_status = "● Ready (zero-copy mmap)"
@@ -2318,6 +2413,104 @@ Add model personas with `Phantomfile` and pull weights with `phantom pull <model
 
     def _cmd_pull(self, args: str, cmd: Command) -> None:
         self._block(self.cli.cmd_pull, args, "Q4_K_M", False, True)
+
+    # ------------------------------------------------------------ catalog installer
+    def _cmd_install(self, args: str, cmd: Command) -> None:
+        ref = args.strip()
+        if ref:
+            try:
+                from phantom.registry.catalog import catalog_find
+            except Exception:
+                catalog_find = None
+            m = catalog_find(ref) if catalog_find else None
+            if m is not None:
+                self._open_install_quant(m)
+            else:
+                # Free-form reference that isn't in the catalog → install directly.
+                alias = ref.replace(":", "-").replace("/", "_")
+                self._start_install(_CatalogRef(repo=ref, alias=alias), "Q4_K_M")
+            return
+        self._open_install_catalog()
+
+    def _open_install_catalog(self) -> None:
+        from phantom.registry.catalog import catalog_categories
+        items = [(cat, f"{n} model{'s' if n != 1 else ''}", cat) for cat, n in catalog_categories()]
+        self.dialog = Dialog("install_cat", "Model Catalog — pick a category", items)
+        self.refresh()
+
+    def _open_install_models(self, category: str) -> None:
+        from phantom.registry.catalog import catalog_models
+        items = [
+            (m.id, f"{m.params} · {m.context} ctx · ~{m.q4_gb:g} GB · {m.desc}", m)
+            for m in catalog_models(category)
+        ]
+        self.dialog = Dialog("install_models", f"Models — {category} (type to filter)", items)
+        self.refresh()
+
+    def _open_install_quant(self, m: Any) -> None:
+        self._pending_install_model = m
+        items = [
+            (q, f"~{gb:.1f} GB" + (" · recommended" if q == "Q4_K_M" else ""), q)
+            for q, gb in m.quants.items()
+        ]
+        self.dialog = Dialog("install_quant", f"Install {getattr(m, 'id', m.repo)} — choose quant", items)
+        self.refresh()
+
+    def _start_install(self, m: Any, quant: str) -> None:
+        if self.install and self.install.get("running"):
+            return
+        self.install = {
+            "running": True,
+            "model": getattr(m, "id", str(m.repo)),
+            "repo": m.repo,
+            "quant": quant,
+            "stage": "starting",
+            "pct": 0.0,
+            "detail": "",
+            "cancel": False,
+            "ok": False,
+            "msg": "",
+        }
+        self.dialog = None
+        self.install_thread = threading.Thread(
+            target=self._install_worker, args=(m.repo, self.install["model"], quant), daemon=True
+        )
+        self.install_thread.start()
+        self.refresh()
+
+    def _install_progress(self, stage: str, pct: float, detail: str) -> None:
+        if self.install is None:
+            return
+        self.install["stage"] = stage
+        self.install["pct"] = pct
+        now = time.time()
+        if now - self._install_throttle >= 0.3:
+            self._install_throttle = now
+            self.install["detail"] = detail
+        if self.install.get("cancel"):
+            raise KeyboardInterrupt("install cancelled by user")
+
+    def _install_worker(self, repo: str, alias: str, quant: str) -> None:
+        msg = ""
+        try:
+            self.cli.mgr.pull(
+                model_ref=repo,
+                quantization=quant,
+                no_calibrate=True,
+                skip_convert=True,
+                progress_cb=self._install_progress,
+            )
+            msg = f"✓ Installed {alias} · {quant}. Use: /models to switch, or /show {alias}"
+        except KeyboardInterrupt:
+            msg = f"✗ Install of {alias} cancelled."
+        except Exception as e:
+            msg = f"✗ Install failed: {alias} — {e}"
+        finally:
+            if self.install is not None:
+                self.install["running"] = False
+                self.install["ok"] = not msg.startswith("✗")
+                self.install["msg"] = msg
+                self._push_turn("/install", msg, kind="notice")
 
     def _cmd_show(self, args: str, cmd: Command) -> None:
         self._block(self.cli.cmd_show, args or self.model_id)

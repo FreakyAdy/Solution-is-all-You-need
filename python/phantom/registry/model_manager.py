@@ -82,8 +82,11 @@ class ModelManager:
                 with open(manifest_file, "r") as f:
                     manifest = json.load(f)
 
-                # Total size
+                # Total size (include the referenced GGUF for passthrough installs)
                 total_bytes = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
+                gguf_ref = manifest.get("gguf_path")
+                if gguf_ref and Path(gguf_ref).is_file():
+                    total_bytes += Path(gguf_ref).stat().st_size
                 size_gb = total_bytes / (1024**3)
                 size_str = f"{size_gb:.1f} GB" if size_gb >= 1.0 else f"{total_bytes / 1024**2:.0f} MB"
 
@@ -196,7 +199,7 @@ class ModelManager:
         Pull a model by resolving reference, downloading GGUF, and running conversion.
         """
         dest_model_dir = self.models_dir / model_ref.replace(":", "-").replace("/", "_")
-        if dest_model_dir.exists():
+        if dest_model_dir.exists() and (dest_model_dir / "manifest.json").exists():
             logger.info("model_already_exists", path=str(dest_model_dir))
             return dest_model_dir
 
@@ -206,8 +209,11 @@ class ModelManager:
         filename = f"{dest_model_dir.name}.gguf"
 
         # Check local file
+        local_gguf: Optional[Path] = None
         if Path(model_ref).exists() and Path(model_ref).is_file():
             local_gguf = Path(model_ref)
+            dest_model_dir = self.models_dir / f"{local_gguf.stem.replace('.', '-')}-{quantization}"
+            filename = local_gguf.name
         elif model_ref.startswith("http://") or model_ref.startswith("https://"):
             source_url = model_ref
             local_gguf = self.downloads_dir / filename
@@ -221,6 +227,20 @@ class ModelManager:
                 filename = info.get("filename", filename)
                 local_gguf = self.downloads_dir / filename
             else:
+                # Reuse a previously downloaded GGUF for this model (no network needed).
+                last = model_ref.rsplit("/", 1)[-1]
+                reuse: Optional[Path] = None
+                for cand in sorted(self.downloads_dir.glob("*.gguf")):
+                    if last.lower() in cand.name.lower():
+                        if quantization.lower() in cand.name.lower():
+                            reuse = cand
+                            break
+                        if reuse is None:
+                            reuse = cand
+                if reuse is not None:
+                    local_gguf = reuse
+
+            if local_gguf is None:
                 # Search HuggingFace Hub
                 files = self.hf_client.list_gguf_files(model_ref)
                 matched = [f for f in files if quantization.lower() in f.filename.lower()]

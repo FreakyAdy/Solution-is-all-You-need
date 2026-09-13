@@ -25,6 +25,8 @@ except ImportError:
     import logging
     logger = logging.getLogger(__name__)
 
+from phantom.loader.format_detect import ArchitectureSpec  # noqa: E402
+
 GGUF_MAGIC = 0x46554747  # "GGUF" in little-endian
 GGUF_VERSION = 3
 

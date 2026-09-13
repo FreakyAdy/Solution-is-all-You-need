@@ -75,6 +75,8 @@ phantom -a <agent>         # start with a specific agent/persona
 
 The conversation scrolls **line-by-line** like opencode — keep the input empty and use `↑` / `↓` for single lines, `PgUp` / `PgDn` for pages, and `Home` / `End` to jump to the oldest message or back to the latest. Scroll position resets automatically when you send a new message.
 
+**Installing models from inside the TUI:** run `/install` (or open `ctrl+p` → `models` → *Browse catalog & install…*) to browse a large curated catalog — Code, General, Reasoning, Small & Fast, Math & Science — pick a model, choose a quantization, and PHANTOM downloads it in the background with a live progress banner above the conversation. `ctrl+c` cancels. Everything installs in **GGUF passthrough mode** (no heavy conversion), so heavy models just work.
+
 ```
   ▌ hello                                    <- your message
   ■ Build · smollm-135m                       <- model reply
@@ -91,6 +93,7 @@ The conversation scrolls **line-by-line** like opencode — keep the input empty
 | `Home` / `End` | Jump to oldest message / newest message |
 | `!command` | Run a shell command inside the session |
 | `@file` | Attach a file reference (pickers) |
+| `/install` | Browse the catalog and install a model from inside the TUI |
 | `/command` | Slash commands (see below) |
 | `ctrl+p` | Command palette |
 | `ctrl+x` | Leader key (c·compact e·editor m·models n·new l·sessions t·themes u·undo r·redo x·export s·status a·agents b·sidebar h·help q·exit) |
@@ -300,6 +303,7 @@ PHANTOM has zero telemetry and never calls home during inference. For classified
 ```bash
 phantom plan  <model>                    # estimate memory distribution before downloading
 phantom pull  <model> [--quant Q4_K_M]  # download and convert from HuggingFace
+phantom catalog [filter]                # browse the curated catalog of 60+ models
 phantom run   <model> [--skip-convert]  # start interactive TUI / REPL (or just `phantom`)
 phantom list                             # show installed models
 phantom show  <model>                    # show architecture and calibration profile
@@ -354,6 +358,7 @@ Available in both the interactive TUI and non-interactive REPL (`phantom` with p
 | `/doctor` | Run hardware diagnostics without leaving chat |
 | `/benchmark` | Run innovation benchmarks |
 | `/pull <model>` | Download & quantize a model |
+| `/install` | Browse the curated catalog inside the TUI and install a model |
 | `/show <model>` | Inspect a model manifest & calibration |
 | `/search <query>` | Search the community index |
 | `/rm <model>` | Remove a model from the library |

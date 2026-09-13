@@ -405,6 +405,7 @@ class PhantomCLI:
             t.add_section()
             t.add_row("/models", "List installed local models and statuses", "/models")
             t.add_row("/pull <m>", "Download & quantize model from Hugging Face", "/pull smollm:135m")
+            t.add_row("/install", "Browse the curated catalog & install a model", "/install")
             t.add_row("/show [m]", "Inspect model manifest & calibration profile", "/show smollm:135m")
             t.add_row("/search <q>", "Search community models index", "/search deepseek")
             t.add_row("/system <p>", "Update system prompt persona dynamically", "/system You are an expert.")
@@ -430,6 +431,7 @@ class PhantomCLI:
             print("  /plan <m>     — Calculate memory distribution and ceiling lift")
             print("  /models       — List installed local models")
             print("  /pull <m>     — Pull model from Hugging Face")
+            print("  /install      — Browse catalog & install a model from the TUI")
             print("  /show [m]     — Inspect model manifest")
             print("  /search <q>   — Search community model index")
             print("  /system <p>   — Update the system prompt")
@@ -678,6 +680,8 @@ class PhantomCLI:
             return self.cmd_rm(args.model, args.force)
         elif cmd == "search":
             return self.cmd_search(args.query)
+        elif cmd == "catalog":
+            return self.cmd_catalog(args.query or "")
         elif cmd == "create":
             return self.cmd_create(args.name, args.file)
         elif cmd == "serve":
@@ -891,6 +895,42 @@ class PhantomCLI:
             print("-" * 65)
             for r in results:
                 print(f"{r['id']:<25} {r['source']:<15} {r.get('parameters', 'N/A'):<10} {r.get('context', 'N/A'):<10}")
+        return 0
+
+    def cmd_catalog(self, query: str = "") -> int:
+        """Browse the curated catalog — optionally filtered by a query."""
+        from phantom.registry.catalog import CATALOG, catalog_categories, catalog_find
+
+        m = catalog_find(query)
+        if m:
+            print(f"\n{m.name}  [{m.category}]")
+            print(f"  repo:    {m.repo}")
+            print(f"  id:      {m.id}")
+            print(f"  params:  {m.params} · context {m.context} · ~{m.q4_gb:g} GB (Q4_K_M)")
+            print(f"  family:  {m.family}")
+            if m.desc:
+                print(f"  about:   {m.desc}")
+            print(f"  quants:  {', '.join(q + f' (~{gb:.1f} GB)' for q, gb in m.quants.items())}")
+            print(f"\nInstall:  phantom pull {m.repo} --quant Q4_K_M --skip-convert")
+            print(f"          or /install {m.id} inside the TUI\n")
+            return 0
+
+        if not CATALOG:
+            print("Catalog is empty.")
+            return 0
+
+        print("\n📦  PHANTOM MODEL CATALOG")
+        print("=" * 76)
+        for cat, n in catalog_categories():
+            print(f"\n  {cat.upper()}  ({n})")
+            print("  " + "-" * 72)
+            for mm in [x for x in CATALOG if x.category == cat]:
+                if query and query.lower() not in mm.id and query.lower() not in mm.name.lower():
+                    continue
+                print(f"    {mm.id:<24} ~{mm.q4_gb:>4g} GB  {mm.desc[:52]}")
+        print()
+        print("Install any model with:  phantom pull bartowski/<model>-GGUF --quant Q4_K_M --skip-convert")
+        print("Or browse interactively in the TUI with:  /install\n")
         return 0
 
     def cmd_create(self, name: str, phantomfile_path: str) -> int:
@@ -1267,6 +1307,10 @@ def main():
     # search
     search_p = subparsers.add_parser("search", help="Search model index")
     search_p.add_argument("query", help="Search query")
+
+    # catalog
+    catalog_p = subparsers.add_parser("catalog", help="Browse the curated model catalog")
+    catalog_p.add_argument("query", nargs="?", default="", help="Optional filter / model id")
 
     # create
     create_p = subparsers.add_parser("create", help="Create model from Phantomfile")
