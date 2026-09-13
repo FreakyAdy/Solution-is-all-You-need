@@ -66,43 +66,39 @@ curl -fsSL https://phantom-core.org/install.sh | bash
 ## Quickstart
 
 ### 0. OpenCode Interactive Terminal Launcher
-Launch PHANTOM without arguments to enter the OpenCode-inspired interactive console:
+Launch PHANTOM with no arguments to drop straight into an OpenCode-style interactive terminal (chat history canvas, live model sidebar, command palette, leader keys):
 ```bash
-phantom
+phantom                    # open the interactive TUI
+phantom -m llama3:70b      # start the TUI on a specific model
+phantom -c                 # continue the last session
+phantom -s <session-id>    # resume a specific session
+phantom -a <agent>         # start with a specific agent/persona
 ```
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│ ⚡ PHANTOM RUNTIME v1.0.0 — Universal Hardware-Transcendent LLM Engine      │
-│ Device: NVIDIA GeForce RTX 4050 Laptop GPU (6.0 GB VRAM) • 23.8 GB RAM      │
-│ Innovations: +10.1× Ceiling Lift Active • Wraith Prefetch • Neural Cache    │
-└─────────────────────────────────────────────────────────────────────────────┘
-                            📦 Local Model Library                             
-┌───┬─────────────┬──────┬───────┬─────────┬─────────┬────────────────────────┐
-│ # │ Model ID    │ Size │ Quant │ Context │ Status  │ Quick Action           │
-├───┼─────────────┼──────┼───────┼─────────┼─────────┼────────────────────────┤
-│ 1 │ smollm-135m │ 0 MB │ BF16  │   4K    │ ● Ready │ phantom run smollm-135m│
-└───┴─────────────┴──────┴───────┴─────────┴─────────┴────────────────────────┘
 
-              🚀 Quick Action Palette (All Project Capabilities)               
-┌──────────────────────────────────────┬──────────────────────────────────────┐
-│ [1]  Interactive Chat / REPL         │ [8]   Plan Zero-Memory Allocation    │
-│ (phantom run <model>)                │ (phantom plan <model>)               │
-│ [2]  Pull Model from Registry        │ [9]   System Hardware Doctor         │
-│ (phantom pull <repo>)                │ (phantom doctor)                     │
-│ [3]  Inspect Model Details           │ [10]  Run Innovation Benchmarks      │
-│ (phantom show <model>)               │ (phantom benchmark)                  │
-│ [4]  Search Community Index          │ [11]  Start Headless API Daemon      │
-│ (phantom search <query>)             │ (phantom serve)                      │
-│ [5]  Create Persona (Phantomfile)    │ [12]  Show Engine & Memory Status    │
-│ (phantom create -f file)             │ (phantom status)                     │
-│ [6]  Remove Model from Library       │ [13]  Convert GGUF to .phantomw      │
-│ (phantom rm <model>)                 │ (phantom convert)                    │
-│ [7]  List All Installed Models       │ [14]  Update Community Index         │
-│ (phantom list)                       │ (phantom update)                     │
-│                                      │ [q]   Exit PHANTOM                   │
-└──────────────────────────────────────┴──────────────────────────────────────┘
+The TUI is keyboard-first:
 ```
-> **Tip:** At the `phantom ❯` prompt, you can enter any option number `1`–`14`, a model name directly, or full CLI commands (e.g. `plan llama3:70b`, `doctor`, `search deepseek`).
+  ▌ hello                                     <- your message
+  ■ Build · smollm-135m                       <- model reply
+  ...
+  ❯ Build · smollm-135m  |  ● Ready (mmap)                    ▌
+
+  ••••••••  esc exit    tab agents   ctrl+p /help commands   ctrl+x leader
+```
+
+| Input | Action |
+|---|---|
+| `!command` | Run a shell command inside the session |
+| `@file` | Attach a file reference (pickers) |
+| `/command` | Slash commands (see below) |
+| `tab` | Cycle agents / autocomplete a command |
+| `ctrl+p` | Command palette |
+| `ctrl+x` | Leader key (c·compact e·editor m·models n·new l·sessions t·themes u·undo r·redo x·export s·status a·agents b·sidebar h·help q·exit) |
+| `ctrl+t` | Cycle model variants (reasoning effort) |
+| `ctrl+c` | Cancel generation / clear input |
+| `ctrl+d`, `esc` | Exit / interrupt |
+
+> Piped, non-interactive stdin (CI, scripts) falls back to a plain line-based REPL.
+> Type `phantom` then `/help` inside the TUI for the full command and keybinding reference.
 
 ### 1. Check your hardware
 ```bash
@@ -303,7 +299,7 @@ PHANTOM has zero telemetry and never calls home during inference. For classified
 ```bash
 phantom plan  <model>                    # estimate memory distribution before downloading
 phantom pull  <model> [--quant Q4_K_M]  # download and convert from HuggingFace
-phantom run   <model> [--skip-convert]  # start interactive REPL
+phantom run   <model> [--skip-convert]  # start interactive TUI / REPL (or just `phantom`)
 phantom list                             # show installed models
 phantom show  <model>                    # show architecture and calibration profile
 phantom rm    <model>                    # remove model and free disk space
@@ -323,16 +319,48 @@ phantom status       # live metrics: tok/sec, VRAM, prefetch accuracy, thermal s
 ```
 
 ### In-REPL slash commands
-While inside `phantom run`:
+Available in both the interactive TUI and non-interactive REPL (`phantom` with piped stdin):
 
+**OpenCode-style commands**
+| Command | What it does |
+|---|---|
+| `/help` | Show the full command & keybinding reference |
+| `/connect` | Add / configure a model provider (HF Hub, Ollama, gateway, OpenAI-compatible) |
+| `/compact` | Compact the current session summary |
+| `/details` | Toggle tool execution details |
+| `/editor` | Open your `$EDITOR` to compose a message |
+| `/exit` | Exit PHANTOM |
+| `/export` | Export the conversation to Markdown |
+| `/init` | Generate a `PHANTOM.md` project rules / persona file |
+| `/models` | List models and switch |
+| `/new` | Start a new session |
+| `/redo` | Redo an undone message |
+| `/sessions` | List / resume previous sessions (or `-c` at launch) |
+| `/share` · `/unshare` | Share / unshare the current session to `~/.phantom/share` |
+| `/themes` | Switch visual theme |
+| `/thinking` | Toggle reasoning-block visibility |
+| `/undo` | Undo the last message |
+
+**PHANTOM commands**
 | Command | What it does |
 |---|---|
 | `/layers` | Print 2D ANSI layer residency map (VRAM / RAM / NVMe / active / prefetching) |
 | `/stats` | Live tok/sec, TTFT, KV compression ratio, GPU temperature |
+| `/status` | Engine & memory status |
 | `/set temperature 0.5` | Adjust any sampling parameter without restarting |
+| `/system <prompt>` | Replace the system prompt |
+| `/plan <model>` | Zero-memory allocation plan |
 | `/doctor` | Run hardware diagnostics without leaving chat |
-| `/clear` | Reset conversation context and KV cache |
-| `/bye` | Unload layers cleanly and return to shell |
+| `/benchmark` | Run innovation benchmarks |
+| `/pull <model>` | Download & quantize a model |
+| `/show <model>` | Inspect a model manifest & calibration |
+| `/search <query>` | Search the community index |
+| `/rm <model>` | Remove a model from the library |
+| `/save` · `/load` | Export / restore a conversation transcript to JSON |
+| `/serve` | Start the headless API gateway |
+| `/convert <in.gguf> <out-dir>` | Convert GGUF to `.phantomw` format |
+
+`>` `!command` runs a shell command inline, and `@file` attaches a project file.
 
 ---
 
