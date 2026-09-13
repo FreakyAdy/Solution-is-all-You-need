@@ -92,6 +92,7 @@ class PhantomCLI:
         model_status: str = "● Ready (zero-copy mmap)",
         tokens_used: int = 0,
         session_start: Optional[str] = None,
+        target_h: Optional[int] = None,
     ) -> str:
         hw = detect_hardware()
         s_time = session_start or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -104,29 +105,48 @@ class PhantomCLI:
 
         status_color = "bold green" if "Ready" in model_status else "bold yellow"
 
-        lines = [
-            f"[bold white]New session — [/][dim]{s_time}[/]\n",
+        top_lines = [
+            f"[bold white]New session — [/][dim]{s_time}[/]",
+            "",
             "[bold white]Model & Engine[/]",
             f"[dim]{model_id}[/]",
-            f"[{status_color}]{model_status}[/]\n",
+            f"[{status_color}]{model_status}[/]",
+            "",
             "[bold white]Context[/]",
             f"[dim]{tokens_used} tokens[/]",
             f"[dim]{pct_used:.1f}% used[/]",
-            "[dim]KV: 7.8× compressed[/]\n",
+            "[dim]KV: 7.8× compressed[/]",
+            "",
             "[bold white]LSP[/]",
-            "[dim]LSPs are disabled[/]\n",
+            "[dim]LSPs are disabled[/]",
+            "",
             "[bold white]Hardware[/]",
             f"[dim]{gpu_str}[/]",
             f"[dim]{vram_str} • {hw.tier.upper()}[/]",
-            f"[dim]{hw.ram_gb:.0f} GB RAM[/]\n",
+            f"[dim]{hw.ram_gb:.0f} GB RAM[/]",
+            "",
             "[bold white]Innovations[/]",
             "[dim]Wraith: 87.5% hit[/]",
             "[dim]Sparsity: 61.2% routed[/]",
-            "[dim]Lift: +10.1× Active[/]\n\n",
+            "[dim]Lift: +10.1× Active[/]",
+        ]
+
+        bottom_lines = [
             "[bold #3b82f6]/~[/]",
             "[bold green]●[/] [bold white]PHANTOM[/] [dim]1.0.0[/]",
         ]
-        return "\n".join(lines)
+
+        if target_h is not None:
+            side_spacer = target_h - len(top_lines) - len(bottom_lines)
+            if side_spacer > 0:
+                top_lines.extend([""] * side_spacer)
+            else:
+                top_lines.append("")
+        else:
+            top_lines.extend(["", ""])
+
+        top_lines.extend(bottom_lines)
+        return "\n".join(top_lines)
 
     def _render_workspace_table(
         self,
@@ -138,50 +158,57 @@ class PhantomCLI:
         loading_msg: Optional[str] = None,
     ) -> Table:
         import shutil
-        term_size = shutil.get_terminal_size((100, 28))
-        term_h = term_size.lines
+        if HAVE_RICH and console and console.height:
+            term_h = console.height
+        else:
+            term_h = shutil.get_terminal_size((100, 28)).lines
 
-        lines = []
+        term_h = max(term_h, 24)
+        target_h = max(term_h - 1, 26)
+
+        main_lines: List[str] = []
 
         if not turns:
-            lines.append(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]")
-            lines.append("  [dim]Type a message to chat, or [/][bold #3b82f6]/help[/][dim] for commands & options.[/]\n")
+            main_lines.append(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]")
+            main_lines.append("  [dim]Type a message to chat, or [/][bold #3b82f6]/help[/][dim] for commands & options.[/]")
+            main_lines.append("")
         else:
-            visible_turns = turns
-            if len(turns) > 4:
-                visible_turns = turns[-4:]
-
+            visible_turns = turns[-4:] if len(turns) > 4 else turns
             for t in visible_turns:
-                lines.append(f"  [bold #3b82f6]▌[/] [bold white]{t['prompt']}[/]")
-                lines.append(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [dim]{model_id}[/]")
+                main_lines.append(f"  [bold #3b82f6]▌[/] [bold white]{t['prompt']}[/]")
+                main_lines.append(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [dim]{model_id}[/]")
                 if t.get("response"):
-                    lines.append(f"  {t['response']}")
+                    for resp_line in t["response"].split("\n"):
+                        main_lines.append(f"  {resp_line}")
                 if t.get("meta"):
-                    lines.append(f"  [dim]{t['meta']}[/]")
-                lines.append("")
+                    main_lines.append(f"  [dim]{t['meta']}[/]")
+                main_lines.append("")
 
-        curr_rendered = "\n".join(lines)
-        used_lines = curr_rendered.count("\n") + 1
+        used_lines = len(main_lines)
 
-        target_lines = max(term_h - 4, 18)
-        spacer_lines = max(1, target_lines - used_lines - 4)
-        lines.append("\n" * (spacer_lines - 1))
+        bottom_card = [
+            f"  [bold yellow]◐[/] [dim]{loading_msg}[/]" if loading_msg else f"  [bold #3b82f6]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]",
+            "  [dim]••••••••  esc exit            tab agents   ctrl+p /help commands[/]",
+        ]
 
-        if loading_msg:
-            lines.append(f"  [bold yellow]◐[/] [dim]{loading_msg}[/]")
+        spacer_count = target_h - used_lines - len(bottom_card)
+        if spacer_count > 0:
+            main_lines.extend([""] * spacer_count)
         else:
-            lines.append(f"  [bold #3b82f6]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]")
-        lines.append("  [dim]••••••••  esc exit            tab agents   ctrl+p /help commands[/]")
+            main_lines.append("")
 
-        main_col = "\n".join(lines)
+        main_lines.extend(bottom_card)
+        main_col = "\n".join(main_lines)
+
         sidebar_col = self._render_opencode_sidebar(
             model_id=model_id,
             model_status=model_status,
             tokens_used=tokens_used,
             session_start=session_start,
+            target_h=target_h,
         )
 
-        t = Table(show_header=False, box=None, expand=True, padding=(0, 2))
+        t = Table(show_header=False, box=None, expand=True, padding=(0, 1))
         t.add_column("main", ratio=4)
         t.add_column("sidebar", width=28)
         t.add_row(main_col, sidebar_col)
@@ -1139,7 +1166,7 @@ class PhantomCLI:
                 tokens_count = 0
                 if HAVE_RICH and sys.stdout.isatty():
                     console.clear()
-                    t, col_offset = self._render_workspace_table(
+                    t = self._render_workspace_table(
                         turns=turns,
                         model_id=model_id,
                         model_status=model_status,
@@ -1215,6 +1242,9 @@ class PhantomCLI:
             turns.append(curr_turn)
             conversation_history.append({"role": "user", "content": line})
 
+            if HAVE_RICH and sys.stdout.isatty():
+                console.clear()
+
             if model is not None and tokenizer is not None:
                 import threading
                 from transformers import TextIteratorStreamer
@@ -1273,6 +1303,7 @@ class PhantomCLI:
                             session_start=session_time,
                         )
                         live.update(fin_t)
+                    console.print()
                 else:
                     for new_text in streamer:
                         sys.stdout.write(new_text)
@@ -1318,6 +1349,7 @@ class PhantomCLI:
                             session_start=session_time,
                         )
                         live.update(fin_t)
+                    console.print()
                 else:
                     for tok in sim_tokens:
                         sys.stdout.write(tok)
