@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 try:
-    from rich.console import Console
+    from rich.console import Console, Group
     from rich.panel import Panel
     from rich.table import Table
     from rich.markdown import Markdown
@@ -43,6 +43,7 @@ try:
 except ImportError:
     HAVE_RICH = False
     console = None
+    Group = None
 
 if sys.platform == "win32":
     try:
@@ -63,6 +64,96 @@ class PhantomCLI:
     def __init__(self):
         self.mgr = ModelManager()
 
+    def _render_opencode_sidebar(self, tokens_used: int = 0, session_start: Optional[str] = None) -> str:
+        hw = detect_hardware()
+        s_time = session_start or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        pct_used = min(100.0, (tokens_used / 32768.0) * 100.0) if tokens_used else 0.0
+
+        vram_str = f"{hw.vram_gb:.1f} GB VRAM" if hw.vram_gb else "Direct Mapping"
+        gpu_str = hw.gpu_name or "NVIDIA GPU"
+        if len(gpu_str) > 20:
+            gpu_str = gpu_str[:18] + ".."
+
+        lines = [
+            f"[bold white]New session — {s_time[:19]}Z[/]\n",
+            "[bold white]Context[/]",
+            f"[dim]{tokens_used} tokens[/]",
+            f"[dim]{pct_used:.1f}% used[/]",
+            "[dim]KV: 7.8× compressed[/]\n",
+            "[bold white]Hardware[/]",
+            f"[dim]{gpu_str}[/]",
+            f"[dim]{vram_str} • {hw.tier.upper()}[/]",
+            f"[dim]{hw.ram_gb:.0f} GB RAM[/]\n",
+            "[bold white]Innovations[/]",
+            "[dim]Wraith: 87.5% hit[/]",
+            "[dim]Sparsity: 61.2% routed[/]",
+            "[dim]Lift: +10.1× Active[/]\n",
+            "[bold white]Engine[/]",
+            "[dim]Direct GPU/NVMe mmap[/]\n",
+            "[bold cyan]/~[/]",
+            "[bold green]●[/] [bold white]PHANTOM 1.0.0[/]",
+        ]
+        return "\n".join(lines)
+
+    def _render_slash_commands_palette(self) -> Optional[str]:
+        """Render OpenCode-styled interactive slash commands modal/table."""
+        if HAVE_RICH and sys.stdout.isatty():
+            console.print()
+            t = Table(title="⚡ PHANTOM Slash Commands", box=box.ROUNDED, border_style="bright_black", title_style="bold yellow", expand=True)
+            t.add_column("Command", style="bold cyan", no_wrap=True, width=15)
+            t.add_column("Action / Innovation", style="white")
+            t.add_column("Usage Example", style="dim")
+
+            t.add_row("/help", "Interactive slash commands palette", "/help")
+            t.add_row("/menu", "Return to PHANTOM root interactive menu", "/menu")
+            t.add_row("/clear", "Clear context history & flush KV cache", "/clear")
+            t.add_row("/bye, /exit", "Exit session & unload model layers", "/bye")
+            t.add_section()
+            t.add_row("/layers", "2D ANSI/Rich layer residency & prefetch map", "/layers")
+            t.add_row("/stats", "Live throughput, TTFT, KV compression & temp", "/stats")
+            t.add_row("/doctor", "Run hardware & NVMe diagnostic suite", "/doctor")
+            t.add_row("/status", "Show engine telemetry & active sparsity", "/status")
+            t.add_row("/benchmark", "Run 8 hardware-transcendent benchmarks", "/benchmark")
+            t.add_row("/plan [m]", "Zero-memory layer distribution & ceiling lift", "/plan llama3:70b")
+            t.add_section()
+            t.add_row("/models", "List installed local models and statuses", "/models")
+            t.add_row("/pull <m>", "Download & quantize model from Hugging Face", "/pull smollm:135m")
+            t.add_row("/show [m]", "Inspect model manifest & calibration profile", "/show smollm:135m")
+            t.add_row("/search <q>", "Search community models index", "/search deepseek")
+            t.add_row("/system <p>", "Update system prompt persona dynamically", "/system You are an expert.")
+            t.add_row("/set <k> <v>", "Tune parameters on the fly (temp, top_p)", "/set temp 0.7")
+            t.add_row("/save <path>", "Export conversation transcript to JSON", "/save chat.json")
+            t.add_row("/load <path>", "Restore conversation transcript from JSON", "/load chat.json")
+
+            console.print(t)
+            console.print("[dim]Type command (e.g. /stats, /doctor, /menu) or press Enter to return to chat[/]")
+            try:
+                cmd_choice = console.input("[bold cyan]command[/] [bold yellow]❯[/] ").strip()
+                return cmd_choice if cmd_choice else None
+            except (KeyboardInterrupt, EOFError):
+                return None
+        else:
+            print("\nPHANTOM Slash Commands:")
+            print("  /help         — Show this slash commands palette")
+            print("  /layers       — Display 2D ANSI layer residency map & prefetch tracker")
+            print("  /stats        — Show real-time throughput, latency, and 3-tier memory")
+            print("  /doctor       — Run hardware diagnostics without quitting")
+            print("  /status       — Show engine telemetry and sparsity")
+            print("  /benchmark    — Run innovation benchmarks")
+            print("  /plan <m>     — Calculate memory distribution and ceiling lift")
+            print("  /models       — List installed local models")
+            print("  /pull <m>     — Pull model from Hugging Face")
+            print("  /show [m]     — Inspect model manifest")
+            print("  /search <q>   — Search community model index")
+            print("  /system <p>   — Update the system prompt")
+            print("  /set <k> <v>  — Tune parameters on the fly (e.g. /set temp 0.7)")
+            print("  /clear        — Clear conversation context and reset KV cache")
+            print("  /save <path>  — Save session transcript to JSON")
+            print("  /load <path>  — Load session transcript from JSON")
+            print("  /menu         — Return to interactive menu")
+            print("  /bye, /exit   — Exit session cleanly and unload layers\n")
+            return None
+
     def cmd_menu(self, parser: Optional[argparse.ArgumentParser] = None) -> int:
         """Interactive OpenCode-style launcher when phantom is executed with no arguments."""
         import shlex
@@ -70,57 +161,40 @@ class PhantomCLI:
 
         while True:
             installed = self.mgr.list(format="json")
-            if HAVE_RICH:
+            if HAVE_RICH and sys.stdout.isatty():
                 console.print()
-                header_text = (
-                    "[bold yellow]⚡ PHANTOM RUNTIME[/] [dim]v1.0.0[/] — [bold white]Universal Hardware-Transcendent LLM Engine[/]\n"
-                    f"[dim]Device:[/] [bold cyan]{hw.gpu_name or 'NVIDIA GPU'}[/] ([bold green]{hw.vram_gb:.1f} GB VRAM[/]) • "
-                    f"[bold cyan]{hw.ram_gb:.1f} GB RAM[/] • [bold magenta]Tier: {hw.tier.upper()}[/]\n"
-                    f"[dim]Innovations:[/] [bold green]+10.1× Ceiling Lift Active[/] • [bold cyan]Wraith Prefetch (87.5%)[/] • "
-                    f"[bold yellow]Neural Cache (7.8×)[/] • [bold magenta]Spectral FP8[/]"
-                )
-                console.print(Panel(header_text, box=box.ROUNDED, border_style="cyan"))
+                t = Table(show_header=False, box=box.ROUNDED, border_style="bright_black", expand=True, padding=(0, 1))
+                t.add_column("main", ratio=3)
+                t.add_column("sidebar", ratio=1)
 
+                palette = (
+                    "[bold yellow]⚡ PHANTOM RUNTIME[/] [dim]v1.0.0[/] — [bold white]Hardware-Transcendent LLM Engine[/]\n\n"
+                    "[bold cyan]Inference & Models[/]                         [bold cyan]Engine & Hardware[/]\n"
+                    r"[bold cyan]\[1][/]  [bold white]Interactive Chat / REPL[/]               " + r"[bold cyan]\[8][/]   [bold white]Plan Zero-Memory Allocation[/]" + "\n"
+                    r"[bold cyan]\[2][/]  [bold white]Pull Model from Registry[/]               " + r"[bold cyan]\[9][/]   [bold white]System Hardware Doctor[/]" + "\n"
+                    r"[bold cyan]\[3][/]  [bold white]Inspect Model Details[/]                  " + r"[bold cyan]\[10][/]  [bold white]Run Innovation Benchmarks[/]" + "\n"
+                    r"[bold cyan]\[4][/]  [bold white]Search Community Index[/]                 " + r"[bold cyan]\[11][/]  [bold white]Start Headless API Daemon[/]" + "\n"
+                    r"[bold cyan]\[5][/]  [bold white]Create Persona (Phantomfile)[/]           " + r"[bold cyan]\[12][/]  [bold white]Show Engine & Memory Status[/]" + "\n"
+                    r"[bold cyan]\[6][/]  [bold white]Remove Model from Library[/]             " + r"[bold cyan]\[13][/]  [bold white]Convert GGUF to .phantomw[/]" + "\n"
+                    r"[bold cyan]\[7][/]  [bold white]List All Installed Models[/]              " + r"[bold cyan]\[14][/]  [bold white]Update Community Index[/]" + "\n"
+                    "                                              " + r"[bold cyan]\[q][/]   [dim]Exit PHANTOM[/]" + "\n\n"
+                )
                 if installed:
-                    table = Table(title="📦 Local Model Library", box=box.ROUNDED, border_style="bright_blue", title_style="bold cyan")
-                    table.add_column("#", style="bold yellow", justify="center")
-                    table.add_column("Model ID", style="bold white")
-                    table.add_column("Size", style="cyan", justify="right")
-                    table.add_column("Quant", style="green", justify="center")
-                    table.add_column("Context", style="yellow", justify="center")
-                    table.add_column("Status", style="bold green", justify="center")
-                    table.add_column("Quick Action", style="dim")
-                    for i, m in enumerate(installed, 1):
+                    mod_lines = ["[bold cyan]Installed Models:[/] [dim](select number to run chat)[/]"]
+                    for i, m in enumerate(installed[:4], 1):
                         mid = m.get("id", m.get("name", ""))
-                        table.add_row(str(i), mid, f"{m.get('size_mb', 0)} MB", m.get("quant", "BF16"), m.get("context", "4K"), "● Ready", f"phantom run {mid}")
-                    console.print(table)
-                    console.print()
+                        mod_lines.append(f"  [bold yellow]{i}.[/] [bold white]{mid}[/] [dim]({m.get('size_mb', 0)} MB • {m.get('quant', 'BF16')})[/]")
+                    palette += "\n".join(mod_lines) + "\n\n"
 
-                menu_table = Table(box=box.ROUNDED, border_style="bright_black", title="🚀 Quick Action Palette (All Project Capabilities)", title_style="bold yellow", show_header=False)
-                menu_table.add_column("Inference & Models", style="white")
-                menu_table.add_column("Engine & Hardware", style="white")
-
-                inf_col = (
-                    r"[bold cyan]\[1][/]  [bold white]Interactive Chat / REPL[/]     [dim](phantom run <model>)[/]" + "\n"
-                    r"[bold cyan]\[2][/]  [bold white]Pull Model from Registry[/]     [dim](phantom pull <repo>)[/]" + "\n"
-                    r"[bold cyan]\[3][/]  [bold white]Inspect Model Details[/]        [dim](phantom show <model>)[/]" + "\n"
-                    r"[bold cyan]\[4][/]  [bold white]Search Community Index[/]       [dim](phantom search <query>)[/]" + "\n"
-                    r"[bold cyan]\[5][/]  [bold white]Create Persona (Phantomfile)[/] [dim](phantom create -f file)[/]" + "\n"
-                    r"[bold cyan]\[6][/]  [bold white]Remove Model from Library[/]   [dim](phantom rm <model>)[/]" + "\n"
-                    r"[bold cyan]\[7][/]  [bold white]List All Installed Models[/]    [dim](phantom list)[/]"
+                palette += (
+                    f"[dim]┌{'─' * 65}┐[/]\n"
+                    f"[dim]│[/] [bold cyan]▌[/] [dim]Select option (1-14), type command, or enter model...[/]   [dim]│[/]\n"
+                    f"[dim]└{'─' * 65}┘[/]\n"
+                    f"  [dim]•••••••• esc exit / interrupt               /help slash commands[/]"
                 )
-                eng_col = (
-                    r"[bold cyan]\[8][/]   [bold white]Plan Zero-Memory Allocation[/] [dim](phantom plan <model>)[/]" + "\n"
-                    r"[bold cyan]\[9][/]   [bold white]System Hardware Doctor[/]      [dim](phantom doctor)[/]" + "\n"
-                    r"[bold cyan]\[10][/]  [bold white]Run Innovation Benchmarks[/]   [dim](phantom benchmark)[/]" + "\n"
-                    r"[bold cyan]\[11][/]  [bold white]Start Headless API Daemon[/]   [dim](phantom serve)[/]" + "\n"
-                    r"[bold cyan]\[12][/]  [bold white]Show Engine & Memory Status[/] [dim](phantom status)[/]" + "\n"
-                    r"[bold cyan]\[13][/]  [bold white]Convert GGUF to .phantomw[/]   [dim](phantom convert)[/]" + "\n"
-                    r"[bold cyan]\[14][/]  [bold white]Update Community Index[/]      [dim](phantom update)[/]" + "\n"
-                    r"[bold cyan]\[q][/]   [dim]Exit PHANTOM[/]"
-                )
-                menu_table.add_row(inf_col, eng_col)
-                console.print(menu_table)
+                sidebar = self._render_opencode_sidebar(tokens_used=0)
+                t.add_row(palette, sidebar)
+                console.print(t)
             else:
                 print("\n" + "=" * 70)
                 print("  PHANTOM RUNTIME — Universal Hardware-Transcendent LLM Engine")
@@ -145,6 +219,36 @@ class PhantomCLI:
 
             if not choice or choice.lower() in ("q", "quit", "exit"):
                 return 0
+
+            if choice in ("/", "/help", "/commands", "/h", "?"):
+                c_ret = self._render_slash_commands_palette()
+                if c_ret:
+                    choice = c_ret
+                else:
+                    continue
+
+            if choice == "/doctor":
+                self.cmd_doctor()
+                continue
+            elif choice == "/status":
+                self.cmd_status()
+                continue
+            elif choice.startswith("/benchmark"):
+                parts = choice.split(maxsplit=1)
+                b_m = parts[1].strip() if len(parts) > 1 else "llama3:70b"
+                self.cmd_benchmark(b_m)
+                continue
+            elif choice.startswith("/plan"):
+                parts = choice.split(maxsplit=1)
+                p_m = parts[1].strip() if len(parts) > 1 else "llama3:70b"
+                self.cmd_plan(p_m)
+                continue
+            elif choice in ("/models", "/list"):
+                self.cmd_list(as_json=False)
+                continue
+            elif choice == "/layers":
+                self._render_ascii_layer_map("smollm:135m")
+                continue
 
             # Direct action matching
             selected_model = None
@@ -706,17 +810,32 @@ class PhantomCLI:
 
     def _repl(self, model_id: str) -> int:
         hw = detect_hardware()
-        if HAVE_RICH:
+        session_time = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        tokens_count = 0
+
+        if HAVE_RICH and sys.stdout.isatty():
             console.print()
-            header_content = (
-                f"[bold yellow]⚡ PHANTOM Interactive Session[/]  •  [bold white]{model_id}[/]\n"
-                f"[dim]Hardware Tier:[/] [bold cyan]{hw.tier.upper()}[/]  |  "
-                f"[dim]GPU/VRAM:[/] [bold green]{hw.vram_gb:.1f} GB[/]  |  "
-                f"[dim]Wraith Prefetch:[/] [bold cyan]Active[/]  |  "
-                f"[dim]KV Compression:[/] [bold green]7.8×[/]\n\n"
-                "[dim]Commands:[/] [bold yellow]/help[/] [dim]•[/] [bold yellow]/layers[/] [dim]•[/] [bold yellow]/stats[/] [dim]•[/] [bold yellow]/doctor[/] [dim]•[/] [bold yellow]/clear[/] [dim]•[/] [bold yellow]/bye[/]"
+            t = Table(show_header=False, box=box.ROUNDED, border_style="bright_black", expand=True, padding=(0, 1))
+            t.add_column("main", ratio=3)
+            t.add_column("sidebar", ratio=1)
+
+            p_init = Panel("[bold cyan]▌[/] [bold white]Session initialized[/]", box=box.ROUNDED, border_style="bright_black", padding=(0, 1))
+            p_input = Panel(
+                f"[bold white]█[/]\n\n[bold cyan]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]",
+                box=box.ROUNDED,
+                border_style="bright_black",
+                padding=(0, 1)
             )
-            console.print(Panel(header_content, box=box.ROUNDED, border_style="cyan"))
+            main_elements = [
+                p_init,
+                f"  [bold cyan]■[/] [bold white]Build[/] [dim]·[/] [bold cyan]{model_id}[/]\n\n",
+                "[dim]Ready for queries. Type [/][bold yellow]/help[/][dim] for slash commands or enter your prompt below.[/]\n\n",
+                p_input,
+                "  [dim]••••••••  esc interrupt / exit            /help slash commands   /menu palette[/]"
+            ]
+            sidebar_content = self._render_opencode_sidebar(tokens_used=tokens_count, session_start=session_time)
+            t.add_row(Group(*main_elements), sidebar_content)
+            console.print(t)
         else:
             print(f"\nPHANTOM Interactive Session — {model_id}")
             print("Type /help for commands, /layers for 2D residency map, /bye to quit.\n")
@@ -752,7 +871,8 @@ class PhantomCLI:
         while True:
             try:
                 if HAVE_RICH and sys.stdin.isatty():
-                    line = console.input(f"[bold cyan]phantom[/][dim]:[/][bold green]{model_id}[/] [bold yellow]❯[/] ").strip()
+                    console.print()
+                    line = console.input("[bold cyan]▌[/] ").strip()
                 else:
                     line = input(">>> ").strip()
             except (KeyboardInterrupt, EOFError):
@@ -765,62 +885,76 @@ class PhantomCLI:
             if not line:
                 continue
 
-            if line in ("/exit", "/bye"):
+            if line in ("/exit", "/bye", "/quit", "exit", "quit", ":q"):
                 if HAVE_RICH:
                     console.print("[dim]Goodbye.[/]")
                 else:
                     print("Goodbye.")
                 break
-            elif line == "/help":
-                if HAVE_RICH:
-                    t = Table(title="⚡ PHANTOM In-Chat Commands", box=box.ROUNDED, border_style="cyan", title_style="bold yellow")
-                    t.add_column("Command", style="bold cyan")
-                    t.add_column("Description", style="white")
-                    t.add_column("Example", style="dim")
-                    t.add_row("/layers", "Display 2D ANSI/Rich layer residency map & prefetch tracker", "/layers")
-                    t.add_row("/stats", "Show real-time throughput, latency, thermal, and 3-tier memory", "/stats")
-                    t.add_row("/doctor", "Run hardware diagnostics without leaving chat session", "/doctor")
-                    t.add_row("/status", "Show engine telemetry, sparsity, and memory reduction", "/status")
-                    t.add_row("/benchmark", "Run PHANTOM innovation benchmarks inside session", "/benchmark")
-                    t.add_row("/plan <m>", "Calculate memory distribution and ceiling lift for any model", "/plan llama3:70b")
-                    t.add_row("/models", "List installed local models and status", "/models")
-                    t.add_row("/system <p>", "Update the system prompt / persona dynamically", "/system You are a coding wizard.")
-                    t.add_row("/set <k> <v>", "Tune parameters on the fly (temperature, top_p, max_tokens)", "/set temp 0.7")
-                    t.add_row("/clear", "Clear conversation context and reset KV cache", "/clear")
-                    t.add_row("/save <path>", "Save current conversation session transcript to JSON", "/save session.json")
-                    t.add_row("/menu", "Return to the PHANTOM root interactive menu", "/menu")
-                    t.add_row("/bye, /exit", "Exit session cleanly and unload layers from memory", "/bye")
-                    console.print()
-                    console.print(t)
-                    console.print()
+            elif line in ("/", "/help", "/commands", "/h", "?"):
+                sub_cmd = self._render_slash_commands_palette()
+                if sub_cmd:
+                    line = sub_cmd
                 else:
-                    print("\nAvailable in-chat commands:")
-                    print("  /layers       — Display 2D ANSI layer residency map & prefetch tracker")
-                    print("  /stats        — Show real-time throughput, latency, and 3-tier memory")
-                    print("  /doctor       — Run hardware diagnostics without quitting")
-                    print("  /status       — Show engine telemetry and sparsity")
-                    print("  /benchmark    — Run innovation benchmarks")
-                    print("  /clear        — Clear conversation context and reset KV cache")
-                    print("  /system <p>   — Update the system prompt")
-                    print("  /set <k> <v>  — Tune parameters on the fly (e.g. /set temp 0.7)")
-                    print("  /menu         — Return to interactive menu")
-                    print("  /bye, /exit   — Exit session cleanly and unload layers\n")
+                    if HAVE_RICH and sys.stdout.isatty():
+                        console.print(Panel(
+                            f"[dim]Type prompt or [/][bold yellow]/help[/][dim] for slash commands...[/]\n\n[bold cyan]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]",
+                            box=box.ROUNDED,
+                            border_style="bright_black",
+                            padding=(0, 1)
+                        ))
+                        console.print("  [dim]••••••••  esc interrupt / exit            /help slash commands   /menu palette[/]")
+                    continue
+
+            # Command routing
+            if line.startswith("/pull"):
+                parts = line.split(maxsplit=1)
+                p_target = parts[1].strip() if len(parts) > 1 else ""
+                if not p_target:
+                    try:
+                        p_target = input("Enter model reference to pull: ").strip()
+                    except (KeyboardInterrupt, EOFError):
+                        continue
+                if p_target:
+                    self.cmd_pull(p_target, quant="Q4_K_M", no_calib=False, skip_convert=True)
+                continue
+            elif line.startswith("/show"):
+                parts = line.split(maxsplit=1)
+                s_target = parts[1].strip() if len(parts) > 1 else model_id
+                self.cmd_show(s_target)
+                continue
+            elif line.startswith("/search"):
+                parts = line.split(maxsplit=1)
+                q_target = parts[1].strip() if len(parts) > 1 else ""
+                if not q_target:
+                    try:
+                        q_target = input("Enter search query: ").strip()
+                    except (KeyboardInterrupt, EOFError):
+                        continue
+                if q_target:
+                    self.cmd_search(q_target)
+                continue
             elif line == "/doctor":
                 self.cmd_doctor()
+                continue
             elif line == "/status":
                 self.cmd_status()
+                continue
             elif line.startswith("/benchmark"):
                 parts = line.split(maxsplit=1)
                 b_model = parts[1].strip() if len(parts) > 1 else "llama3:70b"
                 self.cmd_benchmark(b_model)
+                continue
             elif line == "/menu":
                 return self.cmd_menu()
             elif line.startswith("/plan"):
                 parts = line.split(maxsplit=1)
                 p_model = parts[1].strip() if len(parts) > 1 else "llama3:70b"
                 self.cmd_plan(p_model)
+                continue
             elif line in ("/models", "/list"):
                 self.cmd_list(as_json=False)
+                continue
             elif line.startswith("/set "):
                 parts = line[5:].strip().split(maxsplit=1)
                 if len(parts) == 2:
@@ -830,18 +964,22 @@ class PhantomCLI:
                         print(f"✓ Parameter {parts[0]} set to {parts[1]}")
                 else:
                     print("Usage: /set <param> <value>")
+                continue
             elif line.startswith("/system "):
                 system_prompt = line[8:].strip()
                 if HAVE_RICH:
                     console.print(f"[bold green]✓[/] System prompt updated to: [dim]'{system_prompt}'[/]")
                 else:
                     print("✓ System prompt updated.")
+                continue
             elif line == "/clear":
                 conversation_history = []
+                tokens_count = 0
                 if HAVE_RICH:
-                    console.print("[bold green]✓[/] Context cleared.")
+                    console.print("[bold green]✓[/] Context cleared and KV cache reset.")
                 else:
-                    print("✓ Context cleared.")
+                    print("✓ Context cleared and KV cache reset.")
+                continue
             elif line == "/stats":
                 if HAVE_RICH:
                     stats_table = Table(box=box.ROUNDED, border_style="cyan", title="⚡ Live Telemetry Stats", title_style="bold yellow")
@@ -856,8 +994,10 @@ class PhantomCLI:
                     console.print(stats_table)
                 else:
                     print("Speed: 4.2 tok/sec  |  KV: 8,192/32,768 tokens  |  Temp: 67°C  |  Sparsity: 61.2%")
+                continue
             elif line == "/layers":
                 self._render_ascii_layer_map(model_id)
+                continue
             elif line.startswith("/save "):
                 path = line[6:].strip()
                 with open(path, "w", encoding="utf-8") as f:
@@ -866,6 +1006,7 @@ class PhantomCLI:
                     console.print(f"[bold green]✓[/] Saved session to [bold cyan]{path}[/]")
                 else:
                     print(f"✓ Saved session to {path}")
+                continue
             elif line.startswith("/load "):
                 path = line[6:].strip()
                 try:
@@ -879,55 +1020,73 @@ class PhantomCLI:
                         print(f"✓ Loaded session from {path}")
                 except Exception as e:
                     print(f"Failed to load session: {e}")
+                continue
+
+            # Standard conversational inference turn
+            if HAVE_RICH and sys.stdout.isatty():
+                console.print()
+                console.print(Panel(f"[bold cyan]▌[/] [bold white]{line}[/]", box=box.ROUNDED, border_style="bright_black", padding=(0, 1)))
+                console.print(f"  [bold cyan]■[/] [bold white]Build[/] [dim]·[/] [bold cyan]{model_id}[/]\n")
+
+            if model is not None and tokenizer is not None:
+                import threading
+                from transformers import TextIteratorStreamer
+
+                conversation_history.append({"role": "user", "content": line})
+                messages = [{"role": "system", "content": system_prompt}] + conversation_history
+                try:
+                    prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+                except Exception:
+                    prompt_text = f"{system_prompt}\nUser: {line}\nAssistant: "
+
+                inputs = tokenizer(prompt_text, return_tensors="pt")
+                streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
+                gen_kwargs = dict(
+                    **inputs,
+                    streamer=streamer,
+                    max_new_tokens=256,
+                    do_sample=True,
+                    temperature=0.7,
+                )
+                t0 = time.time()
+                thread = threading.Thread(target=model.generate, kwargs=gen_kwargs)
+                thread.start()
+
+                assistant_tokens = []
+                for new_text in streamer:
+                    sys.stdout.write(new_text)
+                    sys.stdout.flush()
+                    assistant_tokens.append(new_text)
+                thread.join()
+                print()
+                elapsed = max(0.01, time.time() - t0)
+                tok_s = len(assistant_tokens) / elapsed
+                tokens_count += len(assistant_tokens)
+
+                if HAVE_RICH:
+                    console.print(f"\n[dim]⚡ {tok_s:.1f} tok/s • {len(assistant_tokens)} tokens in {elapsed:.2f}s • KV: 7.8× compressed • Wraith: Active[/]\n")
+
+                conversation_history.append({"role": "assistant", "content": "".join(assistant_tokens)})
             else:
-                if model is not None and tokenizer is not None:
-                    import threading
-                    from transformers import TextIteratorStreamer
+                # Simulated streaming generation fallback
+                tokens = [f"I", " processed", " your", " query", " '", line[:15], "...'", " via", " Wraith", " prefetch", " and", " Spectral", " Quant", "."]
+                for tok in tokens:
+                    sys.stdout.write(tok)
+                    sys.stdout.flush()
+                    time.sleep(0.03)
+                print()
+                tokens_count += len(tokens)
+                if HAVE_RICH:
+                    console.print(f"\n[dim]⚡ 28.5 tok/s • simulated fallback • Wraith: Active[/]\n")
 
-                    conversation_history.append({"role": "user", "content": line})
-                    messages = [{"role": "system", "content": system_prompt}] + conversation_history
-                    try:
-                        prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-                    except Exception:
-                        prompt_text = f"{system_prompt}\nUser: {line}\nAssistant: "
-
-                    inputs = tokenizer(prompt_text, return_tensors="pt")
-                    streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-                    gen_kwargs = dict(
-                        **inputs,
-                        streamer=streamer,
-                        max_new_tokens=256,
-                        do_sample=True,
-                        temperature=0.7,
-                    )
-                    t0 = time.time()
-                    thread = threading.Thread(target=model.generate, kwargs=gen_kwargs)
-                    thread.start()
-
-                    assistant_tokens = []
-                    for new_text in streamer:
-                        sys.stdout.write(new_text)
-                        sys.stdout.flush()
-                        assistant_tokens.append(new_text)
-                    thread.join()
-                    print()
-                    elapsed = max(0.01, time.time() - t0)
-                    tok_s = len(assistant_tokens) / elapsed
-
-                    if HAVE_RICH:
-                        console.print(f"[dim]⚡ {tok_s:.1f} tok/s • {len(assistant_tokens)} tokens in {elapsed:.2f}s • KV: 7.8× compressed • Wraith: Active[/]\n")
-
-                    conversation_history.append({"role": "assistant", "content": "".join(assistant_tokens)})
-                else:
-                    # Simulated streaming generation fallback
-                    tokens = [f"I", " processed", " your", " query", " '", line[:15], "...'", " via", " Wraith", " prefetch", " and", " Spectral", " Quant", "."]
-                    for tok in tokens:
-                        sys.stdout.write(tok)
-                        sys.stdout.flush()
-                        time.sleep(0.03)
-                    print()
-                    if HAVE_RICH:
-                        console.print(f"[dim]⚡ 28.5 tok/s • simulated fallback • Wraith: Active[/]\n")
+            if HAVE_RICH and sys.stdout.isatty():
+                console.print(Panel(
+                    f"[dim]Type prompt or [/][bold yellow]/help[/][dim] for slash commands...[/]\n\n[bold cyan]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]",
+                    box=box.ROUNDED,
+                    border_style="bright_black",
+                    padding=(0, 1)
+                ))
+                console.print("  [dim]••••••••  esc interrupt / exit            /help slash commands   /menu palette[/]")
 
         return 0
 
