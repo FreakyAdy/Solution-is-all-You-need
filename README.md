@@ -65,6 +65,45 @@ curl -fsSL https://phantom-core.org/install.sh | bash
 
 ## Quickstart
 
+### 0. OpenCode Interactive Terminal Launcher
+Launch PHANTOM without arguments to enter the OpenCode-inspired interactive console:
+```bash
+phantom
+```
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ ⚡ PHANTOM RUNTIME v1.0.0 — Universal Hardware-Transcendent LLM Engine      │
+│ Device: NVIDIA GeForce RTX 4050 Laptop GPU (6.0 GB VRAM) • 23.8 GB RAM      │
+│ Innovations: +10.1× Ceiling Lift Active • Wraith Prefetch • Neural Cache    │
+└─────────────────────────────────────────────────────────────────────────────┘
+                            📦 Local Model Library                             
+┌───┬─────────────┬──────┬───────┬─────────┬─────────┬────────────────────────┐
+│ # │ Model ID    │ Size │ Quant │ Context │ Status  │ Quick Action           │
+├───┼─────────────┼──────┼───────┼─────────┼─────────┼────────────────────────┤
+│ 1 │ smollm-135m │ 0 MB │ BF16  │   4K    │ ● Ready │ phantom run smollm-135m│
+└───┴─────────────┴──────┴───────┴─────────┴─────────┴────────────────────────┘
+
+              🚀 Quick Action Palette (All Project Capabilities)               
+┌──────────────────────────────────────┬──────────────────────────────────────┐
+│ [1]  Interactive Chat / REPL         │ [8]   Plan Zero-Memory Allocation    │
+│ (phantom run <model>)                │ (phantom plan <model>)               │
+│ [2]  Pull Model from Registry        │ [9]   System Hardware Doctor         │
+│ (phantom pull <repo>)                │ (phantom doctor)                     │
+│ [3]  Inspect Model Details           │ [10]  Run Innovation Benchmarks      │
+│ (phantom show <model>)               │ (phantom benchmark)                  │
+│ [4]  Search Community Index          │ [11]  Start Headless API Daemon      │
+│ (phantom search <query>)             │ (phantom serve)                      │
+│ [5]  Create Persona (Phantomfile)    │ [12]  Show Engine & Memory Status    │
+│ (phantom create -f file)             │ (phantom status)                     │
+│ [6]  Remove Model from Library       │ [13]  Convert GGUF to .phantomw      │
+│ (phantom rm <model>)                 │ (phantom convert)                    │
+│ [7]  List All Installed Models       │ [14]  Update Community Index         │
+│ (phantom list)                       │ (phantom update)                     │
+│                                      │ [q]   Exit PHANTOM                   │
+└──────────────────────────────────────┴──────────────────────────────────────┘
+```
+> **Tip:** At the `phantom ❯` prompt, you can enter any option number `1`–`14`, a model name directly, or full CLI commands (e.g. `plan llama3:70b`, `doctor`, `search deepseek`).
+
 ### 1. Check your hardware
 ```bash
 phantom doctor
