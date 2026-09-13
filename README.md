@@ -87,10 +87,11 @@ The TUI is keyboard-first:
 
 | Input | Action |
 |---|---|
+| `/` + typing | Live slash-command menu, narrows as you type |
 | `!command` | Run a shell command inside the session |
 | `@file` | Attach a file reference (pickers) |
 | `/command` | Slash commands (see below) |
-| `tab` | Cycle agents / autocomplete a command |
+| `tab` / `↑` `↓` | Cycle slash menu / agents / autocomplete a command |
 | `ctrl+p` | Command palette |
 | `ctrl+x` | Leader key (c·compact e·editor m·models n·new l·sessions t·themes u·undo r·redo x·export s·status a·agents b·sidebar h·help q·exit) |
 | `ctrl+t` | Cycle model variants (reasoning effort) |

@@ -593,6 +593,8 @@ class PhantomTUI:
         self.sidebar_visible = True
         self.variant_idx = 0
         self.scroll_offset = 0
+        self.slash_idx = 0
+        self.slash_token = ""
         self.agents = self._load_agents()
         self.agent_idx = self._agent_index(agent)
         self.cursor_visible = True
@@ -831,14 +833,18 @@ class PhantomTUI:
 
         canvas = root["canvas"]
         prompt_h = self._prompt_height()
-        canvas.split_column(
-            Layout(name="messages", ratio=1),
-            Layout(name="prompt_area", size=prompt_h),
-        )
+        parts: List[Layout] = [Layout(name="messages", ratio=1)]
+        matches = self._slash_matches() if not self.dialog and not self.generating else []
+        if matches:
+            parts.append(Layout(name="slash_menu", size=min(len(matches), 7) + 4))
+        parts.append(Layout(name="prompt_area", size=prompt_h))
+        canvas.split_column(*parts)
         if self.dialog:
             canvas["messages"].update(Align.center(self._render_dialog_panel(), vertical="middle"))
         else:
             canvas["messages"].update(self._render_messages())
+        if matches:
+            canvas["slash_menu"].update(self._render_slash_menu())
         canvas["prompt_area"].update(self._render_prompt_card())
         return root
 
@@ -1462,6 +1468,7 @@ class PhantomTUI:
         if key.type == Key.K_CHAR:
             self.buffer.insert(key.data)
             self.history_idx = -1
+            self._clamp_slash_idx()
             if key.data == "@":
                 self._maybe_open_file_picker()
             self.refresh()
@@ -1473,25 +1480,41 @@ class PhantomTUI:
             return False
         if key.type == Key.K_BACKSPACE:
             self.buffer.backspace()
+            self._clamp_slash_idx()
             return not key.data
         if key.type == Key.K_ENTER:
             self._submit(self.buffer.text)
             self.buffer.set_text("")
             self.history_idx = -1
+            self.slash_idx = 0
             return True
         if key.type == Key.K_TAB:
+            if self._slash_active():
+                cur = self.buffer.text[1:]
+                matches = self._slash_matches()
+                if self.slash_idx < len(matches) and matches[self.slash_idx].name == cur:
+                    self._slash_cycle(1)
+                else:
+                    self.slash_idx = 0
+                    self.buffer.set_text("/" + matches[0].name)
+                    self.buffer.end()
+                return True
             self._on_tab()
             return True
         if key.type == Key.K_ARROW:
             if key.data == "up":
-                if not self.buffer.text:
+                if self._slash_active():
+                    self._slash_cycle(-1)
+                elif not self.buffer.text:
                     self._scroll_messages(-1)
                 elif self.buffer.pos == 0 or "\n" not in self.buffer.text[:self.buffer.pos]:
                     self._history_prev()
                 else:
                     self.buffer.pos = self._visual_up(self.buffer.pos)
             elif key.data == "down":
-                if not self.buffer.text:
+                if self._slash_active():
+                    self._slash_cycle(1)
+                elif not self.buffer.text:
                     self._scroll_messages(1)
                 elif self.buffer.pos == len(self.buffer.text) or "\n" not in self.buffer.text[self.buffer.pos:]:
                     self._history_next()
@@ -1649,6 +1672,83 @@ class PhantomTUI:
             return
         self.agent_idx = (self.agent_idx + 1) % len(self.agents)
         self.refresh()
+
+    # ------------------------------------------------------------ slash menu
+    def _slash_matches(self, text: Optional[str] = None) -> List[Command]:
+        """Live slash-command menu: `/` + typed token → filtered opencode-style list."""
+        if text is not None:
+            if not text.startswith("/") or " " in text:
+                return []
+            token = text[1:]
+        else:
+            tb = self.buffer.text
+            # menu only while composing a bare `/cmd` (no args typed yet)
+            if not tb.startswith("/") or " " in tb:
+                return []
+            # navigation keeps the candidate pool of the current filter token
+            token = self.slash_token if tb != "/" else ""
+        if not token:
+            return list(COMMANDS)
+        return [
+            c for c in COMMANDS
+            if c.name.startswith(token) or any(a.startswith(token) for a in c.aliases)
+        ]
+
+    def _slash_active(self) -> bool:
+        return self.buffer.text.startswith("/") and " " not in self.buffer.text and bool(self._slash_matches())
+
+    def _clamp_slash_idx(self) -> None:
+        text = self.buffer.text
+        if text.startswith("/") and " " not in text:
+            self.slash_token = text[1:]
+        else:
+            self.slash_token = ""
+        matches = self._slash_matches()
+        if not matches:
+            self.slash_idx = 0
+        elif self.slash_idx >= len(matches) or self.slash_idx < 0:
+            self.slash_idx = 0
+
+    def _slash_cycle(self, delta: int) -> None:
+        matches = self._slash_matches()
+        if not matches:
+            return
+        self.slash_idx = (self.slash_idx + delta) % len(matches)
+        self.buffer.set_text("/" + matches[self.slash_idx].name)
+        self.buffer.end()
+
+    def _render_slash_menu(self) -> Panel:
+        matches = self._slash_matches() or list(COMMANDS)
+        shown = min(len(matches), 7)
+        start = max(0, min(self.slash_idx - 3, len(matches) - shown))
+        body = Text()
+        for j in range(shown):
+            i = start + j
+            c = matches[i]
+            if i == self.slash_idx:
+                body.append("  ▸ ", style=f"bold #{self.theme['accent']}")
+                body.append(f"/{c.name}", style=f"bold #{self.theme['accent']}")
+            else:
+                body.append("    ", style="dim")
+                body.append(f"/{c.name}", style="white")
+            body.append("  ", style="dim")
+            body.append(c.desc, style=f"dim #{self.theme['dim']}")
+            body.append("\n")
+        header = Text()
+        header.append("  Slash Commands ", style=f"bold #{self.theme['accent']}")
+        header.append(f"`/{self.buffer.text[1:]}`", style=f"dim #{self.theme['dim']}")
+        if len(matches) > shown:
+            header.append(f"  {len(matches)} matches", style="dim")
+        footer = Text.from_markup(
+            f"  [dim]tab / ↑↓ cycle · enter run · ctrl+p full palette[/]"
+        )
+        return Panel(
+            Group(header, body, footer),
+            box=box.ROUNDED,
+            border_style=f"bold #{self.theme['accent']}",
+            style=f"on #{self.theme['bg']}",
+            width=min(72, (console.width or 80) - 8),
+        )
 
     def _open_files_dialog(self) -> None:
         files = self._list_files()
@@ -1981,6 +2081,13 @@ class PhantomTUI:
         token, _, rest = text.partition(" ")
         cmd = COMMAND_MAP.get(token.lstrip("/"))
         if not cmd:
+            # `/x` with no exact command → run the highlighted slash-menu match
+            matches = self._slash_matches(text)
+            if matches:
+                selected = matches[self.slash_idx % len(matches)]
+                suffix = " " + rest if rest.strip() else ""
+                self._run_command_text("/" + selected.name + suffix)
+                return
             # Unknown slash command → pass through to the model like opencode
             self._service_turn(text)
             return
