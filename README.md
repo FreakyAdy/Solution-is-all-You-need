@@ -56,7 +56,7 @@ pip install torch==2.10.0+cu126 --index-url https://download.pytorch.org/whl/cu1
 
 > Pick the CUDA wheel matching your Python version at [pytorch.org/get-started/locally](https://pytorch.org/get-started/locally). Verify it took effect with `phantom doctor` — you should see `PyTorch CUDA Runtime: Active`.
 
-No GPU, or CPU-only PyTorch? No problem. PHANTOM just runs on CPU (SIMD engine). Models load with `device_map="auto"`, so on a GPU the layers spread across VRAM → RAM → NVMe as one memory tier; without one, everything stays in RAM/CPU.
+No GPU, or CPU-only PyTorch? No problem. PHANTOM just runs on CPU (SIMD engine). Models load with `device_map="auto"`, so on a GPU the layers spread across VRAM → RAM → NVMe as one memory tier; without one, everything stays in RAM/CPU. GGUF dequantization during model conversion also runs on the GPU automatically when CUDA is available.
 
 ### 2. Install PHANTOM
 

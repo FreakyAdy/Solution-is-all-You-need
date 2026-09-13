@@ -313,6 +313,143 @@ class GGUFLoader:
 
         return self.dequantize_tensor(raw_bytes, tinfo.quant_type, tinfo.shape)
 
+    def _dequantize_gpu(
+        self, data: bytes, quant_type: GGUFQuantType, shape: Tuple[int, ...]
+    ) -> torch.Tensor:
+        """CUDA-accelerated dequantization mirroring the NumPy path formulas."""
+        n_elems = int(np.prod(shape))
+        dev = "cuda"
+
+        def _buf(b):
+            return torch.from_numpy(np.frombuffer(b, dtype=np.uint8).copy()).to(dev)
+
+        def _f16(x):
+            return x.contiguous().view(torch.float16).view(-1).float()
+
+        def _f32(x):
+            return x.contiguous().view(torch.float32).view(-1)
+
+        if quant_type == GGUFQuantType.BF16:
+            return _buf(data[: n_elems * 2]).view(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.F16:
+            return _buf(data[: n_elems * 2]).view(torch.float16).to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.F32:
+            return _buf(data[: n_elems * 4]).view(torch.float32).to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.Q4_0:
+            n_blocks = n_elems // 32
+            raw = _buf(data[: n_blocks * 18]).reshape(n_blocks, 18)
+            d = _f16(raw[:, :2]).unsqueeze(1)
+            qs = raw[:, 2:]
+            low = (qs & 0x0F).to(torch.int8) - 8
+            high = ((qs >> 4) & 0x0F).to(torch.int8) - 8
+            weights = torch.cat([low.float() * d, high.float() * d], dim=-1)
+            return weights.reshape(-1)[:n_elems].to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.Q4_1:
+            n_blocks = n_elems // 32
+            raw = _buf(data[: n_blocks * 20]).reshape(n_blocks, 20)
+            d = _f16(raw[:, :2]).unsqueeze(1)
+            m = _f16(raw[:, 2:4]).unsqueeze(1)
+            qs = raw[:, 4:]
+            low = (qs & 0x0F).float()
+            high = ((qs >> 4) & 0x0F).float()
+            weights = torch.cat([low * d + m, high * d + m], dim=-1)
+            return weights.reshape(-1)[:n_elems].to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.Q8_0:
+            n_blocks = n_elems // 32
+            raw = _buf(data[: n_blocks * 34]).reshape(n_blocks, 34)
+            d = _f16(raw[:, :2]).unsqueeze(1)
+            qs = raw[:, 2:].contiguous().view(torch.int8).float()
+            weights = qs * d
+            return weights.reshape(-1)[:n_elems].to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.Q8_1:
+            n_blocks = n_elems // 32
+            raw = _buf(data[: n_blocks * 40]).reshape(n_blocks, 40)
+            d = _f32(raw[:, :4]).unsqueeze(1)
+            s = _f32(raw[:, 4:8]).unsqueeze(1)
+            qs = raw[:, 8:].contiguous().view(torch.int8).float()
+            weights = qs * d + s
+            return weights.reshape(-1)[:n_elems].to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.Q5_0:
+            n_blocks = n_elems // 32
+            raw = _buf(data[: n_blocks * 22]).reshape(n_blocks, 22)
+            d = _f16(raw[:, :2]).unsqueeze(1)
+            qh = raw[:, 2:6].contiguous().view(torch.uint32).view(n_blocks).to(torch.int64)
+            qs = raw[:, 6:]
+            low_nib = (qs & 0x0F).to(torch.int8)
+            high_bit_low = ((qh.unsqueeze(1) >> torch.arange(16, device=dev)) & 1).to(torch.int8)
+            q_low = ((high_bit_low << 4) | low_nib) - 16
+            high_nib = ((qs >> 4) & 0x0F).to(torch.int8)
+            high_bit_high = ((qh.unsqueeze(1) >> torch.arange(16, 32, device=dev)) & 1).to(torch.int8)
+            q_high = ((high_bit_high << 4) | high_nib) - 16
+            weights = torch.cat([q_low.float() * d, q_high.float() * d], dim=-1)
+            return weights.reshape(-1)[:n_elems].to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.Q4_K:
+            n_blocks = n_elems // 256
+            raw = _buf(data[: n_blocks * 144]).reshape(n_blocks, 144)
+            d = _f16(raw[:, :2]).unsqueeze(1)
+            dmin = _f16(raw[:, 2:4]).unsqueeze(1)
+            scales_raw = raw[:, 4:16]
+            qs = raw[:, 16:144]
+            sc = torch.cat(
+                [
+                    (scales_raw[:, 0:4] & 0x3F).float(),
+                    ((scales_raw[:, 8:12] & 0x0F) | ((scales_raw[:, 0:4] >> 6) << 4)).float(),
+                ],
+                dim=-1,
+            )
+            m = torch.cat(
+                [
+                    (scales_raw[:, 4:8] & 0x3F).float(),
+                    (((scales_raw[:, 8:12] >> 4) & 0x0F) | ((scales_raw[:, 4:8] >> 6) << 4)).float(),
+                ],
+                dim=-1,
+            )
+            weights = torch.empty((n_blocks, 256), dtype=torch.float32, device=dev)
+            for sb in range(8):
+                sub = qs[:, sb * 16 : (sb + 1) * 16]
+                low = (sub & 0x0F).float()
+                high = ((sub >> 4) & 0x0F).float()
+                scale = (d * sc[:, sb : sb + 1])
+                offset = (dmin * m[:, sb : sb + 1])
+                weights[:, sb * 32 : sb * 32 + 16] = low * scale - offset
+                weights[:, sb * 32 + 16 : (sb + 1) * 32] = high * scale - offset
+            return weights.reshape(-1)[:n_elems].to(torch.bfloat16).reshape(shape).cpu()
+
+        if quant_type == GGUFQuantType.Q6_K:
+            n_blocks = n_elems // 256
+            raw = _buf(data[: n_blocks * 210]).reshape(n_blocks, 210)
+            ql = raw[:, 0:128]
+            qh = raw[:, 128:192]
+            scales = raw[:, 192:208].contiguous().view(torch.int8).float()
+            d = _f16(raw[:, 208:210]).unsqueeze(1)
+            weights = torch.empty((n_blocks, 256), dtype=torch.float32, device=dev)
+            for sb in range(16):
+                sub_ql = ql[:, sb * 8 : (sb + 1) * 8]
+                low_nib = (sub_ql & 0x0F).to(torch.int8)
+                high_nib = ((sub_ql >> 4) & 0x0F).to(torch.int8)
+                sub_qh = qh[:, sb * 4 : (sb + 1) * 4]
+                qh0 = (sub_qh & 0x03).to(torch.int8)
+                qh1 = ((sub_qh >> 2) & 0x03).to(torch.int8)
+                qh2 = ((sub_qh >> 4) & 0x03).to(torch.int8)
+                qh3 = ((sub_qh >> 6) & 0x03).to(torch.int8)
+                qh_expanded = torch.cat([qh0, qh1, qh2, qh3], dim=-1)
+                ql_expanded = torch.cat([low_nib, high_nib], dim=-1)
+                q = ((qh_expanded << 4) | ql_expanded).to(torch.int8) - 32
+                sc = d * scales[:, sb : sb + 1]
+                weights[:, sb * 16 : (sb + 1) * 16] = q.float() * sc
+            return weights.reshape(-1)[:n_elems].to(torch.bfloat16).reshape(shape).cpu()
+
+        logger.warning("unsupported_gguf_quant_fallback", quant_type=int(quant_type))
+        return torch.zeros(shape, dtype=torch.bfloat16).cpu()
+
     def iter_tensors(self) -> Iterator[Tuple[str, torch.Tensor]]:
         """Iterate over all tensors in file offset order to optimize I/O streaming."""
         sorted_tensors = sorted(self.meta.tensors.values(), key=lambda t: t.offset)
@@ -329,6 +466,9 @@ class GGUFLoader:
         n_elems = int(np.prod(shape))
         if n_elems == 0:
             return torch.empty(shape, dtype=torch.bfloat16)
+
+        if torch.cuda.is_available():
+            return self._dequantize_gpu(data, quant_type, shape)
 
         # 1. Uncompressed Float Types
         if quant_type == GGUFQuantType.BF16:
