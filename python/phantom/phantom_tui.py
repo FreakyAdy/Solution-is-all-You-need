@@ -592,6 +592,7 @@ class PhantomTUI:
         self.details_visible = False
         self.sidebar_visible = True
         self.variant_idx = 0
+        self.scroll_offset = 0
         self.agents = self._load_agents()
         self.agent_idx = self._agent_index(agent)
         self.cursor_visible = True
@@ -923,14 +924,21 @@ class PhantomTUI:
             return []
         term_h = console.height if (console and console.height) else 30
         max_avail = max(8, term_h - 10)
+        n = len(self.turns)
+        # scroll_offset = number of turns scrolled back from the latest
+        off = max(0, min(self.scroll_offset, n - 1))
+        end = n - off
         visible: List[Dict[str, Any]] = []
         total = 0
-        for turn in reversed(self.turns):
+        i = end
+        while i > 0:
+            turn = self.turns[i - 1]
             block = self._turn_height(turn)
             if visible and total + block > max_avail:
                 break
             visible.insert(0, turn)
             total += block
+            i -= 1
         return visible
 
     @staticmethod
@@ -1476,12 +1484,16 @@ class PhantomTUI:
             return True
         if key.type == Key.K_ARROW:
             if key.data == "up":
-                if self.buffer.pos == 0 or "\n" not in self.buffer.text[:self.buffer.pos]:
+                if not self.buffer.text:
+                    self._scroll_messages(-1)
+                elif self.buffer.pos == 0 or "\n" not in self.buffer.text[:self.buffer.pos]:
                     self._history_prev()
                 else:
                     self.buffer.pos = self._visual_up(self.buffer.pos)
             elif key.data == "down":
-                if self.buffer.pos == len(self.buffer.text) or "\n" not in self.buffer.text[self.buffer.pos:]:
+                if not self.buffer.text:
+                    self._scroll_messages(1)
+                elif self.buffer.pos == len(self.buffer.text) or "\n" not in self.buffer.text[self.buffer.pos:]:
                     self._history_next()
                 else:
                     self.buffer.pos = self._visual_down(self.buffer.pos)
@@ -1590,7 +1602,12 @@ class PhantomTUI:
         return sum(len(ln) for ln in lines[:y]) + x
 
     def _scroll_messages(self, delta: int) -> None:
-        pass  # messages auto-scroll to latest; reserved for future
+        if not self.turns:
+            return
+        limit = len(self.turns) - 1
+        # negative delta = scroll back (increase offset); positive delta = toward latest
+        self.scroll_offset = max(0, min(self.scroll_offset - delta, limit))
+        self.refresh()
 
     def _history_prev(self) -> None:
         if not self.history:
@@ -1880,6 +1897,7 @@ class PhantomTUI:
         self.tokens_count = 0
         self.undo_stack.clear()
         self.redo_stack.clear()
+        self.scroll_offset = 0
         self._push_turn("New session", f"Session {self.session_id} started. Let's go.", kind="notice")
         self.refresh()
 
@@ -1898,6 +1916,7 @@ class PhantomTUI:
         self.model_id = data.get("model", self.model_id)
         self.undo_stack.clear()
         self.redo_stack.clear()
+        self.scroll_offset = 0
         self.refresh()
 
     def _compact_session(self) -> None:
@@ -2407,6 +2426,7 @@ Add model personas with `Phantomfile` and pull weights with `phantom pull <model
     def _run_shell_turn(self, cmd: str) -> None:
         self.undo_stack.append(self._snapshot())
         self.redo_stack.clear()
+        self.scroll_offset = 0
         self._push_turn("!" + cmd, "", kind="chat")
         self.generating = True
         self.refresh()
@@ -2433,6 +2453,7 @@ Add model personas with `Phantomfile` and pull weights with `phantom pull <model
         self.redo_stack.clear()
         self.cancel_flag.clear()
         self.generating = True
+        self.scroll_offset = 0
         turn: Dict[str, Any] = {
             "prompt": text, "response": "", "kind": "chat",
             "thinking": None, "meta": "",
