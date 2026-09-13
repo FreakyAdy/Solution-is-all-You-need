@@ -1314,7 +1314,7 @@ class PhantomTUI:
                     prompt_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
                 except Exception:
                     prompt_text = f"{self.system_prompt}\nUser: {prompt}\nAssistant: "
-                inputs = self.tokenizer(prompt_text, return_tensors="pt")
+                inputs = self.tokenizer(prompt_text, return_tensors="pt").to(self.model.device)
                 streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
                 gen_kwargs = dict(
                     **inputs, streamer=streamer, max_new_tokens=256,
@@ -1329,7 +1329,11 @@ class PhantomTUI:
                 return "".join(parts)
             except Exception:
                 pass
-        sim = ["I", " processed", " your", " query", " via", " Wraith", " prefetch", " and", " Spectral", " Quant", "."]
+        sim = [
+            f"[Model '{self.model_id}' weights are not active in memory. ",
+            "To generate real responses, switch to an installed model that fits your system resources (e.g. /models -> smollm-135m) ",
+            "or run 'phantom run smollm-135m <prompt>'.]"
+        ]
         if any(w in prompt.lower() for w in ("who", "what", "phantom", "hardware", "vram")):
             sim = ["PHANTOM", " is", " a", " hardware-transcendent", " runtime", " engine", " enabling", " 70B",
                    " models", " to", " run", " across", " consumer", " GPUs", " via", " NVMe", " memory", " tiers", "."]
@@ -1344,7 +1348,7 @@ class PhantomTUI:
                     prompt_text = self.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
                 except Exception:
                     prompt_text = f"{self.system_prompt}\nUser: {prompt}\nAssistant: "
-                inputs = self.tokenizer(prompt_text, return_tensors="pt")
+                inputs = self.tokenizer(prompt_text, return_tensors="pt").to(self.model.device)
                 streamer = TextIteratorStreamer(self.tokenizer, skip_prompt=True, skip_special_tokens=True)
                 gen_kwargs = dict(
                     **inputs, streamer=streamer, max_new_tokens=256,
@@ -1376,7 +1380,11 @@ class PhantomTUI:
                 return
             except Exception:
                 pass
-        sim = ["I", " processed", " your", " query", " via", " Wraith", " prefetch", " and", " Spectral", " Quant", "."]
+        sim = [
+            f"[Model '{self.model_id}' weights are not active in memory. ",
+            "To generate real responses, switch to an installed model that fits your system resources (e.g. /models -> smollm-135m) ",
+            "or run 'phantom run smollm-135m <prompt>'.]"
+        ]
         if any(w in prompt.lower() for w in ("who", "what", "phantom", "hardware", "vram")):
             sim = ["PHANTOM", " is", " a", " hardware-transcendent", " runtime", " engine", " enabling", " 70B",
                    " models", " to", " run", " across", " consumer", " GPUs", " via", " NVMe", " memory", " tiers", "."]
@@ -2103,10 +2111,39 @@ class PhantomTUI:
             self._open_install_catalog()
             return
         self.model_id = mid
-        self.model_status = "● Ready (zero-copy mmap)"
+        gguf_path = self.cli._find_gguf_path(mid)
+        if gguf_path:
+            try:
+                import torch
+                from transformers import AutoModelForCausalLM, AutoTokenizer
+                from phantom.loader import patch_transformers_gguf_gpu
+                patch_transformers_gguf_gpu()
+                device = self.cli._torch_device()
+                load_kwargs = {"low_cpu_mem_usage": True}
+                if device == "cuda":
+                    load_kwargs["torch_dtype"] = torch.bfloat16
+                try:
+                    import accelerate  # noqa: F401
+                    load_kwargs["device_map"] = "auto"
+                except ImportError:
+                    pass
+                self.tokenizer = AutoTokenizer.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
+                self.model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name, **load_kwargs)
+                if "device_map" not in load_kwargs:
+                    self.model.to(device)
+                self.model_status = "● Ready (zero-copy mmap)"
+            except Exception:
+                self.model = None
+                self.tokenizer = None
+                self.model_status = "● Simulated (weights load failed)"
+        else:
+            self.model = None
+            self.tokenizer = None
+            self.model_status = "● Ready (simulated)"
+
         self.turns.append({
             "prompt": f"Switched to model {mid}",
-            "response": f"Now running {mid}.  Wraith prefetch re-armed · KV cache re-encoded.",
+            "response": f"Now running {mid}." if self.model else f"Selected {mid} (simulated - weights not loaded).",
             "meta": "Model hot-swap via Chronos Scheduler < 400 ms",
         })
         self._save_session()

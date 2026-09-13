@@ -661,8 +661,15 @@ class PhantomCLI:
             # mirroring `opencode` behaviour.  Optional -c/-s/-m/-a select the
             # session/model/agent to start with.
             installed = self.mgr.list(format="json")
-            default_model = (getattr(args, "model", None)
-                             or (installed[0].get("id", "smollm:135m") if installed else "smollm:135m"))
+            default_model = getattr(args, "model", None)
+            if not default_model:
+                smollm_candidates = [m.get("id", "") for m in installed if "smollm" in m.get("id", "").lower()]
+                if smollm_candidates:
+                    default_model = smollm_candidates[0]
+                elif installed:
+                    default_model = installed[-1].get("id", "smollm:135m")
+                else:
+                    default_model = "smollm:135m"
             return self._repl(
                 default_model,
                 session_id=getattr(args, "session", None),
@@ -1247,8 +1254,10 @@ class PhantomCLI:
                 if "device_map" not in load_kwargs:
                     model.to(device)
                 model_status = "\u25cf Ready (zero-copy mmap)"
-            except Exception:
-                model_status = "\u25cf Ready (simulated)"
+            except Exception as e:
+                model = None
+                tokenizer = None
+                model_status = "● Simulated (weights load failed)"
 
         from phantom.phantom_tui import PhantomTUI
 
