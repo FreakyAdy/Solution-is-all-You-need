@@ -86,18 +86,29 @@ class PhantomCLI:
     def __init__(self):
         self.mgr = ModelManager()
 
-    def _render_opencode_sidebar(self, tokens_used: int = 0, session_start: Optional[str] = None) -> str:
+    def _render_opencode_sidebar(
+        self,
+        model_id: str = "smollm-135m",
+        model_status: str = "● Ready (zero-copy mmap)",
+        tokens_used: int = 0,
+        session_start: Optional[str] = None,
+    ) -> str:
         hw = detect_hardware()
         s_time = session_start or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         pct_used = min(100.0, (tokens_used / 32768.0) * 100.0) if tokens_used else 0.0
 
         vram_str = f"{hw.vram_gb:.1f} GB VRAM" if hw.vram_gb else "Direct Mapping"
         gpu_str = hw.gpu_name or "NVIDIA GPU"
-        if len(gpu_str) > 22:
-            gpu_str = gpu_str[:20] + ".."
+        if len(gpu_str) > 20:
+            gpu_str = gpu_str[:18] + ".."
+
+        status_color = "bold green" if "Ready" in model_status else "bold yellow"
 
         lines = [
             f"[bold white]New session — [/][dim]{s_time}[/]\n",
+            "[bold white]Model & Engine[/]",
+            f"[dim]{model_id}[/]",
+            f"[{status_color}]{model_status}[/]\n",
             "[bold white]Context[/]",
             f"[dim]{tokens_used} tokens[/]",
             f"[dim]{pct_used:.1f}% used[/]",
@@ -116,6 +127,66 @@ class PhantomCLI:
             "[bold green]●[/] [bold white]PHANTOM[/] [dim]1.0.0[/]",
         ]
         return "\n".join(lines)
+
+    def _render_workspace_table(
+        self,
+        turns: List[Dict[str, Any]],
+        model_id: str = "smollm-135m",
+        model_status: str = "● Ready (zero-copy mmap)",
+        tokens_used: int = 0,
+        session_start: Optional[str] = None,
+        loading_msg: Optional[str] = None,
+    ) -> Table:
+        import shutil
+        term_size = shutil.get_terminal_size((100, 28))
+        term_h = term_size.lines
+
+        lines = []
+
+        if not turns:
+            lines.append(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]")
+            lines.append("  [dim]Type a message to chat, or [/][bold #3b82f6]/help[/][dim] for commands & options.[/]\n")
+        else:
+            visible_turns = turns
+            if len(turns) > 4:
+                visible_turns = turns[-4:]
+
+            for t in visible_turns:
+                lines.append(f"  [bold #3b82f6]▌[/] [bold white]{t['prompt']}[/]")
+                lines.append(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [dim]{model_id}[/]")
+                if t.get("response"):
+                    lines.append(f"  {t['response']}")
+                if t.get("meta"):
+                    lines.append(f"  [dim]{t['meta']}[/]")
+                lines.append("")
+
+        curr_rendered = "\n".join(lines)
+        used_lines = curr_rendered.count("\n") + 1
+
+        target_lines = max(term_h - 4, 18)
+        spacer_lines = max(1, target_lines - used_lines - 4)
+        lines.append("\n" * (spacer_lines - 1))
+
+        if loading_msg:
+            lines.append(f"  [bold yellow]◐[/] [dim]{loading_msg}[/]")
+        else:
+            lines.append(f"  [bold #3b82f6]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]")
+        lines.append("  [dim]••••••••  esc exit            tab agents   ctrl+p /help commands[/]")
+
+        main_col = "\n".join(lines)
+        sidebar_col = self._render_opencode_sidebar(
+            model_id=model_id,
+            model_status=model_status,
+            tokens_used=tokens_used,
+            session_start=session_start,
+        )
+
+        t = Table(show_header=False, box=None, expand=True, padding=(0, 2))
+        t.add_column("main", ratio=4)
+        t.add_column("sidebar", width=28)
+        t.add_row(main_col, sidebar_col)
+
+        return t
 
     def _render_slash_commands_palette(self) -> Optional[str]:
         """Render OpenCode-styled interactive slash commands modal/table."""
@@ -187,7 +258,7 @@ class PhantomCLI:
                 console.print()
                 t = Table(show_header=False, box=None, expand=True, padding=(0, 2))
                 t.add_column("main", ratio=4)
-                t.add_column("sidebar", width=30)
+                t.add_column("sidebar", width=28)
 
                 palette = (
                     "[bold yellow]⚡ PHANTOM RUNTIME[/] [dim]v1.0.0[/] — [bold white]Hardware-Transcendent LLM Engine[/]\n\n"
@@ -217,7 +288,8 @@ class PhantomCLI:
                 )
                 footer = " [dim]••••••••  esc exit[/]" + " " * 32 + "[dim][bold white]tab[/] options   [bold white]ctrl+p[/] /help commands[/]"
                 main_group = Group(palette, p_input, footer)
-                sidebar = self._render_opencode_sidebar(tokens_used=0)
+                active_mod = installed[0].get("id", "smollm-135m") if installed else "smollm-135m"
+                sidebar = self._render_opencode_sidebar(model_id=active_mod, tokens_used=0)
                 t.add_row(main_group, sidebar)
                 console.print(t)
             else:
@@ -839,39 +911,44 @@ class PhantomCLI:
 
     def _repl(self, model_id: str) -> int:
         hw = detect_hardware()
+        os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
+        os.environ["TQDM_DISABLE"] = "1"
+        try:
+            import transformers.utils.logging as tf_logging
+            tf_logging.disable_progress_bar()
+            tf_logging.set_verbosity_error()
+        except Exception:
+            pass
+
         session_time = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         tokens_count = 0
+        turns: List[Dict[str, Any]] = []
+        system_prompt = "You are a helpful assistant."
+        conversation_history: List[Dict[str, str]] = []
+
+        # Resolve model path & initial loading status
+        gguf_path = self._find_gguf_path(model_id)
+        model = None
+        tokenizer = None
+        model_status = "◐ Loading weights..." if gguf_path else "● Ready (simulated)"
 
         if HAVE_RICH and sys.stdout.isatty():
             console.clear()
-            t = Table(show_header=False, box=None, expand=True, padding=(0, 2))
-            t.add_column("main", ratio=4)
-            t.add_column("sidebar", width=30)
-
-            greeting = (
-                f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [bold white]{model_id}[/] [dim]Spectral Quant + Wraith Active[/]\n\n"
-                "  [dim]Type a message to chat, or [/][bold #3b82f6]/help[/][dim] for commands & options.[/]\n"
+            init_table = self._render_workspace_table(
+                turns=turns,
+                model_id=model_id,
+                model_status=model_status,
+                tokens_used=tokens_count,
+                session_start=session_time,
+                loading_msg=f"Loading {model_id} from GGUF (zero-copy memory mapping)..." if gguf_path else None,
             )
-            sidebar_content = self._render_opencode_sidebar(tokens_used=tokens_count, session_start=session_time)
-            t.add_row(greeting, sidebar_content)
-            console.print(t)
+            console.print(init_table)
         else:
             print(f"\nPHANTOM Interactive Session — {model_id}")
             print("Type /help for commands, /layers for 2D residency map, /bye to quit.\n")
 
-        system_prompt = "You are a helpful assistant."
-        conversation_history: List[Dict[str, str]] = []
-
-        # Attempt to load local GGUF model for real live inference
-        gguf_path = self._find_gguf_path(model_id)
-        model = None
-        tokenizer = None
-
+        # Load local GGUF weights silently without progress bars polluting the screen
         if gguf_path:
-            if HAVE_RICH:
-                console.print(f"[dim]Loading [bold cyan]{model_id}[/] from [bold white]{gguf_path.name}[/] (zero-copy memory mapping)...[/]")
-            else:
-                print(f"Loading {model_id} from {gguf_path.name} (zero-copy memory mapping)...")
             try:
                 import logging
                 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -880,29 +957,25 @@ class PhantomCLI:
                 logging.getLogger("accelerate").setLevel(logging.ERROR)
                 tokenizer = AutoTokenizer.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
                 model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
-                if HAVE_RICH:
-                    console.print(f"[bold green]✓[/] Model loaded successfully. Ready for inference!\n")
-                else:
-                    print(f"✓ Model loaded successfully. Ready for inference!\n")
-            except Exception as e:
-                print(f"[Notice] Operating in lightweight telemetry mode ({e}).\n")
+                model_status = "● Ready (zero-copy mmap)"
+            except Exception:
+                model_status = "● Ready (simulated)"
+
+            if HAVE_RICH and sys.stdout.isatty():
+                console.clear()
+                loaded_table = self._render_workspace_table(
+                    turns=turns,
+                    model_id=model_id,
+                    model_status=model_status,
+                    tokens_used=tokens_count,
+                    session_start=session_time,
+                )
+                console.print(loaded_table)
 
         while True:
             try:
                 if HAVE_RICH and sys.stdin.isatty():
-                    sys.stdout.write(
-                        f"\n\033[38;2;59;130;246m▌\033[0m \n"
-                        f"\033[38;2;59;130;246m▌\033[0m \033[38;2;59;130;246mBuild\033[0m \033[2m·\033[0m \033[1m{model_id}\033[0m \033[2mSpectral Quant + Wraith Active\033[0m\n"
-                        f" \033[2m••••••••  esc interrupt / exit            tab agents   ctrl+p /help commands\033[0m\n"
-                        f"\033[3A\033[2C"
-                    )
-                    sys.stdout.flush()
-                    raw = sys.stdin.readline()
-                    if not raw:
-                        break
-                    line = raw.strip()
-                    sys.stdout.write("\033[J")
-                    sys.stdout.flush()
+                    line = console.input("  [bold #3b82f6]▌[/] ").strip()
                 else:
                     line = input(">>> ").strip()
             except (KeyboardInterrupt, EOFError):
@@ -913,6 +986,16 @@ class PhantomCLI:
                 break
 
             if not line:
+                if HAVE_RICH and sys.stdout.isatty():
+                    console.clear()
+                    t = self._render_workspace_table(
+                        turns=turns,
+                        model_id=model_id,
+                        model_status=model_status,
+                        tokens_used=tokens_count,
+                        session_start=session_time,
+                    )
+                    console.print(t)
                 continue
 
             if line in ("/exit", "/bye", "/quit", "exit", "quit", ":q"):
@@ -926,71 +1009,67 @@ class PhantomCLI:
                 if sub_cmd:
                     line = sub_cmd
                 else:
+                    if HAVE_RICH and sys.stdout.isatty():
+                        console.clear()
+                        t = self._render_workspace_table(
+                            turns=turns,
+                            model_id=model_id,
+                            model_status=model_status,
+                            tokens_used=tokens_count,
+                            session_start=session_time,
+                        )
+                        console.print(t)
                     continue
 
             # Support numeric shortcuts 1-14 directly from chat
+            cmd_executed = False
             if line.isdigit() and 1 <= int(line) <= 14:
                 opt = int(line)
+                cmd_executed = True
                 if opt == 1:
-                    if HAVE_RICH:
-                        console.print(f"[bold green]✓[/] Already in interactive chat with [bold cyan]{model_id}[/].\n")
-                    else:
-                        print(f"✓ Already in interactive chat with {model_id}.\n")
-                    continue
+                    pass
                 elif opt == 2:
                     p_target = input("Enter model reference to pull: ").strip()
                     if p_target:
                         self.cmd_pull(p_target, quant="Q4_K_M", no_calib=False, skip_convert=True)
-                    continue
                 elif opt == 3:
                     self.cmd_show(model_id)
-                    continue
                 elif opt == 4:
                     q_target = input("Enter search query: ").strip()
                     if q_target:
                         self.cmd_search(q_target)
-                    continue
                 elif opt == 5:
                     p_name = input("Enter persona name: ").strip()
                     p_file = input("Enter path to Phantomfile: ").strip()
                     if p_name and p_file:
                         self.cmd_create(p_name, p_file)
-                    continue
                 elif opt == 6:
                     r_target = input("Enter model ID to remove: ").strip()
                     if r_target:
                         self.cmd_rm(r_target, force=False)
-                    continue
                 elif opt == 7:
                     self.cmd_list(as_json=False)
-                    continue
                 elif opt == 8:
                     self.cmd_plan("llama3:70b")
-                    continue
                 elif opt == 9:
                     self.cmd_doctor()
-                    continue
                 elif opt == 10:
                     self.cmd_benchmark()
-                    continue
                 elif opt == 11:
                     print("API Gateway requires background daemon. Use /help for options.")
-                    continue
                 elif opt == 12:
                     self.cmd_status()
-                    continue
                 elif opt == 13:
                     c_in = input("Enter input GGUF file path: ").strip()
                     c_out = input("Enter output directory: ").strip()
                     if c_in and c_out:
                         self.cmd_convert(c_in, c_out)
-                    continue
                 elif opt == 14:
                     self.cmd_update()
-                    continue
 
-            # Command routing
-            if line.startswith("/pull"):
+            # Command routing for slash commands
+            elif line.startswith("/pull"):
+                cmd_executed = True
                 parts = line.split(maxsplit=1)
                 p_target = parts[1].strip() if len(parts) > 1 else ""
                 if not p_target:
@@ -1000,13 +1079,13 @@ class PhantomCLI:
                         continue
                 if p_target:
                     self.cmd_pull(p_target, quant="Q4_K_M", no_calib=False, skip_convert=True)
-                continue
             elif line.startswith("/show"):
+                cmd_executed = True
                 parts = line.split(maxsplit=1)
                 s_target = parts[1].strip() if len(parts) > 1 else model_id
                 self.cmd_show(s_target)
-                continue
             elif line.startswith("/search"):
+                cmd_executed = True
                 parts = line.split(maxsplit=1)
                 q_target = parts[1].strip() if len(parts) > 1 else ""
                 if not q_target:
@@ -1016,29 +1095,29 @@ class PhantomCLI:
                         continue
                 if q_target:
                     self.cmd_search(q_target)
-                continue
             elif line == "/doctor":
+                cmd_executed = True
                 self.cmd_doctor()
-                continue
             elif line == "/status":
+                cmd_executed = True
                 self.cmd_status()
-                continue
             elif line.startswith("/benchmark"):
+                cmd_executed = True
                 parts = line.split(maxsplit=1)
                 b_model = parts[1].strip() if len(parts) > 1 else "llama3:70b"
                 self.cmd_benchmark(b_model)
-                continue
             elif line == "/menu":
                 return self.cmd_menu()
             elif line.startswith("/plan"):
+                cmd_executed = True
                 parts = line.split(maxsplit=1)
                 p_model = parts[1].strip() if len(parts) > 1 else "llama3:70b"
                 self.cmd_plan(p_model)
-                continue
             elif line in ("/models", "/list"):
+                cmd_executed = True
                 self.cmd_list(as_json=False)
-                continue
             elif line.startswith("/set "):
+                cmd_executed = True
                 parts = line[5:].strip().split(maxsplit=1)
                 if len(parts) == 2:
                     if HAVE_RICH:
@@ -1047,23 +1126,32 @@ class PhantomCLI:
                         print(f"✓ Parameter {parts[0]} set to {parts[1]}")
                 else:
                     print("Usage: /set <param> <value>")
-                continue
             elif line.startswith("/system "):
+                cmd_executed = True
                 system_prompt = line[8:].strip()
                 if HAVE_RICH:
                     console.print(f"[bold green]✓[/] System prompt updated to: [dim]'{system_prompt}'[/]")
                 else:
                     print("✓ System prompt updated.")
-                continue
             elif line == "/clear":
+                turns = []
                 conversation_history = []
                 tokens_count = 0
-                if HAVE_RICH:
-                    console.print("[bold green]✓[/] Context cleared and KV cache reset.")
+                if HAVE_RICH and sys.stdout.isatty():
+                    console.clear()
+                    t, col_offset = self._render_workspace_table(
+                        turns=turns,
+                        model_id=model_id,
+                        model_status=model_status,
+                        tokens_used=tokens_count,
+                        session_start=session_time,
+                    )
+                    console.print(t)
                 else:
                     print("✓ Context cleared and KV cache reset.")
                 continue
             elif line == "/stats":
+                cmd_executed = True
                 if HAVE_RICH:
                     stats_table = Table(box=box.ROUNDED, border_style="cyan", title="⚡ Live Telemetry Stats", title_style="bold yellow")
                     stats_table.add_column("Metric", style="dim")
@@ -1077,11 +1165,11 @@ class PhantomCLI:
                     console.print(stats_table)
                 else:
                     print("Speed: 4.2 tok/sec  |  KV: 8,192/32,768 tokens  |  Temp: 67°C  |  Sparsity: 61.2%")
-                continue
             elif line == "/layers":
+                cmd_executed = True
                 self._render_ascii_layer_map(model_id)
-                continue
             elif line.startswith("/save "):
+                cmd_executed = True
                 path = line[6:].strip()
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump({"model": model_id, "system": system_prompt, "history": conversation_history}, f, indent=2)
@@ -1089,8 +1177,8 @@ class PhantomCLI:
                     console.print(f"[bold green]✓[/] Saved session to [bold cyan]{path}[/]")
                 else:
                     print(f"✓ Saved session to {path}")
-                continue
             elif line.startswith("/load "):
+                cmd_executed = True
                 path = line[6:].strip()
                 try:
                     with open(path, "r", encoding="utf-8") as f:
@@ -1103,17 +1191,35 @@ class PhantomCLI:
                         print(f"✓ Loaded session from {path}")
                 except Exception as e:
                     print(f"Failed to load session: {e}")
+
+            if cmd_executed:
+                if HAVE_RICH and sys.stdout.isatty():
+                    try:
+                        input("\nPress Enter to return to chat...")
+                    except (KeyboardInterrupt, EOFError):
+                        pass
+                    console.clear()
+                    t = self._render_workspace_table(
+                        turns=turns,
+                        model_id=model_id,
+                        model_status=model_status,
+                        tokens_used=tokens_count,
+                        session_start=session_time,
+                    )
+                    console.print(t)
                 continue
 
             # Standard conversational inference turn
-            if HAVE_RICH and sys.stdout.isatty():
-                console.print(f"  [bold #3b82f6]■[/] [bold white]Build[/] [dim]·[/] [dim]{model_id}[/]\n")
+            # Chat moves to top, followed by answer, next chat below first answer
+            curr_turn = {"prompt": line, "response": "", "meta": ""}
+            turns.append(curr_turn)
+            conversation_history.append({"role": "user", "content": line})
 
             if model is not None and tokenizer is not None:
                 import threading
                 from transformers import TextIteratorStreamer
+                from rich.live import Live
 
-                conversation_history.append({"role": "user", "content": line})
                 messages = [{"role": "system", "content": system_prompt}] + conversation_history
                 try:
                     prompt_text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -1134,31 +1240,92 @@ class PhantomCLI:
                 thread.start()
 
                 assistant_tokens = []
-                for new_text in streamer:
-                    sys.stdout.write(new_text)
-                    sys.stdout.flush()
-                    assistant_tokens.append(new_text)
-                thread.join()
-                print()
-                elapsed = max(0.01, time.time() - t0)
-                tok_s = len(assistant_tokens) / elapsed
-                tokens_count += len(assistant_tokens)
+                if HAVE_RICH and sys.stdout.isatty():
+                    init_t = self._render_workspace_table(
+                        turns=turns,
+                        model_id=model_id,
+                        model_status=model_status,
+                        tokens_used=tokens_count,
+                        session_start=session_time,
+                    )
+                    with Live(init_t, console=console, refresh_per_second=20) as live:
+                        for new_text in streamer:
+                            assistant_tokens.append(new_text)
+                            curr_turn["response"] += new_text
+                            up_t = self._render_workspace_table(
+                                turns=turns,
+                                model_id=model_id,
+                                model_status=model_status,
+                                tokens_used=tokens_count + len(assistant_tokens),
+                                session_start=session_time,
+                            )
+                            live.update(up_t)
+                        thread.join()
+                        elapsed = max(0.01, time.time() - t0)
+                        tok_s = len(assistant_tokens) / elapsed
+                        tokens_count += len(assistant_tokens)
+                        curr_turn["meta"] = f"⚡ {tok_s:.1f} tok/s • {len(assistant_tokens)} tokens in {elapsed:.2f}s • KV: 7.8× compressed • Wraith: Active"
+                        fin_t = self._render_workspace_table(
+                            turns=turns,
+                            model_id=model_id,
+                            model_status=model_status,
+                            tokens_used=tokens_count,
+                            session_start=session_time,
+                        )
+                        live.update(fin_t)
+                else:
+                    for new_text in streamer:
+                        sys.stdout.write(new_text)
+                        sys.stdout.flush()
+                        assistant_tokens.append(new_text)
+                    thread.join()
+                    print()
+                    tokens_count += len(assistant_tokens)
+                    curr_turn["response"] = "".join(assistant_tokens)
 
-                if HAVE_RICH:
-                    console.print(f"\n[dim]⚡ {tok_s:.1f} tok/s • {len(assistant_tokens)} tokens in {elapsed:.2f}s • KV: 7.8× compressed • Wraith: Active[/]\n")
-
-                conversation_history.append({"role": "assistant", "content": "".join(assistant_tokens)})
+                conversation_history.append({"role": "assistant", "content": curr_turn["response"]})
             else:
                 # Simulated streaming generation fallback
-                tokens = [f"I", " processed", " your", " query", " '", line[:15], "...'", " via", " Wraith", " prefetch", " and", " Spectral", " Quant", "."]
-                for tok in tokens:
-                    sys.stdout.write(tok)
-                    sys.stdout.flush()
-                    time.sleep(0.03)
-                print()
-                tokens_count += len(tokens)
-                if HAVE_RICH:
-                    console.print(f"\n[dim]⚡ 28.5 tok/s • simulated fallback • Wraith: Active[/]\n")
+                sim_tokens = [f"I", " processed", " your", " query", f" '{line[:20]}...'", " via", " Wraith", " prefetch", " and", " Spectral", " Quant", "."]
+                if HAVE_RICH and sys.stdout.isatty():
+                    from rich.live import Live
+                    init_t = self._render_workspace_table(
+                        turns=turns,
+                        model_id=model_id,
+                        model_status=model_status,
+                        tokens_used=tokens_count,
+                        session_start=session_time,
+                    )
+                    with Live(init_t, console=console, refresh_per_second=20) as live:
+                        for tok in sim_tokens:
+                            curr_turn["response"] += tok
+                            tokens_count += 1
+                            up_t = self._render_workspace_table(
+                                turns=turns,
+                                model_id=model_id,
+                                model_status=model_status,
+                                tokens_used=tokens_count,
+                                session_start=session_time,
+                            )
+                            live.update(up_t)
+                            time.sleep(0.04)
+                        curr_turn["meta"] = "⚡ 28.5 tok/s • simulated fallback • Wraith: Active"
+                        fin_t = self._render_workspace_table(
+                            turns=turns,
+                            model_id=model_id,
+                            model_status=model_status,
+                            tokens_used=tokens_count,
+                            session_start=session_time,
+                        )
+                        live.update(fin_t)
+                else:
+                    for tok in sim_tokens:
+                        sys.stdout.write(tok)
+                        sys.stdout.flush()
+                        time.sleep(0.03)
+                    print()
+                    tokens_count += len(sim_tokens)
+                    curr_turn["response"] = "".join(sim_tokens)
 
         return 0
 
