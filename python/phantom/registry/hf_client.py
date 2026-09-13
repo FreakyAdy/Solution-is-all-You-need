@@ -7,6 +7,7 @@ Discovers and locates GGUF model files from HuggingFace Hub repositories.
 from __future__ import annotations
 
 import json
+import os
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -33,10 +34,17 @@ class HFClient:
 
     API_BASE = "https://huggingface.co/api"
 
+    def _get_headers(self) -> Dict[str, str]:
+        headers = {"User-Agent": "phantom-runtime/1.0"}
+        token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        if token:
+            headers["Authorization"] = f"Bearer {token}"
+        return headers
+
     def list_gguf_files(self, repo_id: str) -> List[HFModelFile]:
         """List all .gguf files in a repository with direct download URLs."""
         url = f"{self.API_BASE}/models/{repo_id}"
-        req = urllib.request.Request(url, headers={"User-Agent": "phantom-cli/1.0"})
+        req = urllib.request.Request(url, headers=self._get_headers())
 
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
@@ -72,7 +80,7 @@ class HFClient:
         """Search HuggingFace for GGUF models."""
         encoded = urllib.parse.quote(f"{query} gguf")
         url = f"{self.API_BASE}/models?search={encoded}&limit={limit}&full=false"
-        req = urllib.request.Request(url, headers={"User-Agent": "phantom-cli/1.0"})
+        req = urllib.request.Request(url, headers=self._get_headers())
 
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:

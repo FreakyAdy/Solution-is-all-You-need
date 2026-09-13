@@ -11,10 +11,10 @@
       "size_gb": 0.09,
       "sources": {
         "Q4_K_M": {
-          "repo": "HuggingFaceTB/SmolLM-135M-Instruct-GGUF",
-          "filename": "smollm-135m-instruct-q4_k_m.gguf",
-          "url": "https://huggingface.co/HuggingFaceTB/SmolLM-135M-Instruct-GGUF/resolve/main/smollm-135m-instruct-q4_k_m.gguf",
-          "size_bytes": 94000000
+          "repo": "unsloth/SmolLM2-135M-Instruct-GGUF",
+          "filename": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+          "url": "https://huggingface.co/unsloth/SmolLM2-135M-Instruct-GGUF/resolve/main/SmolLM2-135M-Instruct-Q4_K_M.gguf",
+          "size_bytes": 105454144
         }
       },
       "community_profiles": [

@@ -11,6 +11,7 @@ import hashlib
 import os
 import sys
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Callable, Optional
@@ -44,7 +45,14 @@ class ResumableDownloader:
         if part_path.exists():
             downloaded_bytes = part_path.stat().st_size
 
-        req = urllib.request.Request(url)
+        headers = {
+            "User-Agent": "phantom-runtime/1.0",
+        }
+        hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+        if hf_token and ("huggingface.co" in url or "hf.co" in url):
+            headers["Authorization"] = f"Bearer {hf_token}"
+
+        req = urllib.request.Request(url, headers=headers)
         if downloaded_bytes > 0:
             req.add_header("Range", f"bytes={downloaded_bytes}-")
 
@@ -89,6 +97,25 @@ class ResumableDownloader:
                         if progress_cb:
                             progress_cb(downloaded_bytes, total_bytes, speed, eta)
 
+        except urllib.error.HTTPError as e:
+            logger.error("download_failed", error=str(e), url=url, status_code=e.code)
+            if e.code == 401:
+                raise RuntimeError(
+                    f"HTTP Error 401: Unauthorized for {url}\n"
+                    "Hugging Face returned 401 Unauthorized. This typically occurs when:\n"
+                    "  1. The model repository is private or gated (e.g. Meta-Llama, Gemma) and requires access approval.\n"
+                    "  2. To access gated models, set your Hugging Face Access Token:\n"
+                    "     Windows (PowerShell):  $env:HF_TOKEN = \"hf_your_token_here\"\n"
+                    "     Linux / macOS:         export HF_TOKEN=\"hf_your_token_here\"\n"
+                    "     Generate token:        https://huggingface.co/settings/tokens\n"
+                    "  3. If not gated, verify that the repository and file name exist on Hugging Face."
+                ) from e
+            elif e.code == 404:
+                raise RuntimeError(
+                    f"HTTP Error 404: Model file not found at {url}\n"
+                    "Please verify that the model repository and filename exist on Hugging Face."
+                ) from e
+            raise
         except Exception as e:
             logger.error("download_failed", error=str(e), url=url)
             raise
