@@ -1087,7 +1087,8 @@ class PhantomCLI:
 
                 inputs = tokenizer(prompt_text, return_tensors="pt")
                 streamer = TextIteratorStreamer(tokenizer, skip_prompt=True, skip_special_tokens=True)
-                gen_kwargs = dict(**inputs, streamer=streamer, max_new_tokens=256, do_sample=True, temperature=0.7)
+                gen_kwargs = dict(**inputs, streamer=streamer, max_new_tokens=256, do_sample=True, temperature=0.7,
+                          repetition_penalty=1.1, no_repeat_ngram_size=4)
                 thread = threading.Thread(target=model.generate, kwargs=gen_kwargs)
                 thread.start()
 

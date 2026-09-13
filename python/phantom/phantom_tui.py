@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import os
+import queue
 import shlex
 import shutil
 import subprocess
@@ -1239,6 +1240,7 @@ class PhantomTUI:
                 gen_kwargs = dict(
                     **inputs, streamer=streamer, max_new_tokens=256,
                     do_sample=True, temperature=self._variant_temp(), top_p=self._variant_top_p(),
+                    repetition_penalty=1.1, no_repeat_ngram_size=4,
                 )
                 thread = threading.Thread(target=self.model.generate, kwargs=gen_kwargs, daemon=True)
                 thread.start()
@@ -1268,12 +1270,29 @@ class PhantomTUI:
                 gen_kwargs = dict(
                     **inputs, streamer=streamer, max_new_tokens=256,
                     do_sample=True, temperature=self._variant_temp(), top_p=self._variant_top_p(),
+                    repetition_penalty=1.1, no_repeat_ngram_size=4,
                 )
                 thread = threading.Thread(target=self.model.generate, kwargs=gen_kwargs, daemon=True)
                 thread.start()
-                for new_text in streamer:
+                q = streamer.text_queue
+                stop = streamer.stop_signal
+                full: List[str] = []
+                truncated = False
+                while True:
+                    try:
+                        new_text = q.get(timeout=120.0)
+                    except queue.Empty:
+                        break  # generate thread stalled/crashed — bail out instead of hanging
+                    if new_text is stop:
+                        break
                     if self.cancel_flag.is_set():
                         break
+                    full.append(new_text)
+                    if truncated:
+                        continue
+                    if self._repetition_loop("".join(full)):
+                        truncated = True
+                        continue
                     on_token(new_text)
                 return
             except Exception:
@@ -1287,6 +1306,23 @@ class PhantomTUI:
                 return
             time.sleep(0.04)
             on_token(tok)
+
+    @staticmethod
+    def _repetition_loop(text: str) -> bool:
+        """True when >=80 trailing chars are one unit repeated back-to-back (degeneration)."""
+        n = len(text)
+        if n < 80:
+            return False
+        for unit_len in range(4, 41):
+            unit = text[-unit_len:]
+            count = 0
+            i = n
+            while i >= unit_len and text[i - unit_len:i] == unit:
+                count += 1
+                i -= unit_len
+            if count * unit_len >= 80:
+                return True
+        return False
 
     # ------------------------------------------------------------ shell & files
     def _run_shell(self, cmd: str) -> Tuple[str, float, int]:
