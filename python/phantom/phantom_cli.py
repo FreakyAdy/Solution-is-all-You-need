@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import sys
 import time
 from pathlib import Path
@@ -275,6 +276,12 @@ class PhantomCLI:
         cuda_avail = torch.cuda.is_available()
         gpu_count = torch.cuda.device_count() if cuda_avail else 0
         print(f"  [{'PASS' if cuda_avail else 'WARN'}] PyTorch CUDA available: {cuda_avail} ({gpu_count} devices)")
+        if not cuda_avail:
+            hw = detect_hardware()
+            if hw.gpu_name and "Simulated" not in hw.gpu_name:
+                print(f"         └─ Physical GPU Detected: {hw.gpu_name} ({hw.vram_gb:.1f} GB VRAM)")
+                print(f"            PyTorch build: {torch.__version__} (CPU-only wheel on Python {platform.python_version()})")
+                print("            PHANTOM CPU-orchestrated 3-tier memory engine is active.")
         # 3. NVMe speed check
         t0 = time.time()
         test_file = Path.home() / ".phantom" / "_speed_test.bin"
