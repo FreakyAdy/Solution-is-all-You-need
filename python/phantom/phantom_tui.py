@@ -75,14 +75,14 @@ PHANTOM_HOME = Path.home() / ".phantom"
 # ─────────────────────────────────────────────────────────────────────────────
 
 THEMES: Dict[str, Dict[str, str]] = {
-    "phantom": dict(bg="#18181b", accent="#3b82f6", ok="#10b981", warn="#f59e0b", err="#ef4444", dim="#71717a"),
-    "opencode": dict(bg="#151516", accent="#8ab4f8", ok="#70c7ba", warn="#e5c07b", err="#ee5396", dim="#6b6f79"),
-    "dracula": dict(bg="#282a36", accent="#bd93f9", ok="#50fa7b", warn="#f1fa8c", err="#ff5555", dim="#6272a4"),
-    "tokyonight": dict(bg="#1a1b26", accent="#7aa2f7", ok="#9ece6a", warn="#e0af68", err="#f7768e", dim="#565f89"),
-    "gruvbox": dict(bg="#282828", accent="#d79921", ok="#b8bb26", warn="#fabd2f", err="#fb4934", dim="#928374"),
-    "nord": dict(bg="#2e3440", accent="#88c0d0", ok="#a3be8c", warn="#ebcb8b", err="#bf616a", dim="#4c566a"),
-    "monokai": dict(bg="#272822", accent="#66d9ef", ok="#a6e22e", warn="#e6db74", err="#f92672", dim="#75715e"),
-    "solarized": dict(bg="#002b36", accent="#268bd2", ok="#859900", warn="#b58900", err="#dc322f", dim="#586e75"),
+    "phantom": dict(bg="18181b", accent="3b82f6", ok="10b981", warn="f59e0b", err="ef4444", dim="71717a"),
+    "opencode": dict(bg="151516", accent="8ab4f8", ok="70c7ba", warn="e5c07b", err="ee5396", dim="6b6f79"),
+    "dracula": dict(bg="282a36", accent="bd93f9", ok="50fa7b", warn="f1fa8c", err="ff5555", dim="6272a4"),
+    "tokyonight": dict(bg="1a1b26", accent="7aa2f7", ok="9ece6a", warn="e0af68", err="f7768e", dim="565f89"),
+    "gruvbox": dict(bg="282828", accent="d79921", ok="b8bb26", warn="fabd2f", err="fb4934", dim="928374"),
+    "nord": dict(bg="2e3440", accent="88c0d0", ok="a3be8c", warn="ebcb8b", err="bf616a", dim="4c566a"),
+    "monokai": dict(bg="272822", accent="66d9ef", ok="a6e22e", warn="e6db74", err="f92672", dim="75715e"),
+    "solarized": dict(bg="002b36", accent="268bd2", ok="859900", warn="b58900", err="dc322f", dim="586e75"),
 }
 
 VARIANT_NAMES = ("Balanced", "Precise", "Creative", "Focused")
@@ -802,8 +802,15 @@ class PhantomTUI:
         pass
 
     def refresh(self) -> None:
-        if self.live:
+        if not self.live:
+            return
+        try:
             self.live.update(self._build_layout(), refresh=True)
+        except Exception:
+            self.live.stop()
+            console.print("[bold red]PHANTOM TUI render error[/] — see traceback below.")
+            console.print_exception()
+            self.live = None
 
     def _build_layout(self) -> Layout:
         root = Layout()
