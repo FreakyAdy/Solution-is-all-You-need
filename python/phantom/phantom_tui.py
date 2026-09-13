@@ -1351,15 +1351,7 @@ class PhantomTUI:
                 return "".join(parts)
             except Exception:
                 pass
-        sim = [
-            f"[Model '{self.model_id}' weights are not active in memory. ",
-            "To generate real responses, switch to an installed model that fits your system resources (e.g. /models -> smollm-135m) ",
-            "or run 'phantom run smollm-135m <prompt>'.]"
-        ]
-        if any(w in prompt.lower() for w in ("who", "what", "phantom", "hardware", "vram")):
-            sim = ["PHANTOM", " is", " a", " hardware-transcendent", " runtime", " engine", " enabling", " 70B",
-                   " models", " to", " run", " across", " consumer", " GPUs", " via", " NVMe", " memory", " tiers", "."]
-        return "".join(sim)
+        return f"[Error: Model '{self.model_id}' weights are not active in memory or failed to load. Use /models to switch to an installed model or run 'phantom run <model> <prompt>'.]"
 
     def _generate_stream(self, prompt: str, on_token: Callable[[str], None]) -> None:
         if self.ollama_model:
@@ -1415,19 +1407,8 @@ class PhantomTUI:
                 return
             except Exception:
                 pass
-        sim = [
-            f"[Model '{self.model_id}' weights are not active in memory. ",
-            "To generate real responses, switch to an installed model that fits your system resources (e.g. /models -> smollm-135m) ",
-            "or run 'phantom run smollm-135m <prompt>'.]"
-        ]
-        if any(w in prompt.lower() for w in ("who", "what", "phantom", "hardware", "vram")):
-            sim = ["PHANTOM", " is", " a", " hardware-transcendent", " runtime", " engine", " enabling", " 70B",
-                   " models", " to", " run", " across", " consumer", " GPUs", " via", " NVMe", " memory", " tiers", "."]
-        for tok in sim:
-            if self.cancel_flag.is_set():
-                return
-            time.sleep(0.04)
-            on_token(tok)
+        msg = f"[Error: Model '{self.model_id}' weights are not active in memory or failed to load. Use /models to switch to an installed model or run 'phantom run <model> <prompt>'.]"
+        on_token(msg)
 
     @staticmethod
     def _repetition_loop(text: str) -> bool:
@@ -2881,7 +2862,7 @@ Add model personas with `Phantomfile` and pull weights with `phantom pull <model
             "thinking": None, "meta": "",
         }
         if self.thinking_visible:
-            turn["thinking"] = "reasoning block (simulated) — tokens are routed through the spectroscopy stage…"
+            turn["thinking"] = None
         self.turns.append(turn)
         self.conversation_history.append({"role": "user", "content": text})
 

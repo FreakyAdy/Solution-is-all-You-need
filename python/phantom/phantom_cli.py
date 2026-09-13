@@ -1255,17 +1255,9 @@ class PhantomCLI:
             except Exception:
                 pass
 
-        print(f"Generating response from {model_id}...")
-        if args.stream:
-            tokens = ["Hello", "!", " I", " am", " running", " on", " PHANTOM", " CORE", " with", " hardware", " transcendence", "."]
-            for tok in tokens:
-                sys.stdout.write(tok)
-                sys.stdout.flush()
-                time.sleep(0.04)
-            print()
-        else:
-            print(f"Hello! I am {model_id} running on PHANTOM CORE.")
-        return 0
+        print(f"\n✗ Error: Model '{model_id}' weights could not be loaded for local execution.")
+        print("  Please verify the model is installed with 'phantom list' or pulled via 'phantom pull'.\n")
+        return 1
 
     def _repl(
         self,

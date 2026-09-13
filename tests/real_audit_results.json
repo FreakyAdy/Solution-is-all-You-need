@@ -1,0 +1,74 @@
+[
+  {
+    "task_id": "TASK_1_ALGORITHMIC_DP",
+    "task_name": "0/1 Knapsack Space-Optimized Dynamic Programming",
+    "prompt": "Write a clean Python function `knapsack(weights, values, W)` using 1D space-optimized DP. What is the return value for weights=[10, 20, 30], values=[60, 100, 120], W=50? Give the final numeric answer clearly.",
+    "metrics": {
+      "token_count": 432,
+      "total_time_sec": 178.64,
+      "ttft_sec": 25.93,
+      "tok_per_sec": 2.83,
+      "vram_used_mb_avg": 4553.2,
+      "vram_used_mb_max": 4559.0,
+      "gpu_temp_c_avg": 60.2,
+      "gpu_util_pct_max": 24.0,
+      "system": {
+        "ram_used_gb": 22.4,
+        "ram_total_gb": 23.78,
+        "ram_percent": 94.2,
+        "cpu_percent": 18.5
+      }
+    },
+    "passed": true,
+    "details": "dp_keyword=True, max_formula=True, computed_target_220=True",
+    "answer_summary": "1D DP array initialized to W+1. Computed exact maximum value 220 for weights=[10, 20, 30], values=[60, 100, 120], W=50."
+  },
+  {
+    "task_id": "TASK_2_MATHEMATICAL_REASONING",
+    "task_name": "Harmonic Mean Trip Velocity Deduction",
+    "prompt": "A train travels 120 miles from City A to City B at 60 mph, and immediately returns along the same 120-mile route from City B to City A at 40 mph. What is the average speed for the entire round trip? Show your calculation and give the final exact number.",
+    "metrics": {
+      "token_count": 315,
+      "total_time_sec": 111.68,
+      "ttft_sec": 2.43,
+      "tok_per_sec": 2.88,
+      "vram_used_mb_avg": 4552.0,
+      "vram_used_mb_max": 4557.0,
+      "gpu_temp_c_avg": 63.8,
+      "gpu_util_pct_max": 18.0,
+      "system": {
+        "ram_used_gb": 22.43,
+        "ram_total_gb": 23.78,
+        "ram_percent": 94.3,
+        "cpu_percent": 15.2
+      }
+    },
+    "passed": true,
+    "details": "contains_correct_48_mph=True, avoids_arithmetic_mean_50=True",
+    "answer_summary": "Calculated total distance 240 miles, outward time 2h, return time 3h, total time 5h -> exact average speed 48 mph."
+  },
+  {
+    "task_id": "TASK_3_CODE_SYNTHESIS",
+    "task_name": "String In-Place Word Reversal with Multi-Space Normalization",
+    "prompt": "Write a concise Python function `reverse_words(s: str) -> str` that reverses the order of words in a string while compressing all consecutive spaces into a single space and removing leading/trailing spaces. Use standard python idiom.",
+    "metrics": {
+      "token_count": 172,
+      "total_time_sec": 60.73,
+      "ttft_sec": 2.27,
+      "tok_per_sec": 2.94,
+      "vram_used_mb_avg": 4549.5,
+      "vram_used_mb_max": 4551.0,
+      "gpu_temp_c_avg": 64.1,
+      "gpu_util_pct_max": 24.0,
+      "system": {
+        "ram_used_gb": 22.58,
+        "ram_total_gb": 23.78,
+        "ram_percent": 94.9,
+        "cpu_percent": 21.0
+      }
+    },
+    "passed": true,
+    "details": "split_used=True, join_used=True, reversed_used=True",
+    "answer_summary": "def reverse_words(s: str) -> str: return ' '.join(reversed(s.split())) with correct whitespace handling."
+  }
+]
