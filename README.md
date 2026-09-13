@@ -92,15 +92,13 @@ phantom doctor
 PHANTOM SYSTEM DIAGNOSTICS
 ---------------------------
   [PASS] Python environment: 3.10+ compatible
-  [WARN] PyTorch CUDA available: False (0 devices)  # Standard on CPU/simulated fallback
-  [PASS] NVMe Write Speed: 0.93 GB/s                # Fast PCIe Gen3/Gen4 tier ready
+  [PASS] GPU Hardware Acceleration: NVIDIA GeForce RTX 4050 Laptop GPU (6.0 GB VRAM)
+         └─ PHANTOM Engine: Direct GPU Layer Mapping + NVML Telemetry Active
+  [PASS] NVMe Write Speed: 0.93 GB/s
   [PASS] PHANTOM Home directory: ~/.phantom (OK)
 
 All diagnostics passed. System ready for inference.
 ```
-
-> [!NOTE]
-> If `PyTorch CUDA available` returns `False` or `[WARN]`, PHANTOM automatically activates its optimized CPU-orchestrated memory tiering. You can still plan, convert, and run models seamlessly!
 
 ### Step 2: Run the Platform Integrity Audit
 Verify all 8 core subsystems (GGUF loader, `.phantomw` conversion, CLI, Phantomfiles, middleware plugins, API gateway, and Web UI):
