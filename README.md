@@ -13,7 +13,7 @@ PHANTOM is a hardware-transcendent local LLM runtime that orchestrates VRAM, sys
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![Ollama API Compatible](https://img.shields.io/badge/Ollama%20API-drop--in-purple.svg)](docs/OLLAMA_MIGRATION.md)
 
-[Install](#install) · [Quickstart](#quickstart) · [How it works](#how-it-works) · [CLI reference](#cli-reference) · [Integrations](#integrations) · [Benchmarks](#benchmarks) · [FAQ](#faq)
+[Install](#install) · [Quickstart](#quickstart) · [Adding models](#adding-local--hugging-face-models) · [How it works](#how-it-works) · [CLI reference](#cli-reference) · [Integrations](#integrations) · [Benchmarks](#benchmarks) · [FAQ](#faq)
 
 </div>
 
@@ -161,35 +161,102 @@ Reads GPU junction temperature and throttle state via NVML. When the GPU is ther
 
 ---
 
-## Offline and air-gapped usage
+## Adding Local & Hugging Face Models
 
-PHANTOM has no telemetry and makes no network calls at inference time. All of these workflows run with the network cable unplugged.
+PHANTOM supports any standard `.gguf` model file. You can pull models directly from the Hugging Face Hub, load existing GGUFs downloaded in your browser, or import cached models from Ollama without re-downloading a single byte.
 
-**Run a local GGUF directly:**
+### 1. Where to Find GGUF Models on Hugging Face
+
+The primary source for GGUF weights is the [Hugging Face Model Hub](https://huggingface.co/models?search=gguf). Look for trusted quantization specialists who publish high-quality, verified GGUFs:
+
+* **[`bartowski`](https://huggingface.co/bartowski)** — Highest quality, comprehensive daily quantization of top frontier models with complete metadata. *(Recommended)*
+* **[`TheBloke`](https://huggingface.co/TheBloke)** — Classic, massive archive of thousands of open-source models.
+* **[`Qwen`](https://huggingface.co/Qwen)** — Official GGUFs directly from Alibaba Cloud for Qwen2.5 general and coder models.
+* **[`unsloth`](https://huggingface.co/unsloth)** — Fast, memory-optimized quants for LLaMA-3.3, DeepSeek-R1, and Mistral.
+
+#### Quantization Cheat Sheet (Which file to download?):
+* **`Q4_K_M` (Recommended)**: Optimal balance of speed, perplexity, and memory reduction. Best for running 70B models on 6 GB–8 GB GPUs.
+* **`Q5_K_M`**: Slightly higher fidelity; recommended if you have 32 GB+ system RAM.
+* **`Q8_0`**: Near-FP16 perfection; best for mathematical proofs and code generation on high-memory systems.
+* **`Q3_K_M`**: Extra compression for low-RAM setups (<16 GB system RAM).
+
+---
+
+### 2. Famous Model Examples & 1-Command Pulls
+
+You can pull any of these popular models directly by short alias or by exact Hugging Face repository ID:
+
+| Model Name | Parameters | Quant Size | Hugging Face Repository | 1-Line PHANTOM Pull Command |
+| :--- | :---: | :---: | :--- | :--- |
+| **Meta LLaMA 3.3 70B** | 70.6B | 41 GB | `bartowski/Llama-3.3-70B-Instruct-GGUF` | `phantom pull llama3:70b` |
+| **DeepSeek R1 Distill 70B** | 70.6B | 41 GB | `bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF` | `phantom pull bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF --quant Q4_K_M` |
+| **Qwen 2.5 72B Instruct** | 72.7B | 43 GB | `bartowski/Qwen2.5-72B-Instruct-GGUF` | `phantom pull qwen2:72b` |
+| **Qwen 2.5 Coder 32B** | 32.5B | 19 GB | `bartowski/Qwen2.5-Coder-32B-Instruct-GGUF` | `phantom pull bartowski/Qwen2.5-Coder-32B-Instruct-GGUF --quant Q4_K_M` |
+| **Mistral NeMo 12B** | 12.2B | 7.5 GB | `bartowski/Mistral-Nemo-Instruct-2407-GGUF` | `phantom pull mistral:22b` |
+| **Meta LLaMA 3.1 8B** | 8.0B | 4.9 GB | `bartowski/Meta-Llama-3.1-8B-Instruct-GGUF` | `phantom pull llama3:8b` |
+| **Phi 3.5 Mini (3.8B)** | 3.8B | 2.2 GB | `bartowski/Phi-3.5-mini-instruct-GGUF` | `phantom pull phi3:3.8b` |
+| **SmolLM2 135M (Fast Test)**| 0.135B | 90 MB | `HuggingFaceTB/SmolLM2-135M-Instruct-GGUF` | `phantom pull smollm:135m` |
+
+---
+
+### 3. Three Ways to Add & Run Models
+
+#### Method A: Direct 1-Command Pull via CLI
+PHANTOM downloads the `.gguf` from Hugging Face and automatically compiles it into native `.phantomw` format:
 ```bash
-phantom run /path/to/model.gguf --skip-convert
+# Pull flagship 70B reasoning model:
+phantom pull bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF --quant Q4_K_M
+
+# Pull flagship 32B coding model:
+phantom pull bartowski/Qwen2.5-Coder-32B-Instruct-GGUF --quant Q4_K_M
+
+# Run the model interactively:
+phantom run DeepSeek-R1-Distill-Llama-70B-Q4_K_M
 ```
 
-**Convert once, run forever:**
-```bash
-phantom convert /path/to/model.gguf --output ~/.phantom/models/my-model/
-phantom run my-model
-```
+#### Method B: Download Manually & Run Locally (Zero-Copy)
+If you prefer downloading via your browser, torrent, or the official `huggingface-cli`:
 
-**Reuse existing Ollama models (no re-download):**
+1. **Download via `huggingface-cli` (Fast multi-threaded downloader):**
+   ```bash
+   pip install -U huggingface_hub
+   huggingface-cli download bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf --local-dir ./models/
+   ```
+2. **Or download directly from your browser:**
+   - Go to any Hugging Face model repository (e.g. [bartowski/Llama-3.3-70B-Instruct-GGUF](https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF)).
+   - Click the **Files and versions** tab.
+   - Click the download icon next to `*Q4_K_M.gguf` (e.g. `Llama-3.3-70B-Instruct-Q4_K_M.gguf`).
+   - Save the file to `./models/` or any folder on your machine.
+3. **Run it immediately with zero-copy passthrough (No waiting for conversion):**
+   ```bash
+   phantom run ./models/DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf --skip-convert
+   ```
+4. **Or compile once to native `.phantomw` DCT FP8 format for maximum execution speed:**
+   ```bash
+   phantom convert ./models/DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf --output ~/.phantom/models/deepseek-70b/
+   phantom run deepseek-70b
+   ```
+
+#### Method C: Import Existing Ollama Models (Zero Download, Saves 40 GB)
+If you already have models downloaded in Ollama, PHANTOM can convert them directly from Ollama's local blob storage without consuming any internet bandwidth:
+
 ```bash
-# Linux / macOS
+# Linux / macOS:
 phantom convert ~/.ollama/models/blobs/sha256-<hash> --output ~/.phantom/models/llama3-70b/
 
-# Windows
+# Windows PowerShell:
 phantom convert $env:USERPROFILE\.ollama\models\blobs\sha256-<hash> --output $env:USERPROFILE\.phantom\models\llama3-70b\
 ```
 
-**Air-gapped bundle transfer:**
-1. Run `phantom convert` on any internet-connected machine.
-2. Copy `~/.phantom/models/<model-id>/` to a USB drive.
-3. Paste into `~/.phantom/models/<model-id>/` on the offline machine.
-4. `phantom run <model-id>` — no internet required.
+---
+
+### 4. 100% Offline & Air-Gapped Workflows
+
+PHANTOM has zero telemetry and never calls home during inference. For classified labs, air-gapped environments, or offshore rigs:
+1. Run `phantom convert` on an internet-connected computer.
+2. Copy the resulting `~/.phantom/models/<model-id>/` folder onto an encrypted USB drive.
+3. Paste the folder into `~/.phantom/models/<model-id>/` on your air-gapped PC.
+4. Run `phantom run <model-id>` with the network cable completely unplugged.
 
 ---
 
