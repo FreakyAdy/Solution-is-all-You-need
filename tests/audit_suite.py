@@ -11,8 +11,7 @@ Sections audited:
   S4: Phantomfile Parser, Validator & Modelfile Importer
   S5: Plugin System (RAG, Tool Router, Context Cache)
   S6: API Gateway, Bearer Auth, Rate Limiting & Ollama Endpoints
-  S7: Web Dashboard Components & Assets
-  S8: OSS Readiness, Documentation & Security
+  S7: OSS Readiness, Documentation & Security
 """
 
 from __future__ import annotations
@@ -243,47 +242,7 @@ def audit_section_6():
 
 
 def audit_section_7():
-    """SECTION 7 — Web Dashboard Components & Compiled Assets Verification"""
-    ui_dir = Path(__file__).parents[1] / "ui" / "web"
-
-    # 1. Source component checks
-    comp_dir = ui_dir / "src" / "components"
-    required_components = {
-        "CeilingLift.tsx": "export const CeilingLift",
-        "LayerMap.tsx": "export const LayerMap",
-        "PullProgress.tsx": "export const PullProgress",
-        "CompareOllama.tsx": "export const CompareOllama",
-    }
-    for comp, export_str in required_components.items():
-        p = comp_dir / comp
-        assert p.exists(), f"Missing required component {comp}"
-        content = p.read_text(encoding="utf-8")
-        assert export_str in content, f"Component {comp} missing export {export_str}"
-        assert len(content) > 500, f"Component {comp} is unexpectedly small ({len(content)} bytes)"
-
-    # 2. Main app & styling checks
-    app_tsx = (ui_dir / "src" / "App.tsx").read_text(encoding="utf-8")
-    assert "CeilingLift" in app_tsx or "Dashboard" in app_tsx
-    assert "CompareOllama" in app_tsx or "quickActions" in app_tsx or "Run 70B Model" in app_tsx
-
-    index_css = (ui_dir / "src" / "index.css").read_text(encoding="utf-8")
-    assert "--accent-amber" in index_css
-    assert "body" in index_css
-
-    # 3. Compiled distribution checks
-    dist_html = ui_dir / "dist" / "index.html"
-    assert dist_html.exists(), "Missing compiled UI in ui/web/dist/index.html"
-    html_content = dist_html.read_text(encoding="utf-8")
-    assert "<div id=\"root\">" in html_content or "<script" in html_content
-
-    dist_assets = list((ui_dir / "dist" / "assets").glob("*.js"))
-    assert len(dist_assets) > 0, "Missing compiled JS bundle in ui/web/dist/assets"
-
-    return True
-
-
-def audit_section_8():
-    """SECTION 8 — OSS Readiness & Documentation Integrity (No Stubs Allowed)"""
+    """SECTION 7 — OSS Readiness & Documentation Integrity (No Stubs Allowed)"""
     root = Path(__file__).parents[1]
 
     docs_to_verify = {
@@ -315,7 +274,7 @@ def audit_section_8():
 
 def main():
     print("=" * 70)
-    print("  PHANTOM PLATFORM AUDIT SUITE")
+    print("  PHANTOM PLATFORM AUDIT SUITE (CLI & RUNTIME)")
     print("=" * 70)
 
     sections = [
@@ -325,8 +284,7 @@ def main():
         ("S4 Phantomfile System & Validator", audit_section_4),
         ("S5 Plugin Middleware System", audit_section_5),
         ("S6 Hardened Gateway & Ollama Endpoints", audit_section_6),
-        ("S7 Web Dashboard & Components", audit_section_7),
-        ("S8 OSS Readiness & Documentation", audit_section_8),
+        ("S7 OSS Readiness & Documentation", audit_section_7),
     ]
 
     results = []

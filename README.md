@@ -47,7 +47,6 @@ Speed:     —             Speed:     ~3.5 tok/sec
 git clone https://github.com/FreakyAdy/phantom.git
 cd phantom
 pip install -e python/
-cd ui/web && npm install && npm run build && cd ../..
 ```
 
 ```powershell
@@ -55,7 +54,6 @@ cd ui/web && npm install && npm run build && cd ../..
 git clone https://github.com/FreakyAdy/phantom.git
 cd phantom
 pip install -e python/
-cd ui\web; npm install; npm run build; cd ..\..
 ```
 
 One-line installer (Linux/macOS):
@@ -111,14 +109,14 @@ Or run a local GGUF immediately without conversion:
 phantom run ./models/Meta-Llama-3-70B-Instruct-Q4_K_M.gguf --skip-convert
 ```
 
-### 4. Start the API server and Web Studio
+### 4. Start the Headless API Daemon
 ```bash
 phantom serve --port 11411
 ```
 
-- Web Studio:       `http://localhost:11411/ui`
 - OpenAI endpoint:  `http://localhost:11411/v1`
-- Ollama endpoint:  `http://localhost:11411`
+- Ollama endpoint:  `http://localhost:11411/api`
+- Daemon status:    `http://localhost:11411/`
 
 ---
 
@@ -275,7 +273,7 @@ phantom convert <file.gguf> -o <dir>    # convert local GGUF to .phantomw format
 
 ### Server
 ```bash
-phantom serve [--port 11411] [--token <secret>]   # start API gateway and Web Studio
+phantom serve [--port 11411] [--token <secret>]   # start headless API daemon (OpenAI & Ollama compatible)
 ```
 
 ### Diagnostics and benchmarks

@@ -24,8 +24,7 @@ from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 
 from phantom.api.ollama_compat import ollama_router
 from phantom.api.openai_compat import app as openai_app
@@ -87,12 +86,10 @@ async def gateway_security_and_logging(request: Request, call_next):
     if content_len and int(content_len) > 10 * 1024 * 1024:
         return JSONResponse({"error": "Payload Too Large (>10MB)"}, status_code=413)
 
-    # 2. Auth check (skip for health, metrics, UI, favicon, and tags)
+    # 2. Auth check (skip for daemon banner, health, metrics, hardware, and models)
     path = request.url.path
     is_public = (
-        path in ("/", "/favicon.ico", "/v1/health", "/v1/metrics", "/metrics", "/phantom/hardware", "/api/tags", "/v1/models")
-        or path.startswith("/ui")
-        or path.startswith("/assets")
+        path in ("/", "/api", "/favicon.ico", "/v1/health", "/v1/metrics", "/metrics", "/phantom/hardware", "/api/tags", "/v1/models")
     )
 
     if state.auth_token and not is_public:
@@ -292,139 +289,39 @@ async def websocket_metrics_stream(ws: WebSocket):
         pass
 
 
-dist_dir = Path(__file__).parents[3] / "ui" / "web" / "dist"
-assets_dir = dist_dir / "assets"
-if assets_dir.exists():
-    gateway_app.mount("/ui/assets", StaticFiles(directory=str(assets_dir)), name="ui_assets")
-    gateway_app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="root_assets")
-
-
 @gateway_app.get("/favicon.ico")
 async def favicon():
     return Response(status_code=204)
 
 
-@gateway_app.get("/", response_class=HTMLResponse)
-@gateway_app.get("/ui", response_class=HTMLResponse)
-@gateway_app.get("/ui/", response_class=HTMLResponse)
-async def web_dashboard_ui():
-    """Self-hosted modern glassmorphism dashboard."""
-    html_path = dist_dir / "index.html"
-    if html_path.exists():
-        with open(html_path, "r", encoding="utf-8") as f:
-            return f.read()
-
-    # Dynamic fallback UI rendering the live CeilingLift & LayerMap centerpiece
-    return HTMLResponse("""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>PHANTOM Control Panel</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
-      <style>
-        :root {
-          --bg: #0b0d13;
-          --panel: rgba(18, 22, 34, 0.75);
-          --border: rgba(255, 255, 255, 0.08);
-          --accent: #f59e0b;
-          --blue: #3b82f6;
-          --green: #10b981;
-          --text: #f3f4f6;
-        }
-        body {
-          margin: 0; background: var(--bg); color: var(--text);
-          font-family: 'Outfit', sans-serif; -webkit-font-smoothing: antialiased;
-        }
-        .header {
-          padding: 24px 36px; display: flex; justify-content: space-between; align-items: center;
-          border-bottom: 1px solid var(--border); backdrop-filter: blur(12px);
-        }
-        .logo { font-size: 24px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
-        .container { max-width: 1300px; margin: 0 auto; padding: 32px 24px; }
-        .hero {
-          background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
-          padding: 28px; margin-bottom: 32px; backdrop-filter: blur(16px);
-        }
-        .hero-title { font-size: 20px; font-weight: 600; margin-bottom: 16px; color: var(--accent); }
-        .lift-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
-        .lift-box { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 20px; border: 1px solid var(--border); }
-        .grid-layers {
-          display: grid; grid-template-columns: repeat(16, 1fr); gap: 6px;
-          margin-top: 16px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
-        }
-        .cell {
-          aspect-ratio: 1; border-radius: 4px; display: flex; align-items: center; justify-content: center;
-          transition: all 0.2s; cursor: pointer;
-        }
-        .vram { background: #d97706; color: #fff; box-shadow: 0 0 8px rgba(217,119,6,0.4); }
-        .ram { background: #2563eb; color: #fff; }
-        .nvme { background: #1e293b; color: #94a3b8; }
-        .active { background: #10b981 !important; box-shadow: 0 0 12px #10b981; }
-        .metrics-bar { display: flex; gap: 24px; margin-top: 24px; font-family: 'JetBrains Mono', monospace; }
-        .tag { padding: 4px 10px; border-radius: 6px; background: rgba(255,255,255,0.06); font-size: 13px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <div class="logo">⚡ PHANTOM RUNTIME</div>
-        <div class="tag" style="color: #10b981;">● ONLINE (Port 11411)</div>
-      </div>
-      <div class="container">
-        <div class="hero">
-          <div class="hero-title">HARDWARE CEILING LIFT — YOUR HARDWARE SUPERCHARGED</div>
-          <div class="lift-grid">
-            <div class="lift-box">
-              <div style="color: #ef4444; font-weight: 600;">WITHOUT PHANTOM</div>
-              <div style="font-size: 32px; font-weight: 700; margin: 12px 0;">7B Model Max</div>
-              <div style="color: #94a3b8; font-size: 14px;">RTX 4050 6GB native hardware ceiling. Out of memory on 70B.</div>
-            </div>
-            <div class="lift-box" style="border-color: rgba(245, 158, 11, 0.4);">
-              <div style="color: var(--accent); font-weight: 600;">WITH PHANTOM CORE (7 INNOVATIONS)</div>
-              <div style="font-size: 32px; font-weight: 700; margin: 12px 0; color: #10b981;">70B+ Capable (+10.1× Lift)</div>
-              <div style="color: #94a3b8; font-size: 14px;">Running llama3:70b across VRAM (6GB) + RAM (24GB) + NVMe with Wraith prefetch.</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="hero">
-          <div class="hero-title">2D LAYER RESIDENCY HEATMAP (80 LAYERS)</div>
-          <div style="display: flex; gap: 16px; font-size: 13px; margin-bottom: 12px;">
-            <span><span style="color:#d97706;">■</span> VRAM (Hot)</span>
-            <span><span style="color:#2563eb;">■</span> RAM (Warm)</span>
-            <span><span style="color:#64748b;">■</span> NVMe (Cold)</span>
-            <span><span style="color:#10b981;">■</span> Executing</span>
-          </div>
-          <div class="grid-layers" id="layerGrid"></div>
-          <div class="metrics-bar">
-            <div class="tag">Speed: <span id="tokSpeed">4.2</span> tok/sec</div>
-            <div class="tag">Wraith Accuracy: 87.5%</div>
-            <div class="tag">KV Compression: 7.8× (Neural Cache)</div>
-            <div class="tag">Sparsity: 61.2% Routed</div>
-            <div class="tag">Thermal: Nominal (67°C)</div>
-          </div>
-        </div>
-      </div>
-
-      <script>
-        const grid = document.getElementById('layerGrid');
-        for (let i = 0; i < 80; i++) {
-          const div = document.createElement('div');
-          div.className = 'cell ' + (i < 18 ? 'vram' : (i < 55 ? 'ram' : 'nvme'));
-          div.innerText = i.toString().padStart(2, '0');
-          grid.appendChild(div);
-        }
-        let activeIdx = 0;
-        setInterval(() => {
-          document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
-          activeIdx = (activeIdx + 1) % 80;
-          if (grid.children[activeIdx]) grid.children[activeIdx].classList.add('active');
-        }, 200);
-      </script>
-    </body>
-    </html>
-    """)
+@gateway_app.get("/")
+@gateway_app.get("/api")
+async def daemon_status():
+    """Headless daemon status and API endpoint registry."""
+    return {
+        "service": "PHANTOM Platform",
+        "tagline": "Universal Hardware-Transcendent LLM Inference Engine",
+        "version": "1.0.0",
+        "status": "online",
+        "mode": "headless-daemon",
+        "endpoints": {
+            "openai_chat": "/v1/chat/completions",
+            "openai_models": "/v1/models",
+            "ollama_generate": "/api/generate",
+            "ollama_chat": "/api/chat",
+            "ollama_tags": "/api/tags",
+            "telemetry_metrics": "/v1/metrics",
+            "telemetry_stream": "/phantom/metrics/stream",
+            "hardware": "/phantom/hardware",
+            "health": "/v1/health",
+        },
+        "compatible_frontends": [
+            "Open WebUI (set OLLAMA_BASE_URL=http://localhost:11411)",
+            "Continue.dev (provider: ollama, apiBase: http://localhost:11411)",
+            "Cursor / Cline (OpenAI compatible: http://localhost:11411/v1)",
+            "LibreChat",
+        ],
+    }
 
 
 def start_gateway(host: str = "127.0.0.1", port: int = 11411, auth_token: Optional[str] = None):
