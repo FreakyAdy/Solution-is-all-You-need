@@ -55,6 +55,7 @@ class PhantomConverter:
         compression_ratio: float = 0.5,
         calibrate: bool = True,
         progress_cb: Optional[Callable[[str, float, str], None]] = None,
+        force: bool = False,
     ):
         self.input_path = Path(input_path)
         self.output_dir = Path(output_dir)
@@ -62,6 +63,8 @@ class PhantomConverter:
         self.compression_ratio = compression_ratio
         self.calibrate = calibrate
         self.progress_cb = progress_cb
+        self.force = force
+        self.skipped = False
 
     def _report_progress(self, stage: str, pct: float, detail: str) -> None:
         if self.progress_cb:
@@ -75,6 +78,41 @@ class PhantomConverter:
             chunk = f.read(max_bytes)
             hasher.update(chunk)
         return hasher.hexdigest()
+
+    def _conversion_complete(self) -> bool:
+        """True when this exact GGUF has already been fully converted here."""
+        manifest_file = self.output_dir / "manifest.json"
+        sentinel = self.output_dir / ".phantom-converted"
+        if not manifest_file.exists() or not sentinel.exists():
+            return False
+        try:
+            with open(manifest_file, "r") as f:
+                manifest = json.load(f)
+        except Exception:
+            return False
+        try:
+            return manifest.get("source_sha256") == self._compute_sha256()
+        except Exception:
+            return False
+
+    def _spectral_requantize(self, t: torch.Tensor, k_coeffs: int) -> bytes:
+        """DCT-II + top-K + FP8 quantize on GPU (CUDA) when available."""
+        tf = t.detach().float().cuda()
+        n = tf.shape[-1]
+        x_ext = torch.cat([tf, tf.flip(-1)], dim=-1)
+        k_idx = torch.arange(n, device=tf.device)
+        coeffs = torch.fft.rfft(x_ext, dim=-1)[..., :n] * torch.exp(
+            -1j * torch.pi * k_idx / (2 * n)
+        )
+        coeffs = coeffs.real
+        coeffs[..., 0] /= float(np.sqrt(4 * n))
+        coeffs[..., 1:] /= float(np.sqrt(2 * n))
+        dct_mat = coeffs[..., :k_coeffs]
+        max_val = dct_mat.abs().max().item() or 1.0
+        fp8 = torch.clamp(torch.round((dct_mat / max_val) * 127.0) + 128, 0, 255).to(
+            torch.uint8
+        )
+        return fp8.cpu().numpy().tobytes()
 
     def convert(self) -> Path:
         """Executes full conversion pipeline and returns model directory."""
@@ -91,6 +129,14 @@ class PhantomConverter:
 
         if not self.input_path.exists():
             raise FileNotFoundError(f"Input model file '{self.input_path}' does not exist.")
+
+        if not self.force and self._conversion_complete():
+            self.skipped = True
+            self._report_progress(
+                "skipped", 100.0, f"Already converted for this GGUF — skipping (use --force to rebuild)"
+            )
+            logger.info("conversion_skipped", output=str(self.output_dir))
+            return self.output_dir
 
         fmt = detect_format(self.input_path)
         if fmt != ModelFormat.GGUF:
@@ -151,18 +197,24 @@ class PhantomConverter:
                 if self.spectral_quant and is_mlp and t.dim() == 2:
                     rows, cols = t.shape
                     k_coeffs = max(16, int(cols * self.compression_ratio))
-                    
-                    # Apply DCT along columns
-                    np_t = t.float().cpu().numpy()
-                    if HAVE_SCIPY:
-                        dct_mat = dct(np_t, type=2, norm="ortho", axis=1)[:, :k_coeffs]
-                    else:
-                        dct_mat = np_t[:, :k_coeffs]
 
-                    # Quantize coefficients to FP8 representation (e4m3 scale-normalized)
-                    max_val = np.abs(dct_mat).max() or 1.0
-                    fp8_scaled = np.clip(np.round((dct_mat / max_val) * 127.0) + 128, 0, 255).astype(np.uint8)
-                    writer.add_tensor(tname, t, k_coeffs=k_coeffs, fp8_coeffs=fp8_scaled.tobytes())
+                    if torch.cuda.is_available():
+                        fp8_coeffs = self._spectral_requantize(t, k_coeffs)
+                        writer.add_tensor(
+                            tname, t, k_coeffs=k_coeffs, fp8_coeffs=fp8_coeffs
+                        )
+                    else:
+                        # Apply DCT along columns
+                        np_t = t.float().cpu().numpy()
+                        if HAVE_SCIPY:
+                            dct_mat = dct(np_t, type=2, norm="ortho", axis=1)[:, :k_coeffs]
+                        else:
+                            dct_mat = np_t[:, :k_coeffs]
+
+                        # Quantize coefficients to FP8 representation (e4m3 scale-normalized)
+                        max_val = np.abs(dct_mat).max() or 1.0
+                        fp8_scaled = np.clip(np.round((dct_mat / max_val) * 127.0) + 128, 0, 255).astype(np.uint8)
+                        writer.add_tensor(tname, t, k_coeffs=k_coeffs, fp8_coeffs=fp8_scaled.tobytes())
                 else:
                     writer.add_tensor(tname, t, k_coeffs=0)
 
@@ -243,6 +295,10 @@ timestamp = "{time.strftime('%Y-%m-%dT%H:%M:%SZ')}"
         with open(profile_dir / "calibration.phantom", "w") as f:
             json.dump(calib_data, f, indent=2)
 
+        # Completion sentinel gates idempotent re-runs on this exact GGUF
+        with open(self.output_dir / ".phantom-converted", "w") as f:
+            f.write("ok\n")
+
         self._report_progress("completed", 100.0, f"Successfully created {self.output_dir.name}")
         logger.info("conversion_finished", output=str(self.output_dir), elapsed_sec=round(time.time() - t0, 2))
         return self.output_dir
@@ -254,6 +310,7 @@ def main():
     parser.add_argument("--output", "-o", required=True, help="Output destination directory")
     parser.add_argument("--no-spectral", action="store_true", help="Disable spectral quantization")
     parser.add_argument("--ratio", type=float, default=0.5, help="Spectral compression ratio (default 0.5)")
+    parser.add_argument("--force", action="store_true", help="Rebuild even if already converted for this GGUF")
     args = parser.parse_args()
 
     converter = PhantomConverter(
@@ -261,6 +318,7 @@ def main():
         output_dir=args.output,
         spectral_quant=not args.no_spectral,
         compression_ratio=args.ratio,
+        force=args.force,
     )
     converter.convert()
 

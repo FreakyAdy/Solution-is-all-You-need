@@ -252,6 +252,26 @@ class ModelManager:
                 else:
                     raise ValueError(f"Could not resolve model reference: {model_ref}")
 
+        # Reuse an existing passthrough install pointing at this exact GGUF instead
+        # of starting a fresh (often multi-hour) conversion of the same file.
+        if not skip_convert and local_gguf is not None:
+            target = local_gguf.resolve()
+            for cand in sorted(self.models_dir.iterdir()):
+                manifest_file = cand / "manifest.json"
+                if not manifest_file.is_file():
+                    continue
+                try:
+                    with open(manifest_file, "r") as f:
+                        man = json.load(f)
+                except Exception:
+                    continue
+                if (
+                    man.get("mode") == "passthrough"
+                    and Path(man.get("gguf_path", "")).resolve() == target
+                ):
+                    logger.info("reusing_passthrough_install", path=str(cand), model=model_ref)
+                    return cand
+
         # 2. Download if needed
         if source_url and not local_gguf.exists():
             if progress_cb:

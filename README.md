@@ -38,7 +38,27 @@ Speed:     —             Speed:     ~3.5 tok/sec
 
 ## Install
 
-**Requirements:** Python 3.10+, NVIDIA GPU (Pascal or newer), CUDA 12.x
+**Requirements:** Python 3.10+, NVIDIA GPU (Pascal or newer) + CUDA 12.x for GPU acceleration. GPU-accelerated PyTorch is required to use your GPU; a CPU-only PyTorch build still works — PHANTOM automatically falls back to CPU.
+
+### 1. Install PyTorch with GPU (CUDA) support — recommended
+
+PHANTOM auto-detects your hardware: it runs on the GPU whenever a CUDA-enabled PyTorch is present, and transparently falls back to CPU otherwise. The default `pip install torch` is CPU-only on Windows/macOS, so on NVIDIA GPUs install the CUDA build **before** PHANTOM:
+
+```bash
+# Linux / WSL2
+pip install torch --index-url https://download.pytorch.org/whl/cu126
+```
+
+```powershell
+# Windows PowerShell (Python 3.14 example)
+pip install torch==2.10.0+cu126 --index-url https://download.pytorch.org/whl/cu126
+```
+
+> Pick the CUDA wheel matching your Python version at [pytorch.org/get-started/locally](https://pytorch.org/get-started/locally). Verify it took effect with `phantom doctor` — you should see `PyTorch CUDA Runtime: Active`.
+
+No GPU, or CPU-only PyTorch? No problem. PHANTOM just runs on CPU (SIMD engine). Models load with `device_map="auto"`, so on a GPU the layers spread across VRAM → RAM → NVMe as one memory tier; without one, everything stays in RAM/CPU.
+
+### 2. Install PHANTOM
 
 ```bash
 # Linux / macOS / WSL2

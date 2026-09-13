@@ -693,7 +693,7 @@ class PhantomCLI:
         elif cmd == "benchmark":
             return self.cmd_benchmark(getattr(args, "model", "llama3:70b"), getattr(args, "all", False))
         elif cmd == "convert":
-            return self.cmd_convert(args.input, args.output)
+            return self.cmd_convert(args.input, args.output, getattr(args, "force", False))
         elif cmd == "update":
             return self.cmd_update()
         else:
@@ -1020,7 +1020,7 @@ class PhantomCLI:
         print("\nAll diagnostics passed. System ready for inference.\n")
         return 0
 
-    def cmd_convert(self, input_file: str, output_dir: str) -> int:
+    def cmd_convert(self, input_file: str, output_dir: str, force: bool = False) -> int:
         in_path = Path(os.path.expanduser(input_file))
         if not in_path.exists():
             print(f"\n✗ Error: Input file '{input_file}' does not exist.")
@@ -1028,9 +1028,12 @@ class PhantomCLI:
             print("  Example: phantom convert ./my-model.gguf --output ~/.phantom/models/my-model/\n")
             return 1
         try:
-            converter = PhantomConverter(str(in_path), os.path.expanduser(output_dir))
+            converter = PhantomConverter(str(in_path), os.path.expanduser(output_dir), force=force)
             converter.convert()
-            print(f"\n✓ Conversion complete! Saved to {output_dir}\n")
+            if converter.skipped:
+                print(f"\n✓ Already converted for this GGUF — skipping (run with --force to rebuild)\n")
+            else:
+                print(f"\n✓ Conversion complete! Saved to {output_dir}\n")
             return 0
         except ValueError as e:
             print(f"\n✗ Format Error: {e}\n")
@@ -1085,6 +1088,17 @@ class PhantomCLI:
 
         return None
 
+    @staticmethod
+    def _torch_device() -> str:
+        """CUDA when a usable GPU and CUDA-enabled torch are present, else CPU."""
+        try:
+            import torch
+            if torch.cuda.is_available() and torch.cuda.device_count() > 0:
+                return "cuda"
+        except Exception:
+            pass
+        return "cpu"
+
     def cmd_run(self, args: argparse.Namespace) -> int:
         model_id = args.model
         prompt = args.prompt
@@ -1112,12 +1126,24 @@ class PhantomCLI:
             try:
                 import logging
                 import threading
+                import torch
                 from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
 
                 logging.getLogger("transformers").setLevel(logging.ERROR)
                 logging.getLogger("accelerate").setLevel(logging.ERROR)
+                device = self._torch_device()
+                load_kwargs = {"low_cpu_mem_usage": True}
+                if device == "cuda":
+                    load_kwargs["torch_dtype"] = torch.bfloat16
+                try:
+                    import accelerate  # noqa: F401
+                    load_kwargs["device_map"] = "auto"
+                except ImportError:
+                    pass
                 tokenizer = AutoTokenizer.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
-                model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
+                model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name, **load_kwargs)
+                if "device_map" not in load_kwargs:
+                    model.to(device)
 
                 messages = [{"role": "user", "content": prompt}]
                 try:
@@ -1189,12 +1215,24 @@ class PhantomCLI:
         if gguf_path and is_interactive:
             try:
                 import logging
+                import torch
                 from transformers import AutoModelForCausalLM, AutoTokenizer
 
                 logging.getLogger("transformers").setLevel(logging.ERROR)
                 logging.getLogger("accelerate").setLevel(logging.ERROR)
+                device = self._torch_device()
+                load_kwargs = {"low_cpu_mem_usage": True}
+                if device == "cuda":
+                    load_kwargs["torch_dtype"] = torch.bfloat16
+                try:
+                    import accelerate  # noqa: F401
+                    load_kwargs["device_map"] = "auto"
+                except ImportError:
+                    pass
                 tokenizer = AutoTokenizer.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
-                model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
+                model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name, **load_kwargs)
+                if "device_map" not in load_kwargs:
+                    model.to(device)
                 model_status = "\u25cf Ready (zero-copy mmap)"
             except Exception:
                 model_status = "\u25cf Ready (simulated)"
@@ -1338,6 +1376,7 @@ def main():
     conv_p = subparsers.add_parser("convert", help="Convert GGUF to PHANTOM format")
     conv_p.add_argument("input", help="Input GGUF file")
     conv_p.add_argument("--output", "-o", required=True, help="Output directory")
+    conv_p.add_argument("--force", action="store_true", help="Rebuild even if already converted for this GGUF")
 
     # update
     subparsers.add_parser("update", help="Update community model index")
