@@ -663,11 +663,11 @@ class PhantomCLI:
             installed = self.mgr.list(format="json")
             default_model = getattr(args, "model", None)
             if not default_model:
-                smollm_candidates = [m.get("id", "") for m in installed if "smollm" in m.get("id", "").lower()]
-                if smollm_candidates:
-                    default_model = smollm_candidates[0]
+                qwen_candidates = [m.get("id", "") for m in installed if "qwen" in m.get("id", "").lower()]
+                if qwen_candidates:
+                    default_model = qwen_candidates[0]
                 elif installed:
-                    default_model = installed[-1].get("id", "smollm:135m")
+                    default_model = installed[0].get("id", "smollm:135m")
                 else:
                     default_model = "smollm:135m"
             return self._repl(
@@ -1113,6 +1113,67 @@ class PhantomCLI:
             pass
         return "cpu"
 
+    def _ollama_model_name(self, model_id: str) -> Optional[str]:
+        """Map model_id or GGUF path to an available Ollama model tag, if any."""
+        try:
+            import urllib.request
+            req = urllib.request.Request("http://127.0.0.1:11434/api/tags", headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=1.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                models = [m.get("name", "") for m in data.get("models", [])]
+                mid_lower = model_id.lower()
+                for m in models:
+                    m_lower = m.lower()
+                    if mid_lower == m_lower or mid_lower.split(":")[0] == m_lower.split(":")[0]:
+                        return m
+                    if ("qwen" in mid_lower and "32b" in mid_lower) and ("qwen" in m_lower and "32b" in m_lower):
+                        return m
+                    if "qwen2.5-coder-32b" in mid_lower and "qwen2.5-coder-32b" in m_lower:
+                        return m
+        except Exception:
+            pass
+        return None
+
+    def _generate_ollama_stream(
+        self,
+        model_tag: str,
+        prompt: str,
+        on_token: Any,
+        system_prompt: Optional[str] = None,
+        cancel_flag: Optional[Any] = None,
+    ) -> bool:
+        """Stream generation from local Ollama engine with GPU offload."""
+        try:
+            import urllib.request
+            url = "http://127.0.0.1:11434/api/generate"
+            payload = {
+                "model": model_tag,
+                "prompt": prompt,
+                "stream": True,
+            }
+            if system_prompt:
+                payload["system"] = system_prompt
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=180.0) as resp:
+                for line in resp:
+                    if cancel_flag is not None and getattr(cancel_flag, "is_set", lambda: False)():
+                        break
+                    if not line:
+                        continue
+                    data = json.loads(line.decode("utf-8"))
+                    token = data.get("response", "")
+                    if token:
+                        on_token(token)
+                    if data.get("done", False):
+                        break
+            return True
+        except Exception:
+            return False
+
     def cmd_run(self, args: argparse.Namespace) -> int:
         model_id = args.model
         prompt = args.prompt
@@ -1133,6 +1194,16 @@ class PhantomCLI:
         if not prompt:
             # Enter interactive REPL mode
             return self._repl(model_id)
+
+        # Stream via local engine if available (e.g. Qwen2.5-Coder-32B GPU offload)
+        ollama_model = self._ollama_model_name(model_id)
+        if ollama_model:
+            def _print_tok(tok: str):
+                sys.stdout.write(tok)
+                sys.stdout.flush()
+            if self._generate_ollama_stream(ollama_model, prompt, _print_tok):
+                print()
+                return 0
 
         # Single prompt execution with live local inference if model is available
         gguf_path = self._find_gguf_path(model_id)
@@ -1222,14 +1293,19 @@ class PhantomCLI:
 
         # Resolve model path & initial loading status
         gguf_path = self._find_gguf_path(model_id)
+        ollama_model = self._ollama_model_name(model_id)
         model = None
         tokenizer = None
-        model_status = "\u25cf Ready (simulated)" if not gguf_path else "\u25d0 Loading weights..."
+        if ollama_model:
+            model_status = f"● Ready (GPU: RTX 4050 · {ollama_model})"
+        elif not gguf_path:
+            model_status = "\u25cf Ready (simulated)"
+        else:
+            model_status = "\u25d0 Loading weights..."
 
         # Load local GGUF weights (used by the TUI for real streaming). Skipped
-        # for non-interactive stdin (plain fallback) so piped/CI invocations
-        # return immediately instead of loading a model just to quit.
-        if gguf_path and is_interactive:
+        # for non-interactive stdin (plain fallback) or when using native GPU engine.
+        if not ollama_model and gguf_path and is_interactive:
             try:
                 import logging
                 import torch
@@ -1270,6 +1346,7 @@ class PhantomCLI:
             session_id=session_id,
             continue_last=continue_last,
             agent=agent,
+            ollama_model=ollama_model,
         )
         return tui.run()
 

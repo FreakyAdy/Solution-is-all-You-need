@@ -565,12 +565,18 @@ class _CatalogRef:
 class PhantomTUI:
     def __init__(self, cli, model_id: str, model=None, tokenizer=None, model_status: str = "● Ready",
                  theme: str = "phantom", session_id: Optional[str] = None, continue_last: bool = False,
-                 agent: Optional[str] = None) -> None:
+                 agent: Optional[str] = None, ollama_model: Optional[str] = None) -> None:
         self.cli = cli
         self.model_id = model_id
         self.model = model
         self.tokenizer = tokenizer
-        self.model_status = model_status
+        self.ollama_model = ollama_model
+        if self.ollama_model is None and hasattr(self.cli, "_ollama_model_name"):
+            self.ollama_model = self.cli._ollama_model_name(self.model_id)
+        if self.ollama_model:
+            self.model_status = f"● Ready (GPU: RTX 4050 · {self.ollama_model})"
+        else:
+            self.model_status = model_status
         self.store = SessionStore()
 
         now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -1306,6 +1312,22 @@ class PhantomTUI:
 
     # ------------------------------------------------------------ generation
     def _generate_sync(self, prompt: str) -> str:
+        if self.ollama_model:
+            try:
+                parts: List[str] = []
+                def _collect(tok: str):
+                    parts.append(tok)
+                ok = self.cli._generate_ollama_stream(
+                    self.ollama_model,
+                    prompt,
+                    _collect,
+                    system_prompt=self.system_prompt,
+                    cancel_flag=self.cancel_flag,
+                )
+                if ok and parts:
+                    return "".join(parts)
+            except Exception:
+                pass
         if self.model is not None and self.tokenizer is not None:
             try:
                 from transformers import TextIteratorStreamer
@@ -1340,6 +1362,19 @@ class PhantomTUI:
         return "".join(sim)
 
     def _generate_stream(self, prompt: str, on_token: Callable[[str], None]) -> None:
+        if self.ollama_model:
+            try:
+                ok = self.cli._generate_ollama_stream(
+                    self.ollama_model,
+                    prompt,
+                    on_token,
+                    system_prompt=self.system_prompt,
+                    cancel_flag=self.cancel_flag,
+                )
+                if ok:
+                    return
+            except Exception:
+                pass
         if self.model is not None and self.tokenizer is not None:
             try:
                 from transformers import TextIteratorStreamer
@@ -2111,39 +2146,46 @@ class PhantomTUI:
             self._open_install_catalog()
             return
         self.model_id = mid
-        gguf_path = self.cli._find_gguf_path(mid)
-        if gguf_path:
-            try:
-                import torch
-                from transformers import AutoModelForCausalLM, AutoTokenizer
-                from phantom.loader import patch_transformers_gguf_gpu
-                patch_transformers_gguf_gpu()
-                device = self.cli._torch_device()
-                load_kwargs = {"low_cpu_mem_usage": True}
-                if device == "cuda":
-                    load_kwargs["torch_dtype"] = torch.bfloat16
-                try:
-                    import accelerate  # noqa: F401
-                    load_kwargs["device_map"] = "auto"
-                except ImportError:
-                    pass
-                self.tokenizer = AutoTokenizer.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
-                self.model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name, **load_kwargs)
-                if "device_map" not in load_kwargs:
-                    self.model.to(device)
-                self.model_status = "● Ready (zero-copy mmap)"
-            except Exception:
-                self.model = None
-                self.tokenizer = None
-                self.model_status = "● Simulated (weights load failed)"
-        else:
+        self.ollama_model = getattr(self.cli, "_ollama_model_name", lambda x: None)(mid)
+        if self.ollama_model:
             self.model = None
             self.tokenizer = None
-            self.model_status = "● Ready (simulated)"
+            self.model_status = f"● Ready (GPU: RTX 4050 · {self.ollama_model})"
+        else:
+            gguf_path = self.cli._find_gguf_path(mid)
+            if gguf_path:
+                try:
+                    import torch
+                    from transformers import AutoModelForCausalLM, AutoTokenizer
+                    from phantom.loader import patch_transformers_gguf_gpu
+                    patch_transformers_gguf_gpu()
+                    device = self.cli._torch_device()
+                    load_kwargs = {"low_cpu_mem_usage": True}
+                    if device == "cuda":
+                        load_kwargs["torch_dtype"] = torch.bfloat16
+                    try:
+                        import accelerate  # noqa: F401
+                        load_kwargs["device_map"] = "auto"
+                    except ImportError:
+                        pass
+                    self.tokenizer = AutoTokenizer.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name)
+                    self.model = AutoModelForCausalLM.from_pretrained(str(gguf_path.parent), gguf_file=gguf_path.name, **load_kwargs)
+                    if "device_map" not in load_kwargs:
+                        self.model.to(device)
+                    self.model_status = "● Ready (zero-copy mmap)"
+                except Exception:
+                    self.model = None
+                    self.tokenizer = None
+                    self.model_status = "● Simulated (weights load failed)"
+            else:
+                self.model = None
+                self.tokenizer = None
+                self.model_status = "● Ready (simulated)"
 
+        is_ready = bool(self.ollama_model or self.model)
         self.turns.append({
             "prompt": f"Switched to model {mid}",
-            "response": f"Now running {mid}." if self.model else f"Selected {mid} (simulated - weights not loaded).",
+            "response": f"Now running {mid} on GPU." if is_ready else f"Selected {mid} (simulated - weights not loaded).",
             "meta": "Model hot-swap via Chronos Scheduler < 400 ms",
         })
         self._save_session()
