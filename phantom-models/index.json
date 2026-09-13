@@ -3,6 +3,32 @@
   "updated": "2026-09-12T00:00:00Z",
   "models": [
     {
+      "id": "smollm:135m",
+      "name": "SmolLM 135M Instruct (Fast Test)",
+      "family": "smollm",
+      "parameters": "0.135B",
+      "context_length": 2048,
+      "size_gb": 0.09,
+      "sources": {
+        "Q4_K_M": {
+          "repo": "HuggingFaceTB/SmolLM-135M-Instruct-GGUF",
+          "filename": "smollm-135m-instruct-q4_k_m.gguf",
+          "url": "https://huggingface.co/HuggingFaceTB/SmolLM-135M-Instruct-GGUF/resolve/main/smollm-135m-instruct-q4_k_m.gguf",
+          "size_bytes": 94000000
+        }
+      },
+      "community_profiles": [
+        {
+          "hardware_tier": "laptop_6gb",
+          "calibrated_by": "phantom-community",
+          "wraith_accuracy": 98.5,
+          "kv_ratio": 8.0,
+          "tok_per_sec": 120.0
+        }
+      ],
+      "phantomfile": "FROM smollm:135m\nSYSTEM You are a compact assistant.\n"
+    },
+    {
       "id": "llama3:70b",
       "name": "Meta LLaMA 3 70B Instruct",
       "family": "llama3",

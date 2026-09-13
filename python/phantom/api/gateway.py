@@ -87,9 +87,13 @@ async def gateway_security_and_logging(request: Request, call_next):
     if content_len and int(content_len) > 10 * 1024 * 1024:
         return JSONResponse({"error": "Payload Too Large (>10MB)"}, status_code=413)
 
-    # 2. Auth check (skip for health, metrics, UI, and tags)
+    # 2. Auth check (skip for health, metrics, UI, favicon, and tags)
     path = request.url.path
-    is_public = path in ("/v1/health", "/v1/metrics", "/metrics", "/phantom/hardware", "/api/tags", "/v1/models") or path.startswith("/ui")
+    is_public = (
+        path in ("/", "/favicon.ico", "/v1/health", "/v1/metrics", "/metrics", "/phantom/hardware", "/api/tags", "/v1/models")
+        or path.startswith("/ui")
+        or path.startswith("/assets")
+    )
 
     if state.auth_token and not is_public:
         auth_header = request.headers.get("Authorization", "")
@@ -292,8 +296,15 @@ dist_dir = Path(__file__).parents[3] / "ui" / "web" / "dist"
 assets_dir = dist_dir / "assets"
 if assets_dir.exists():
     gateway_app.mount("/ui/assets", StaticFiles(directory=str(assets_dir)), name="ui_assets")
+    gateway_app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="root_assets")
 
 
+@gateway_app.get("/favicon.ico")
+async def favicon():
+    return Response(status_code=204)
+
+
+@gateway_app.get("/", response_class=HTMLResponse)
 @gateway_app.get("/ui", response_class=HTMLResponse)
 @gateway_app.get("/ui/", response_class=HTMLResponse)
 async def web_dashboard_ui():

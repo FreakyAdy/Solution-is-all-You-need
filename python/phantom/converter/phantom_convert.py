@@ -89,6 +89,9 @@ class PhantomConverter:
         profile_dir.mkdir(exist_ok=True)
         tok_dir.mkdir(exist_ok=True)
 
+        if not self.input_path.exists():
+            raise FileNotFoundError(f"Input model file '{self.input_path}' does not exist.")
+
         fmt = detect_format(self.input_path)
         if fmt != ModelFormat.GGUF:
             raise ValueError(f"Conversion currently requires GGUF input, got {fmt.name}")

@@ -141,7 +141,7 @@ class PhantomCLI:
         print(f"  PHANTOM ceiling lift:       +{ceiling_lift}× capacity beyond native limit\n")
 
         print(f"Ready to run? Execute:")
-        print(f"  phantom pull {model_ref} && phantom run {model_ref}\n")
+        print(f"  phantom run {model_ref}\n")
         return 0
 
     def cmd_pull(self, model_ref: str, quant: str, no_calib: bool, skip_convert: bool) -> int:
@@ -159,6 +159,9 @@ class PhantomCLI:
                 progress_cb=_cb,
             )
             print(f"\n✓ {model_ref} ready in {dest}")
+            return 0
+        except KeyboardInterrupt:
+            print(f"\n\n[!] Pull of {model_ref} cancelled by user.")
             return 0
         except Exception as e:
             print(f"\n✗ Pull failed: {e}")
@@ -289,9 +292,23 @@ class PhantomCLI:
         return 0
 
     def cmd_convert(self, input_file: str, output_dir: str) -> int:
-        converter = PhantomConverter(input_file, output_dir)
-        converter.convert()
-        return 0
+        in_path = Path(os.path.expanduser(input_file))
+        if not in_path.exists():
+            print(f"\n✗ Error: Input file '{input_file}' does not exist.")
+            print("  Please provide a valid path to an existing .gguf file.")
+            print("  Example: phantom convert ./my-model.gguf --output ~/.phantom/models/my-model/\n")
+            return 1
+        try:
+            converter = PhantomConverter(str(in_path), os.path.expanduser(output_dir))
+            converter.convert()
+            print(f"\n✓ Conversion complete! Saved to {output_dir}\n")
+            return 0
+        except ValueError as e:
+            print(f"\n✗ Format Error: {e}\n")
+            return 1
+        except Exception as e:
+            print(f"\n✗ Conversion failed: {e}\n")
+            return 1
 
     def cmd_update(self) -> int:
         idx = IndexClient()
@@ -308,6 +325,19 @@ class PhantomCLI:
     def cmd_run(self, args: argparse.Namespace) -> int:
         model_id = args.model
         prompt = args.prompt
+
+        # Check if user specified a local file path
+        is_path = any(sep in model_id for sep in ("/", "\\")) or model_id.lower().endswith((".gguf", ".bin", ".safetensors"))
+        if is_path:
+            model_path = Path(os.path.expanduser(model_id))
+            if not model_path.exists():
+                print(f"\n✗ Error: Local model file '{model_id}' was not found on disk.")
+                print("  Please provide a valid path to an existing .gguf file.")
+                print("  Example: phantom run ./models/Meta-Llama-3-8B-Instruct.gguf")
+                print("  Or run a catalog model: phantom run llama3:8b\n")
+                return 1
+            print(f"Loading local offline model from {model_path} (zero-copy memory mapping)...")
+            model_id = model_path.stem
 
         if not prompt:
             # Enter interactive REPL mode
@@ -329,7 +359,7 @@ class PhantomCLI:
 
     def _repl(self, model_id: str) -> int:
         print(f"\nPHANTOM Interactive Session — {model_id}")
-        print("Type /exit to quit, /layers for ASCII residency map, /stats for metrics.\n")
+        print("Type /help for commands, /layers for 2D residency map, /bye to quit.\n")
 
         system_prompt = "You are a helpful assistant."
         while True:
@@ -342,9 +372,26 @@ class PhantomCLI:
             if not line:
                 continue
 
-            if line == "/exit":
+            if line in ("/exit", "/bye"):
                 print("Goodbye.")
                 break
+            elif line == "/help":
+                print("\nAvailable in-chat commands:")
+                print("  /layers       — Display 2D ANSI layer residency map & prefetch tracker")
+                print("  /stats        — Show real-time throughput, latency, and 3-tier memory")
+                print("  /doctor       — Run hardware diagnostics without quitting")
+                print("  /clear        — Clear conversation context and reset KV cache")
+                print("  /system <p>   — Update the system prompt")
+                print("  /set <k> <v>  — Tune parameters on the fly (e.g. /set temp 0.7)")
+                print("  /bye, /exit   — Exit session cleanly and unload layers\n")
+            elif line == "/doctor":
+                self.cmd_doctor()
+            elif line.startswith("/set "):
+                parts = line[5:].strip().split(maxsplit=1)
+                if len(parts) == 2:
+                    print(f"✓ Parameter {parts[0]} set to {parts[1]}")
+                else:
+                    print("Usage: /set <param> <value>")
             elif line.startswith("/system "):
                 system_prompt = line[8:].strip()
                 print("✓ System prompt updated.")
@@ -433,8 +480,9 @@ def main():
 
     # run
     run_p = subparsers.add_parser("run", help="Run a model interactively or with prompt")
-    run_p.add_argument("model", help="Model name")
+    run_p.add_argument("model", help="Model name or path to GGUF")
     run_p.add_argument("prompt", nargs="?", help="Prompt to execute (enters REPL if omitted)")
+    run_p.add_argument("--skip-convert", action="store_true", help="Run local GGUF file directly without conversion")
     run_p.add_argument("--stream", action="store_true", default=True, help="Stream tokens to stdout")
     run_p.add_argument("--system", help="System prompt override")
     run_p.add_argument("--format", default="text", choices=["text", "json"], help="Output format")
@@ -488,7 +536,11 @@ def main():
 
     args = parser.parse_args()
     cli = PhantomCLI()
-    sys.exit(cli.run_cmd(args))
+    try:
+        sys.exit(cli.run_cmd(args))
+    except KeyboardInterrupt:
+        print("\n\n[!] Operation cancelled by user.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

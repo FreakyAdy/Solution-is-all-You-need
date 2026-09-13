@@ -166,7 +166,7 @@ class PhantomIPCClient:
             logger.info("ipc_connected", path=self.ipc_path)
         except Exception as e:
             self._connected = False
-            logger.warning("ipc_connect_failed", error=str(e))
+            logger.debug("ipc_connect_failed_using_engine_fallback", error=str(e))
 
     async def disconnect(self) -> None:
         """Close the IPC connection."""
