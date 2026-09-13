@@ -6,7 +6,7 @@
 
 **Run the model that doesn't fit your GPU.**
 
-PHANTOM is a local LLM runtime that orchestrates VRAM, system RAM, and NVMe as a single memory tier — letting a 6 GB laptop GPU run 70B models at conversational speed.
+PHANTOM is a hardware-transcendent local LLM runtime that orchestrates VRAM, system RAM, and NVMe as a single memory tier — letting a 6 GB laptop GPU run 70B models at conversational speed.
 
 [![CI](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
