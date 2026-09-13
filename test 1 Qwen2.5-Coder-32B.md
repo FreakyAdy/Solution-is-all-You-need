@@ -1,4 +1,4 @@
-# PHANTOM REAL HARDWARE EXECUTION AUDIT & SCALE MULTIPLIER REPORT
+# Test 1: Qwen2.5-Coder-32B — Real Hardware Execution Audit & Scale Multipliers
 **Audit Date**: 2026-09-13  
 **Target System**: Windows 11 | Host RAM: 24.0 GB | GPU: NVIDIA GeForce RTX 4050 Laptop GPU (6.0 GB VRAM, Ada Lovelace sm_89)  
 **Evaluator**: Antigravity Senior Systems & Architecture Auditor  
