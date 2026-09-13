@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="docs/phantom_ui_demo.gif" alt="PHANTOM Web Studio" width="100%">
-
 # phantom
 
 **Run the model that doesn't fit your GPU.**
@@ -66,7 +64,7 @@ curl -fsSL https://phantom-core.org/install.sh | bash
 ## Quickstart
 
 ### 0. OpenCode Interactive Terminal Launcher
-Launch PHANTOM with no arguments to drop straight into an OpenCode-style interactive terminal (chat history canvas, live model sidebar, command palette, leader keys):
+Launch PHANTOM with no arguments to drop straight into an OpenCode-style interactive shell. The TUI is a faithful replica of opencode's layout: a message canvas on the left, a live metadata sidebar on the right (model status, persistent context/KV stats, layer residency), a `/`-command autocomplete menu above the composer, and a borderless `▌` input box at the bottom.
 ```bash
 phantom                    # open the interactive TUI
 phantom -m llama3:70b      # start the TUI on a specific model
@@ -75,30 +73,32 @@ phantom -s <session-id>    # resume a specific session
 phantom -a <agent>         # start with a specific agent/persona
 ```
 
-The TUI is keyboard-first:
+The conversation scrolls **line-by-line** like opencode — keep the input empty and use `↑` / `↓` for single lines, `PgUp` / `PgDn` for pages, and `Home` / `End` to jump to the oldest message or back to the latest. Scroll position resets automatically when you send a new message.
+
 ```
-  ▌ hello                                     <- your message
+  ▌ hello                                    <- your message
   ■ Build · smollm-135m                       <- model reply
-  ...
   ❯ Build · smollm-135m  |  ● Ready (mmap)                    ▌
 
-  ••••••••  esc exit    tab agents   ctrl+p /help commands   ctrl+x leader
+  ••••••••  / live command menu    ↑ ↓ scrolls conversation   ctrl+x leader
 ```
 
 | Input | Action |
 |---|---|
-| `/` + typing | Live slash-command menu, narrows as you type |
+| `/` + typing | Live slash-command menu — narrows as you type, `tab` / `↑` `↓` cycles, `enter` runs |
+| `↑` `↓` (empty input) | Scroll conversation up/down one line |
+| `PgUp` / `PgDn` | Scroll conversation a full page |
+| `Home` / `End` | Jump to oldest message / newest message |
 | `!command` | Run a shell command inside the session |
 | `@file` | Attach a file reference (pickers) |
 | `/command` | Slash commands (see below) |
-| `tab` / `↑` `↓` | Cycle slash menu / agents / autocomplete a command |
 | `ctrl+p` | Command palette |
 | `ctrl+x` | Leader key (c·compact e·editor m·models n·new l·sessions t·themes u·undo r·redo x·export s·status a·agents b·sidebar h·help q·exit) |
 | `ctrl+t` | Cycle model variants (reasoning effort) |
 | `ctrl+c` | Cancel generation / clear input |
 | `ctrl+d`, `esc` | Exit / interrupt |
 
-> Piped, non-interactive stdin (CI, scripts) falls back to a plain line-based REPL.
+> Piped, non-interactive stdin (CI, scripts) falls back to a plain line-based REPL that dispatches the same slash commands, or passes unknown text straight to the model. It skips model loading entirely when stdin isn't a terminal, so scripts and CI exit fast.
 > Type `phantom` then `/help` inside the TUI for the full command and keybinding reference.
 
 ### 1. Check your hardware
