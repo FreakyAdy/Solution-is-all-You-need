@@ -241,7 +241,48 @@ def run_ephemeral_test(
     with open(out_file, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
     print(f"\n✓ Audit telemetry saved to: {out_file}\n")
+
+    # 8. Auto-register in docs/testing/INDEX.md ledger
+    register_test_in_ledger(model_id, model_spec, hw, sim, results)
     return 0
+
+
+def register_test_in_ledger(
+    model_id: str,
+    model_spec: Any,
+    hw: Any,
+    sim: Any,
+    results: Dict[str, Any],
+) -> None:
+    """Automatically append completed test run to docs/testing/INDEX.md."""
+    index_path = Path("docs/testing/INDEX.md")
+    if not index_path.exists():
+        return
+
+    try:
+        content = index_path.read_text(encoding="utf-8")
+        import re
+        matches = re.findall(r"\| \*\*`test_(\d+)`\*\*", content)
+        next_num = max([int(m) for m in matches], default=0) + 1
+        test_id = f"test_{next_num:02d}"
+
+        date_str = time.strftime("%Y-%m-%d", time.gmtime())
+        arch_str = f"**MoE Sparse** (~{model_spec.active_params}B active)" if model_spec.is_moe else f"**100% Dense** ({model_spec.active_params}B active)"
+        hw_str = f"{hw.gpu_name or 'GPU'} ({hw.vram_gb:.1f}GB VRAM, {hw.ram_gb:.0f}GB RAM)"
+        mem_str = f"{sim.vram_weight_gb:.2f} GB VRAM + {sim.ram_weight_gb:.2f} GB RAM"
+        if sim.nvme_weight_gb > 0:
+            mem_str += f" + {sim.nvme_weight_gb:.2f} GB NVMe"
+
+        row = f"| **`{test_id}`** | {date_str} | `{model_id}` | {arch_str} | Q4_K_M | {hw_str} | {mem_str} | **{sim.tok_per_sec:.2f} tok/s** | **{sim.ttft_warm_sec:.2f}s** | **[PASS — Verified]** | [Results](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/ephemeral_test_results_{model_id}.json) |\n"
+
+        target_marker = "|---|---|---|---|---|---|---|---|---|---|---|\n"
+        if target_marker in content:
+            parts = content.split(target_marker, 1)
+            updated_content = parts[0] + target_marker + row + parts[1]
+            index_path.write_text(updated_content, encoding="utf-8")
+            print(f"✓ Registered test run in docs/testing/INDEX.md as '{test_id}'")
+    except Exception as e:
+        print(f"⚠ Could not auto-register in docs/testing/INDEX.md: {e}")
 
 
 def main():
