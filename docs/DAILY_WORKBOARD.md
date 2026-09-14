@@ -21,10 +21,11 @@
 | ✅ | `TEST-01` | Testing | Build testing directory structure, master ledger, and report template | [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) |
 | ✅ | `TEST-02` | Automation | Add auto-registration hook in ephemeral test runner to update ledger | [`tests/ephemeral_test_runner.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/ephemeral_test_runner.py) |
 | ✅ | `OPS-01` | Structure | Declutter root directory: relocate prompts & specs to subfolder | [`docs/specs/`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/specs/) |
-| 🔄 | `OPS-02` | Workflow | Create daily mission workboard and operational protocol | [`docs/DAILY_WORKBOARD.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DAILY_WORKBOARD.md) |
-| ⏳ | `OPS-03` | Entrypoint | Link Documentation Hub & Daily Workboard in main README | [`README.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/README.md) |
-| ⏳ | `VERIF-01`| Testing | Run regression audit suite & ephemeral dry-run | `tests/audit_suite.py` |
-| ⏳ | `GIT-01` | Sync | Commit and push complete documentation & organizational structure | Git Remote `origin/main` |
+| ✅ | `OPS-02` | Workflow | Create daily mission workboard and operational protocol | [`docs/DAILY_WORKBOARD.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DAILY_WORKBOARD.md) |
+| ✅ | `OPS-03` | Entrypoint | Link Documentation Hub & Daily Workboard in main README | [`README.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/README.md) |
+| ✅ | `SOP-01` | Protocol | Mandatory post-prompt auto-update SOP, rules & audit script | [`AGENTS.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/AGENTS.md), [`docs/SOP.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/SOP.md), [`scripts/verify_tracking.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/scripts/verify_tracking.py) |
+| ✅ | `VERIF-01`| Testing | Run regression audit suite & ephemeral dry-run (100% pass) | `tests/audit_suite.py` |
+| ✅ | `GIT-01` | Sync | Commit and push complete documentation & organizational structure | Git Remote `origin/main` |
 
 ---
 

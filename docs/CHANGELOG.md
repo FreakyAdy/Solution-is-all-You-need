@@ -13,6 +13,10 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Added Documentation Architecture Hub table to [`README.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/README.md).
 * **Specifications Subdirectory (`docs/specs/`)**:
   * Cleaned up repository root by moving master prompts and platform specs into version-controlled `docs/specs/`.
+* **Autonomous Progress Tracking SOP & Agent Directives (`AGENTS.md`, `.agents/rules/`, `docs/SOP.md`)**:
+  * Created [`AGENTS.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/AGENTS.md) and [`.agents/rules/tracking_protocol.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/.agents/rules/tracking_protocol.md) enforcing mandatory post-prompt updates across the 5 living documentation ledgers.
+  * Formulated [`docs/SOP.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/SOP.md) (Standard Operating Procedure `SOP-OPS-001`).
+  * Built [`scripts/verify_tracking.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/scripts/verify_tracking.py) automated audit utility to evaluate the health and freshness of all 8 tracking documents.
 
 ---
 
