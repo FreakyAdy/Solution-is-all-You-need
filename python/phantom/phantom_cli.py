@@ -678,8 +678,19 @@ class PhantomCLI:
             )
         elif cmd == "menu":
             return self.cmd_menu(parser=parser)
-        elif cmd == "plan":
-            return self.cmd_plan(args.model, args.vram, args.ram, args.nvme)
+        elif cmd in ("plan", "profile"):
+            preset = getattr(args, "preset", "rtx4050-laptop")
+            context = getattr(args, "context", 4096)
+            as_json = getattr(args, "json", False)
+            return self.cmd_profile(
+                args.model,
+                preset=preset,
+                override_vram=getattr(args, "vram", None),
+                override_ram=getattr(args, "ram", None),
+                override_nvme=getattr(args, "nvme", None),
+                context_length=context,
+                as_json=as_json,
+            )
         elif cmd == "pull":
             return self.cmd_pull(args.model, args.quant, args.no_calibrate, args.skip_convert)
         elif cmd == "run":
@@ -715,62 +726,164 @@ class PhantomCLI:
     def cmd_plan(
         self,
         model_ref: str,
-        override_vram: Optional[int] = None,
-        override_ram: Optional[int] = None,
-        override_nvme: Optional[int] = None,
+        override_vram: Optional[float] = None,
+        override_ram: Optional[float] = None,
+        override_nvme: Optional[float] = None,
     ) -> int:
-        """The signature PHANTOM capability: Resource estimation before download."""
-        idx = IndexClient()
-        indexed = idx.get_model(model_ref)
+        """Resource estimation and architecture profiling before download (alias for cmd_profile)."""
+        return self.cmd_profile(
+            model_ref=model_ref,
+            preset="rtx4050-laptop",
+            override_vram=override_vram,
+            override_ram=override_ram,
+            override_nvme=override_nvme,
+        )
 
-        # Hardware detection
-        hw = detect_hardware()
-        vram_gb = (override_vram / 1024.0) if override_vram else (hw.vram_gb or 6.0)
-        ram_gb = override_ram or (hw.ram_gb or 32.0)
-        nvme_gb = override_nvme or 500.0
+    def cmd_profile(
+        self,
+        model_ref: str,
+        preset: str = "rtx4050-laptop",
+        override_vram: Optional[float] = None,
+        override_ram: Optional[float] = None,
+        override_nvme: Optional[float] = None,
+        context_length: int = 4096,
+        as_json: bool = False,
+    ) -> int:
+        """Simulate model execution, memory tiering, and throughput across hardware with ZERO disk overhead."""
+        from phantom.model_profiles.hardware_simulator import (
+            HARDWARE_PRESETS,
+            HardwareProfile,
+            simulate_model_execution,
+        )
 
-        # Model stats
-        param_str = indexed.parameters if indexed else "70.6B"
-        param_count = float(param_str.replace("B", "")) if "B" in param_str else 70.0
-        total_layers = 80 if param_count >= 60 else (32 if param_count >= 7 else 24)
+        custom_hw = None
+        if preset == "detected":
+            hw_info = detect_hardware()
+            custom_hw = HardwareProfile(
+                id="detected",
+                name=f"{hw_info.gpu_name or 'NVIDIA GPU'} ({hw_info.tier.upper()})",
+                vram_gb=hw_info.vram_gb or 6.0,
+                vram_bandwidth_gbps=192.0,
+                ram_gb=hw_info.ram_gb or 24.0,
+                ram_bandwidth_gbps=48.0,
+                os_reserved_ram_gb=6.5,
+                nvme_gb=500.0,
+                nvme_read_gbps=hw_info.nvme_read_gbps or 4.5,
+                pcie_bandwidth_gbps=7.87,
+                compute_tflops_fp16=18.0,
+            )
+        elif override_vram or override_ram or override_nvme:
+            base = HARDWARE_PRESETS.get(preset, HARDWARE_PRESETS["rtx4050-laptop"])
+            custom_hw = HardwareProfile(
+                id="custom",
+                name=f"Custom Profile ({preset} base)",
+                vram_gb=float(override_vram) if override_vram is not None else base.vram_gb,
+                vram_bandwidth_gbps=base.vram_bandwidth_gbps,
+                ram_gb=float(override_ram) if override_ram is not None else base.ram_gb,
+                ram_bandwidth_gbps=base.ram_bandwidth_gbps,
+                os_reserved_ram_gb=base.os_reserved_ram_gb,
+                nvme_gb=float(override_nvme) if override_nvme is not None else base.nvme_gb,
+                nvme_read_gbps=base.nvme_read_gbps,
+                pcie_bandwidth_gbps=base.pcie_bandwidth_gbps,
+                compute_tflops_fp16=base.compute_tflops_fp16,
+            )
 
-        # Layer distribution calculation
-        # Each layer ~ 0.45GB in BF16, ~0.24GB in Spectral FP8
-        layer_size_gb = 0.24 if param_count >= 60 else 0.08
-        vram_layers = min(total_layers, int(vram_gb * 0.75 / layer_size_gb))
-        remaining_layers = total_layers - vram_layers
-        ram_layers = min(remaining_layers, int(ram_gb * 0.65 / layer_size_gb))
-        nvme_layers = remaining_layers - ram_layers
+        res = simulate_model_execution(
+            model_ref=model_ref,
+            hardware_preset=preset,
+            custom_hw=custom_hw,
+            quantization="Q4_K_M",
+            context_length=context_length,
+        )
 
-        native_max_model = f"{int(vram_gb * 1.3)}B"
-        estimated_speed = max(2.5, round(28.0 / (1.0 + (param_count / 10.0)), 1))
-        ceiling_lift = round(param_count / max(1.0, float(native_max_model.replace("B", ""))), 1)
+        if as_json:
+            out = {
+                "model": {
+                    "id": res.model.id,
+                    "name": res.model.name,
+                    "total_params_b": res.model.total_params,
+                    "active_params_b": res.model.active_params,
+                    "is_moe": res.model.is_moe,
+                    "layers": res.model.num_layers,
+                },
+                "hardware": {
+                    "id": res.hardware.id,
+                    "name": res.hardware.name,
+                    "vram_gb": res.hardware.vram_gb,
+                    "ram_gb": res.hardware.ram_gb,
+                },
+                "memory_split_gb": {
+                    "vram": res.vram_weight_gb,
+                    "ram": res.ram_weight_gb,
+                    "nvme": res.nvme_weight_gb,
+                    "total": res.total_weight_gb,
+                },
+                "layer_split": {
+                    "vram_layers": res.vram_layers,
+                    "ram_layers": res.ram_layers,
+                    "nvme_layers": res.nvme_layers,
+                },
+                "performance": {
+                    "tok_per_sec": res.tok_per_sec,
+                    "ttft_warm_sec": res.ttft_warm_sec,
+                    "ttft_cold_sec": res.ttft_cold_sec,
+                    "compute_gflops_per_token": res.compute_gflops_per_token,
+                    "active_transfer_gb_per_token": res.active_transfer_gb_per_token,
+                },
+                "diagnosis": {
+                    "bottleneck": res.bottleneck,
+                    "tier_status": res.memory_tier_status,
+                    "scale_multiplier_vs_vram": res.scale_multiplier_vs_vram,
+                    "warnings": res.warnings,
+                }
+            }
+            print(json.dumps(out, indent=2))
+            return 0
 
-        print("\n" + "=" * 70)
-        print(f"  PHANTOM PLANNER — {model_ref} ({param_str} parameters)")
-        print("=" * 70)
-        print(f"Hardware Detected: {hw.tier.upper()} | {vram_gb:.1f}GB VRAM | {ram_gb:.0f}GB RAM | {nvme_gb:.0f}GB NVMe\n")
+        # Rich / Formatted Dashboard Display
+        print("\n" + "=" * 78)
+        print(f"  ⚡ PHANTOM ZERO-DISK ARCHITECTURE & HARDWARE PROFILER")
+        print("=" * 78)
+        print(f"  Model:            {res.model.name} ({res.model.total_params}B params)")
+        arch_type_str = f"Mixture-of-Experts ({res.model.num_active_experts} of {res.model.num_experts} active experts)" if res.model.is_moe else "100% Dense (All weights active per token)"
+        print(f"  Architecture:     {arch_type_str}")
+        print(f"  Active Compute:   {res.model.active_params}B active parameters ({res.compute_gflops_per_token} GFLOPs/token)")
+        print(f"  Simulated HW:     {res.hardware.name}")
+        print(f"  Memory Hierarchy: {res.hardware.vram_gb:.1f} GB VRAM | {res.hardware.ram_gb:.0f} GB RAM | {res.hardware.nvme_gb:.0f} GB NVMe\n")
 
-        print("┌─────────────────────────────────────────────────────────────────┐")
-        print("│ LAYER RESIDENCY DISTRIBUTION (Zero-Memory Static Plan)          │")
-        vram_bar = "█" * int(vram_layers / total_layers * 20)
-        ram_bar = "█" * int(ram_layers / total_layers * 20)
-        nvme_bar = "░" * int(nvme_layers / total_layers * 20)
+        print("┌────────────────────────────────────────────────────────────────────────────┐")
+        print("│ LAYER RESIDENCY DISTRIBUTION (Zero-Disk Mathematical Simulation)           │")
+        v_pct = int((res.vram_layers / max(1, res.model.num_layers)) * 24)
+        r_pct = int((res.ram_layers / max(1, res.model.num_layers)) * 24)
+        n_pct = int((res.nvme_layers / max(1, res.model.num_layers)) * 24)
+        vram_bar = "█" * v_pct
+        ram_bar = "█" * r_pct
+        nvme_bar = "░" * n_pct
 
-        print(f"│ VRAM  ({vram_gb:>4.1f} GB): layers 00–{vram_layers-1:02d} ({vram_layers:>2d} layers) {vram_bar:<20} │")
-        if ram_layers > 0:
-            print(f"│ RAM   ({ram_gb:>4.0f} GB): layers {vram_layers:02d}–{vram_layers+ram_layers-1:02d} ({ram_layers:>2d} layers) {ram_bar:<20} │")
-        if nvme_layers > 0:
-            print(f"│ NVMe  ({nvme_gb:>4.0f} GB): layers {vram_layers+ram_layers:02d}–{total_layers-1:02d} ({nvme_layers:>2d} layers) {nvme_bar:<20} │")
-        print("└─────────────────────────────────────────────────────────────────┘\n")
+        print(f"│ VRAM  ({res.vram_weight_gb:>5.2f} GB): layers 00–{max(0, res.vram_layers-1):02d} ({res.vram_layers:>2d} layers) {vram_bar:<24} │")
+        if res.ram_layers > 0:
+            print(f"│ RAM   ({res.ram_weight_gb:>5.2f} GB): layers {res.vram_layers:02d}–{res.vram_layers+res.ram_layers-1:02d} ({res.ram_layers:>2d} layers) {ram_bar:<24} │")
+        if res.nvme_layers > 0:
+            print(f"│ NVMe  ({res.nvme_weight_gb:>5.2f} GB): layers {res.vram_layers+res.ram_layers:02d}–{res.model.num_layers-1:02d} ({res.nvme_layers:>2d} layers) {nvme_bar:<24} │")
+        print("└────────────────────────────────────────────────────────────────────────────┘\n")
 
-        print(f"  Estimated token speed:      {estimated_speed} tok/sec")
-        print(f"  Estimated context support:  96K tokens (via 8× Neural Cache)")
-        print(f"  Native ceiling on hardware: ~{native_max_model} parameters")
-        print(f"  PHANTOM ceiling lift:       +{ceiling_lift}× capacity beyond native limit\n")
+        print("  PERFORMANCE PREDICTIONS & THROUGHPUT:")
+        print(f"  • Estimated token speed:      {res.tok_per_sec} tok/sec")
+        print(f"  • Projected Decoding Speed:   {res.tok_per_sec} tokens/sec")
+        print(f"  • Time-To-First-Token (Warm): {res.ttft_warm_sec} seconds (prefill latency)")
+        print(f"  • Cold Model Load Time:       {res.ttft_cold_sec} seconds (NVMe -> RAM)")
+        print(f"  • KV Cache Footprint:         {res.kv_cache_compressed_gb:.2f} GB (compressed 8× via Neural Cache)")
+        print(f"  • Model Weight Footprint:     {res.total_weight_gb:.2f} GB ({res.quantization})")
+        print(f"  • Active Memory per Token:    {res.active_weight_gb_per_token:.2f} GB (active memory bus traffic)")
+        print(f"  • PHANTOM ceiling lift:       +{res.scale_multiplier_vs_vram}× capacity beyond native limit")
+        print(f"  • Hardware Scale Multiplier:  +{res.scale_multiplier_vs_vram}× beyond native 4-bit VRAM capacity\n")
 
-        print(f"Ready to run? Execute:")
-        print(f"  phantom run {model_ref}\n")
+        print("  BOTTLENECK & ARCHITECTURAL VERDICT:")
+        print(f"  ► {res.bottleneck}")
+        print(f"  ► Tier Status: {res.memory_tier_status}")
+        for w in res.warnings:
+            print(f"  ⚠ {w}")
+        print()
         return 0
 
     def cmd_pull(self, model_ref: str, quant: str, no_calib: bool, skip_convert: bool) -> int:
@@ -1397,12 +1510,16 @@ def main():
     parser = argparse.ArgumentParser(prog="phantom", description="PHANTOM Model Runtime Platform")
     subparsers = parser.add_subparsers(dest="command", required=False)
 
-    # plan
-    plan_p = subparsers.add_parser("plan", help="Estimate resources and ceiling lift without loading")
-    plan_p.add_argument("model", help="Model reference (e.g. llama3:70b)")
-    plan_p.add_argument("--vram", type=int, help="Override detected VRAM in MB")
-    plan_p.add_argument("--ram", type=int, help="Override detected RAM in GB")
-    plan_p.add_argument("--nvme", type=int, help="Override detected NVMe in GB")
+    # plan / profile
+    for p_name in ("plan", "profile"):
+        plan_p = subparsers.add_parser(p_name, help="Simulate model execution, memory tiering, and speed across hardware with zero disk usage")
+        plan_p.add_argument("model", help="Model reference (e.g. qwen2.5-coder-32b, qwen3-30b-a3b, llama3:70b)")
+        plan_p.add_argument("--preset", default="rtx4050-laptop", choices=["rtx4050-laptop", "rtx4060-laptop", "rtx4070-desktop", "rtx4090-desktop", "colab-t4", "apple-m3-pro", "detected"], help="Target hardware preset to simulate")
+        plan_p.add_argument("--vram", type=float, help="Override detected VRAM in GB")
+        plan_p.add_argument("--ram", type=float, help="Override detected RAM in GB")
+        plan_p.add_argument("--nvme", type=float, help="Override detected NVMe in GB")
+        plan_p.add_argument("--context", type=int, default=4096, help="Target context length (tokens)")
+        plan_p.add_argument("--json", action="store_true", help="Output raw simulation metrics as JSON")
 
     # pull
     pull_p = subparsers.add_parser("pull", help="Download and convert a model")

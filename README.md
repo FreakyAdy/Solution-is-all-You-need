@@ -7,6 +7,7 @@
 PHANTOM is a hardware-transcendent local LLM runtime. It orchestrates VRAM, system RAM, and NVMe as a single memory tier — so a 6 GB laptop GPU can run 70B models at conversational speed.
 
 [![CI](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/FreakyAdy/phantom/blob/main/notebooks/phantom_cloud_tester.ipynb)
 [![Tests Passing](https://img.shields.io/badge/tests-100%25%20PASS-brightgreen.svg)](tests/audit_suite.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
