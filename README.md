@@ -13,9 +13,23 @@ PHANTOM is a hardware-transcendent local LLM runtime. It orchestrates VRAM, syst
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
 [![Ollama API Compatible](https://img.shields.io/badge/Ollama%20API-drop--in-purple.svg)](docs/OLLAMA_MIGRATION.md)
 
-[Install](#quick-start) · [Basic commands](#basic-commands) · [Quick demo](#quick-demo) · [Why PHANTOM](#why-phantom) · [How it works](#how-it-works) · [Adding models](#adding-models) · [CLI reference](#cli-reference) · [Benchmarks](#benchmarks) · [FAQ](#faq)
+[Install](#quick-start) · [Documentation](#-project-architecture--operations-hub) · [Basic commands](#basic-commands) · [Quick demo](#quick-demo) · [Why PHANTOM](#why-phantom) · [How it works](#how-it-works) · [Adding models](#adding-models) · [CLI reference](#cli-reference) · [Benchmarks](#benchmarks) · [FAQ](#faq)
 
 </div>
+
+---
+
+## 📚 Project Architecture & Operations Hub
+
+| Document | Direct Link | Purpose |
+|:---|:---|:---|
+| 📌 **Today's Workboard** | [`TODAY.md`](TODAY.md) / [`docs/DAILY_WORKBOARD.md`](docs/DAILY_WORKBOARD.md) | Active session checklist, "start with today" workflow & tomorrow's queue |
+| 🗺️ **Concept Map & Roadmap** | [`docs/CONCEPT_MAP.md`](docs/CONCEPT_MAP.md) | North Star, Phase 0 $\to$ Phase 2 journey, and 4 strategic evolutionary branches |
+| 📊 **Living Progress Tracker** | [`docs/PROGRESS.md`](docs/PROGRESS.md) | Subsystem readiness matrix (8/8 green), tested model registry & scorecards |
+| 🧪 **Testing Ledger & Reports** | [`docs/testing/INDEX.md`](docs/testing/INDEX.md) | Verified real model test runs, latency, throughput & hardware telemetry |
+| 📝 **Engineering Changelog** | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Granular reverse-chronological record of all updates, fixes, and commits |
+| ⚖️ **Decision Log (ADR)** | [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md) | Architecture Decision Records (ADRs 001–006) for core engineering choices |
+| 📑 **Platform Specifications** | [`docs/specs/`](docs/specs/) | Master platform prompts, engine specifications, and developer guides |
 
 ---
 

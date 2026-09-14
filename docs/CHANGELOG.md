@@ -4,7 +4,40 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
 
 ---
 
-## [Unreleased] / Current Head (`8809984`) — 2026-09-14
+## [Unreleased] — 2026-09-15
+
+### Added
+* **Daily Mission Workboard & Operations Hub (`docs/DAILY_WORKBOARD.md` & `TODAY.md`)**:
+  * Created daily standup workboard implementing the 5-step operational protocol (Standup $\to$ Build $\to$ Debug & Test $\to$ Auto-Log $\to$ Handoff).
+  * Added active session checklist, next-session queue, and direct root pointer (`TODAY.md`).
+  * Added Documentation Architecture Hub table to [`README.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/README.md).
+* **Specifications Subdirectory (`docs/specs/`)**:
+  * Cleaned up repository root by moving master prompts and platform specs into version-controlled `docs/specs/`.
+
+---
+
+## Commit `ccc974a` — 2026-09-14
+**Title**: `feat: add ephemeral test runner and project documentation suite`
+
+### Added
+* **Evolutionary Concept Map & Long-Term Roadmap ([`docs/CONCEPT_MAP.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/CONCEPT_MAP.md))**:
+  * Documented complete project trajectory from Phase 0 (mock purges) $\to$ Phase 1 (real 32B run) $\to$ Phase 2 (zero-disk streaming).
+  * Formalized 4 strategic branches: Dense Maximization, Sparse MoE Optimization, 70B NVMe Tiering, and Multi-Node Cloud Sandboxes.
+* **Living Subsystem Progress Dashboard ([`docs/PROGRESS.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/PROGRESS.md))**:
+  * Established 8-subsystem readiness matrix (100% green audit pass).
+  * Created tested models registry and Phase 2 milestone tracker.
+* **Architecture Decision Records ([`docs/DECISION_LOG.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DECISION_LOG.md))**:
+  * Documented ADRs 001 through 006 covering HF 65GB RAM explosion, purge of synthetic mocks, hardware calibration, MoE vs Dense compute reality, zero-disk testing paradigm, and pure-CPU SIMD fallback.
+* **Centralized Testing Ledger & Standardized Templates ([`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md))**:
+  * Moved `test 1 Qwen2.5-Coder-32B.md` to `docs/testing/test_01_qwen2.5_coder_32b.md`.
+  * Created master comparative test registry.
+  * Added [`TEMPLATE_TEST_REPORT.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/TEMPLATE_TEST_REPORT.md) for standardized reporting.
+  * Built `register_test_in_ledger()` automated append hook in [`tests/ephemeral_test_runner.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/ephemeral_test_runner.py).
+
+---
+
+## Commit `8809984` — 2026-09-14
+**Title**: `feat: add Zero-Disk & Multi-Hardware Testing Framework`
 
 ### Added
 * **Zero-Disk Virtual Architecture & Hardware Profiler (`phantom profile`)**:
@@ -20,6 +53,7 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Added `--dry-run` simulation mode.
 * **Simulator Unit Test Suite (`tests/unit/test_hardware_simulator.py`)**:
   * Added 7 unit tests verifying model resolution, MoE active compute scaling, 70B NVMe spillover, and multi-hardware presets (100% passing).
+
 
 ---
 
