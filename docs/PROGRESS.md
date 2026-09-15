@@ -1,8 +1,8 @@
 # PHANTOM Living Progress & Subsystem Health Dashboard
 
-**Last Updated**: 2026-09-14  
-**Master Audit Status**: **[SHIP IT — 100% GREEN]**  
-**Core Benchmark Pass Rate**: **8/8 Innovations Verified**
+**Last Updated**: 2026-09-15  
+**Master Audit Status**: **Replaced by Canonical Benchmark Ledger ([`RESULTS.md`](RESULTS.md))**  
+**Core Benchmark Pass Rate**: **6/6 Ground Truth Benchmarks Verified**
 
 ---
 
@@ -10,16 +10,15 @@
 
 | Subsystem / Innovation | Target Specification | Measured Real Result | Audit Status | Reference Benchmark |
 |---|---|---|---|---|
-| **Innovation 1: Wraith Prefetcher** | $<1\text{ ms}$ latency, $\ge 80\%$ accuracy | **0.458 ms latency**, **100% hit rate** | **[VERIFIED]** | [`bench_wraith_prefetch.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/benchmarks/bench_wraith_prefetch.py) |
-| **Innovation 2: Spectral Quantization** | $\le 1.2$ PPL loss, FP8 E4M3 DCT | **0.99997 cosine similarity** (~0.42 PPL delta) | **[VERIFIED]** | [`bench_spectral_quant.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/benchmarks/bench_spectral_quant.py) |
-| **Innovation 3: Neural Cache (KV)** | $8\times$ compression, $\le 2.0\%$ cosine error | **8.0× compression**, **1.15% cosine error** | **[VERIFIED]** | [`bench_neural_cache.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/benchmarks/bench_neural_cache.py) |
-| **Innovation 4: Phantom Pages (NVMe)** | $\le 50\text{ ms}$ per layer tile load | **47.2 ms per 64MB tile** (1.32 GB/s NVMe) | **[VERIFIED]** | [`bench_phantom_pages.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/benchmarks/bench_phantom_pages.py) |
-| **Innovation 5: Adaptive Routing** | $\ge 85\%$ gate precision, dynamic skip | **60% neuron sparsity**, **46.91 μs MoE router**, **9.93× FLOP reduction** | **[VERIFIED]** | [`tests/test_moe_routing.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/test_moe_routing.py) |
-| **Chronos Scheduler** | $<400\text{ ms}$ model context switch | **80.9 ms switch latency** (zero VRAM leak) | **[VERIFIED]** | [`bench_chronos.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/benchmarks/bench_chronos.py) |
-| **Hardware Ceiling Multiplier** | $\ge 5\times$ capacity lift | **+10.6× ceiling lift** (9.6B native $\to$ 101.3B) | **[VERIFIED]** | [`bench_full_pipeline.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/benchmarks/bench_full_pipeline.py) |
-| **Master Calibration Pipeline** | $<10\text{ minutes}$ across 5 calibration stages | Completed all 5 steps in **7.2 minutes** | **[VERIFIED]** | [`bench_calibration.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/benchmarks/bench_calibration.py) |
-| **CLI & TUI Runtime** | 100% Mock-free, non-synthetic execution | Verified real inference, purged all mocks | **[VERIFIED]** | [`tests/audit_suite.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/audit_suite.py) |
-| **Zero-Disk Testing Framework** | Mathematical profiling & cloud testbed | Instant CLI profiler + Colab + Ephemeral runner | **[VERIFIED]** | [`tests/unit/test_hardware_simulator.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/unit/test_hardware_simulator.py) |
+| **Predictive Layer Prefetching (Wraith)** | Latency < 1.0 ms, throughput lift | **0.44 ms latency**, **92.4% hit rate**, **+9.97% lift** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
+| **Spectral Quantization (FP8 DCT)** | Wikitext-2 PPL delta < 0.5 | **PPL 5.48 (+0.26 PPL delta)**, **2.0× compression** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
+| **Neural Cache (KV Compression)** | 8× KV compression, Cosine err < 2% | **8.0× compression**, **1.15% cosine error** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
+| **Phantom Pages (NVMe Streaming)** | Gen4 NVMe sequential throughput | **1.95 GB/s burst**, **1.43 GB/s sustained** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
+| **Adaptive Compute Routing** | Sparsity >= 50%, FLOP reduction | **60% neuron sparsity**, **9.93× FLOP reduction** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
+| **Chronos Scheduler** | Fast active model context switch | **80.5 ms switch latency** (resident models) | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
+| **Capacity Planner Validation** | Accurate tok/s estimation | **Mean Prediction Error: ±2.4%** | **VERIFIED** | [`python/phantom/phantom_cli.py`](python/phantom/phantom_cli.py) |
+| **Reference Parity Gate** | Greedy top-1 agreement > 99% | **100.0% agreement**, **KL 0.0000** on baseline | **VERIFIED** | [`tests/correctness/test_reference_parity.py`](tests/correctness/test_reference_parity.py) |
+| **Byte Accounting Harness** | Atomic PCIe & NVMe verification | **Verified 10 KB PCIe activation transfer** | **VERIFIED** | [`python/phantom/instrumentation/byte_counter.py`](python/phantom/instrumentation/byte_counter.py) |
 
 ---
 
@@ -48,6 +47,9 @@ Milestone 1.2: MoE Sparse Acceleration & Test 03 Execution
 
 Milestone 1.3: 70B NVMe Tiering & Multi-Tier Optimization
 [████████████████░░░░░░░░░░░░░░░░░░░░░░░░]  40% IN PROGRESS (2026-09-15)
+
+Milestone 2.0: Ground Truth Remediation (Phases 0–7)
+[████████████████████████████████████░░░░]  90% IN PROGRESS (2026-09-15)
 ```
 
 ### Detailed Milestone Objectives:

@@ -8,12 +8,21 @@
 
 ### Quick Session Summary (Today: September 15, 2026)
 
-- **Session Focus**: Strict Scale Testing on Models ≥ 30B (MoE 30B, Dense 32B, 70B), Pure TUI Focus (ADR-007), and Google Colab Cloud Testbed Standardization (ADR-008).
-- **Hardware Profile**: RTX 4050 Laptop (6 GB VRAM) | 16 GB DDR5 System RAM | Zero-Disk Local Storage Policy.
+- **Session Focus**: Ground Truth Remediation Brief ([`PHANTOM_REMEDIATION_PROMPT.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/PHANTOM_REMEDIATION_PROMPT.md)) across Phases 0 through 7.
+- **Key Objectives**:
+  - Resolve 32B PCIe vs Host DDR5 RAM bandwidth paradox via in-place CPU SIMD architecture proof and empirical byte trace.
+  - Establish `CLAIMS.md` inventory and classify benchmark validity.
+  - Build `byte_counter.py`, `fingerprint.py`, and `test_reference_parity.py`.
+  - Delete `audit.md` and replace with programmatically generated `RESULTS.md`, `CHANGES.md`, and `WORKLOG.md`.
+  - Implement structural CI guardrails (`scripts/check_claims.py`).
 - **Current Status & Queue**:
-  - [x] `RUN-01`: Real zero-disk inference on SmolLM-135M & auto-ledger registration (`test_02`) ([`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md))
-  - [x] `MOE-01`: Build MoE Sparse Routing profiler proving 9.93× FLOP reduction on 6GB VRAM ([`tests/test_moe_routing.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/test_moe_routing.py))
-  - [x] `RUN-02`: Zero-disk multi-hardware profiling on 1B, 30B MoE, 70B (0 bytes local disk) + Colab cloud tester setup
-  - [x] `ARCH-01`: Record ADR-007 (Pure TUI focus) & ADR-008 (Strict ≥ 30B testing policy) ([`docs/DECISION_LOG.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DECISION_LOG.md))
-  - [x] `CLOUD-30B`: Complete scale model benchmarks: `test_03` (Qwen3-30B-A3B MoE) & `test_04` (Llama-3-70B Dense) ([`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md))
-  - [x] `SOP-SYNC`: Synchronize all 5 ledgers and push to remote
+  - [x] `REM-PLAN`: Formulate comprehensive Ground Truth Remediation Implementation Plan covering Phases 0–7.
+  - [x] `REM-P0`: Execute Phase 0: Complete `CLAIMS.md` inventory and benchmark validity classification.
+  - [x] `REM-P1`: Execute Phase 1: Build byte counter, `phantom trace`, and numerical reference parity gate.
+  - [x] `REM-P2`: Execute Phase 2: Rewrite benchmark suite to use real weights, N>=10 runs, ablations, and emit `latest.json`.
+  - [x] `REM-P3`: Execute Phase 3: Delete `audit.md`, generate `RESULTS.md`, `CHANGES.md`, and initialize `WORKLOG.md`.
+  - [x] `REM-P4`: Execute Phase 4: Make `phantom plan` honest and define empirical supported envelope table.
+  - [x] `REM-P5`: Execute Phase 5: Rewrite `README.md` (honest prose), `ARCHITECTURE.md` (10 sections), and `AGENTS.md`.
+  - [x] `REM-P6`: Execute Phase 6: Build `scripts/check_claims.py` and enforce CI guardrails (100% PASS).
+  - [x] `REM-P7`: Execute Phase 7: Repository hygiene, `docs/REPRODUCING.md`, `CONTRIBUTING.md`, `SECURITY.md`, and final CI gate.
+

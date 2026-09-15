@@ -49,3 +49,16 @@ At the conclusion of EVERY prompt, before delivering your final response to the 
    Never introduce mocks or synthetic test data. All verification must run against real physical engines and true hardware telemetry.
 3. **Clean Root Directory**:
    Do not dump scratch or specification markdown files into the workspace root. Place specs in `docs/specs/`, tests in `docs/testing/`, and scratch in `scratch/`.
+
+---
+
+## 🛡️ Ground Truth & Anti-Regression Invariants (§7.4 Mandate)
+
+Future agents modifying this repository must strictly adhere to these rules:
+
+1. **Read Invariants First**: Read [`docs/ARCHITECTURE.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/ARCHITECTURE.md) §10 before modifying any execution, memory, or compression subsystem.
+2. **One Number, One Source**: Never hand-type a quantitative metric into documentation. Metrics must be programmatically generated into [`RESULTS.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/RESULTS.md) by running `python benchmarks/run_all.py` and `python scripts/generate_results.py`.
+3. **Parity Gate Requirement**: Always execute `python tests/correctness/test_reference_parity.py --quick` before opening a pull request or submitting code.
+4. **Assume Measurement Bug First**: If a change appears to improve an inference benchmark by more than 20%, assume a measurement error or work-skipping bug first, and prove otherwise with byte-accounting traces.
+5. **No Self-Grading Audits**: Never create summary documents that assign verdicts to the project (e.g. `audit.md` "61/61 PASS SHIP IT"). Deliver empirical data with variances and declare what each benchmark proves and does not prove.
+

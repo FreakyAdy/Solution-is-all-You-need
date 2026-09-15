@@ -339,30 +339,32 @@ def _calculate_ceilings(
         quant_bits:   Quantization bits assumed (default 4).
 
     Returns:
-        Dict with ceiling_b values.
+        Dict with physical model ceilings grounded in actual hardware memory tiers.
     """
-    bits_per_param = quant_bits
+    bytes_per_param = quant_bits / 8.0  # 0.5 bytes for Q4_K_M
 
-    # Native: VRAM only, ~80% usable for weights
-    native_b = (vram_gb * 0.80 * 8) / bits_per_param
+    # 1. Native VRAM Ceiling (leaving 1.2 GB for KV cache and display)
+    usable_vram_gb = max(0.5, vram_gb - 1.2)
+    native_b = usable_vram_gb / bytes_per_param
 
-    # Phantom: VRAM + RAM (compressed, ~0.5 of RAM due to LZ4) + NVMe (compressed)
-    vram_params_b = (vram_gb * 0.85 * 8) / bits_per_param
-    ram_params_b = (ram_gb * 0.70 * 8) / bits_per_param * 0.5  # 50% efficiency for offload
-    nvme_params_b = (nvme_free_gb * 0.60 * 8) / bits_per_param * 0.3  # 30% for NVMe speed penalty
+    # 2. Fast-Tier Ceiling (VRAM + usable Host RAM, leaving 6.0 GB for OS)
+    usable_ram_gb = max(1.0, ram_gb - 6.0)
+    fast_tier_gb = usable_vram_gb + usable_ram_gb
+    fast_tier_b = fast_tier_gb / bytes_per_param  # ~38B to 40B on 24GB RAM
 
-    # With Spectral Quant: ~85% memory reduction on MLP weights (60% of total params)
-    spectral_bonus = 0.85 * 0.60
-    phantom_b = (vram_params_b + ram_params_b + nvme_params_b) * (1 + spectral_bonus)
+    # 3. Maximum 3-Tier NVMe Ceiling (Supported models that can stream from NVMe)
+    # Beyond 70B, streaming from 1.5 GB/s NVMe drops speed below 0.1 tok/s
+    nvme_usable_gb = min(nvme_free_gb * 0.5, 60.0)
+    total_physical_tier_gb = fast_tier_gb + nvme_usable_gb
+    max_nvme_b = min(72.0, total_physical_tier_gb / bytes_per_param)
 
-    # Sweet spot: where tok/sec is acceptable
-    sweet_min = vram_params_b * 2  # 2x VRAM still fast
-    sweet_max = phantom_b * 0.7    # 70% of theoretical max
+    # Sweet spot: where generation remains interactive (>= 2.5 tok/sec in fast tier)
+    sweet_min_b = max(native_b, 7.0)
+    sweet_max_b = min(fast_tier_b, 33.0)
 
-    # Min tok/sec estimates by tier
     tier = _classify_tier(vram_gb)
     tok_sec_map = {
-        "LAPTOP": 3.0,
+        "LAPTOP": 2.88,
         "MID": 6.0,
         "DESKTOP": 12.0,
         "PRO": 20.0,
@@ -371,10 +373,11 @@ def _calculate_ceilings(
 
     return {
         "native_b": round(native_b, 1),
-        "phantom_b": round(phantom_b, 1),
-        "sweet_min_b": round(max(sweet_min, native_b), 1),
-        "sweet_max_b": round(min(sweet_max, phantom_b), 1),
-        "min_tok_sec": tok_sec_map.get(tier, 3.0),
+        "fast_tier_b": round(fast_tier_b, 1),
+        "phantom_b": round(max_nvme_b, 1),  # Max supported scale (70B)
+        "sweet_min_b": round(sweet_min_b, 1),
+        "sweet_max_b": round(sweet_max_b, 1),
+        "min_tok_sec": tok_sec_map.get(tier, 2.88),
     }
 
 
@@ -468,11 +471,11 @@ def detect_hardware(
                     vram_gb=round(vram_gb, 1),
                     compute_capability=f"{props.major}.{props.minor}",
                     pcie_gen=4,
-                    pcie_width=16,
-                    peak_bandwidth_gbps=32.0,
-                    measured_bandwidth_gbps=25.0,
-                    temperature_c=65,
-                    power_limit_w=100,
+                    pcie_width=8,
+                    peak_bandwidth_gbps=16.0,
+                    measured_bandwidth_gbps=12.8,
+                    temperature_c=55,
+                    power_limit_w=95,
                 ))
         except Exception:
             pass
@@ -485,10 +488,10 @@ def detect_hardware(
             vram_gb=6.0,
             compute_capability="8.9",
             pcie_gen=4,
-            pcie_width=16,
-            peak_bandwidth_gbps=32.0,
-            measured_bandwidth_gbps=26.0,
-            temperature_c=67,
+            pcie_width=8,
+            peak_bandwidth_gbps=16.0,
+            measured_bandwidth_gbps=12.8,
+            temperature_c=55,
             power_limit_w=95,
         ))
 

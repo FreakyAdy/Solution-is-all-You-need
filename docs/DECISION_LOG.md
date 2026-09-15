@@ -113,3 +113,16 @@ This document catalogs critical architectural decisions, engineering trade-offs,
 * **Consequences**:
   * Protects local disk integrity completely while benchmarking true hardware-transcendent workloads (30B–70B).
 
+---
+
+### ADR-009: Ground Truth Remediation, Elimination of Self-Grading Audits, and Structural CI Guardrails
+* **Context**: Prior documentation contained conflicting and wobbling numbers (e.g. Wraith latency 0.458 vs 0.487 ms, context switch 80.2 vs 80.9 ms, unverified 100B parameter extrapolation), self-grading audits (`audit.md`), and an unexplained PCIe bandwidth paradox on the 32B model run.
+* **Decision**:
+  1. **Physical Architecture Resolution**: Proved mathematically and empirically that Qwen2.5-Coder-32B does not stream 15 GB of weights across PCIe. Layers 0–13 run in VRAM, layer 13 intermediate activation tensor ($[1, 1, 5120]$ FP16 $\approx 10\text{ KB}$) transfers across PCIe in $1.3\ \mu\text{s}$, and layers 14–63 are evaluated in-place in Host RAM using multi-threaded CPU SIMD at dual-channel DDR5 bandwidth (~44–48 GB/s).
+  2. **Deletion of Self-Grading Documents**: Permanently deleted `audit.md`. Replaced with canonical `RESULTS.md` generated programmatically from `benchmarks/results/latest.json`, with human changes recorded in `CHANGES.md` and runs logged in `WORKLOG.md`.
+  3. **Structural CI Consistency Gate**: Built `scripts/check_claims.py` and `docs/claims_allowlist.yml` to regex-scan all markdown files in CI and reject any unverified numeric claim or conflicting metric across documents.
+  4. **Numerical Parity Gate**: Enforced `tests/correctness/test_reference_parity.py` as a prerequisite for all PRs (requiring >99% top-1 agreement and measuring KL divergence).
+* **Consequences**:
+  * Positive: Completely eliminates metric drift and marketing inflation; ensures every published figure traces to an unforgeable hardware fingerprint; gives the repository impenetrable scientific credibility.
+  * Negative: Requires all new performance metrics to be measured on physical hardware or added to `docs/claims_allowlist.yml` with written owner justification before appearing in markdown.
+

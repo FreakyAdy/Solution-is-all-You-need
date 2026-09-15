@@ -7,19 +7,23 @@
 ## 🎯 Active Session Workboard: Today
 
 - **Session Date**: September 15, 2026
-- **Session Objective**: Focus strictly on scale models ≥ 30B (MoE 30B, Dense 32B, 70B), deprecate Web UI in favor of high-performance TUI (ADR-007), and standardize on Google Colab Cloud Testbed (ADR-008).
-- **Hardware Profile**: NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM) | 16 GB DDR5 System RAM | Zero Local Model Storage Policy.
+- **Session Objective**: Ground Truth Remediation Brief ([`PHANTOM_REMEDIATION_PROMPT.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/PHANTOM_REMEDIATION_PROMPT.md)) across Phases 0 through 7.
+- **Hardware Profile**: NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM) | 24 GB DDR5 System RAM | Zero Local Model Storage Policy.
 
 ### 📋 Today's Action Checklist
 
 | Status | Task ID | Domain | Description | Artifact / Target |
 |:---:|:---:|:---:|:---|:---|
-| ✅ | `RUN-01` | Live Testing | Execute real zero-disk inference on SmolLM-135M and verify auto-ledger insertion | [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) (`test_02`) |
-| ✅ | `RUN-02` | Zero-Disk | Mathematical profiling on 1B, 30B MoE, 70B across RTX 4050 & Colab T4 (0 bytes disk) | `phantom profile` & [`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb) |
-| ✅ | `MOE-01` | Benchmarks | Build MoE Sparse Routing profiler proving 10× FLOP reduction for 30B MoE on 6GB VRAM | [`tests/test_moe_routing.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/test_moe_routing.py) |
-| ✅ | `ARCH-01`| Strategy | Record ADR-007 (Pure TUI focus) & ADR-008 (Strict ≥ 30B testing policy) | [`docs/DECISION_LOG.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DECISION_LOG.md) |
-| ✅ | `CLOUD-30B`| Cloud Testing| Deploy & execute ≥ 30B model run (Qwen3-30B-A3B & Llama-3-70B) | [`test_03`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_03_qwen3_30b_a3b.md), [`test_04`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_04_llama3_70b.md) |
-| ✅ | `SOP-SYNC`| Documentation | Auto-synchronize the 5 documentation ledgers and commit clean state | Git Remote `origin/main` |
+| ✅ | `REM-PLAN` | Planning | Create Master Ground Truth Remediation Implementation Plan covering Phases 0–7 | [`implementation_plan.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/implementation_plan.md) |
+| ✅ | `REM-P0` | Inventory | Extract all quantitative claims to `CLAIMS.md` & classify benchmark validity | [`CLAIMS.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/CLAIMS.md) |
+| ✅ | `REM-P1` | Ground Truth | Implement `byte_counter.py`, `phantom trace`, and `test_reference_parity.py` | `python/phantom/instrumentation/` |
+| ✅ | `REM-P2` | Benchmarks | Rebuild benchmark suite (real weights, N>=10, ablations, `latest.json`) | `benchmarks/` |
+| ✅ | `REM-P3` | Reconciliation| Delete `audit.md`, generate `RESULTS.md`, `CHANGES.md`, and log `WORKLOG.md` | Root ledgers |
+| ✅ | `REM-P4` | Runtime Fixes | Model bandwidth wall in `phantom plan` and establish supported envelope | `python/phantom/` |
+| ✅ | `REM-P5` | Documentation | Rewrite `README.md` (honest prose), `ARCHITECTURE.md` (10-sections), `AGENTS.md` | `README.md` & `docs/` |
+| ✅ | `REM-P6` | CI Guardrails | Build `scripts/check_claims.py` & automated CI parity gates (100% PASS) | `scripts/check_claims.py` |
+| ✅ | `REM-P7` | Hygiene | Verify install scripts, author name, clean root, and write `REPRODUCING.md` | `docs/REPRODUCING.md` |
+
 
 ---
 
@@ -71,14 +75,12 @@ flowchart LR
 
 When starting the next session, here is our queued roadmap:
 
-- [ ] **Run Ephemeral Zero-Disk Test on SmolLM-135M**:
-  Execute real inference via `python tests/ephemeral_test_runner.py --model smollm-135m` to verify automated ledger appending end-to-end.
-- [ ] **Run Ephemeral Zero-Disk Test on Llama-3.2-1B**:
-  Stream 1B parameter model directly into RAM/VRAM, benchmark tokens/sec, and verify auto-deletion on exit.
-- [ ] **Implement MoE Sparse Router Profiling**:
-  Create an expert-activation tracing benchmark in `tests/test_moe_routing.py` to prove mathematically why a 30B MoE (with 3B active weights) achieves 10× lower latency than dense 32B on an RTX 4050.
-- [ ] **Web UI Component & Telemetry Test**:
-  Test the React dark glassmorphism dashboard (`http://localhost:11411/ui`) with live WebSocket telemetry.
+- [ ] **Configure Self-Hosted GPU Runner for Automated Nightly CI**:
+  Connect RTX 4050 runner to GitHub Actions with label `self-hosted-gpu` to execute nightly runs of `benchmarks/run_all.py` and commit fresh `latest.json` archives.
+- [ ] **Implement Linux Direct `io_uring` Kernel**:
+  Port `phantom_pages` NVMe tile loader from multi-threaded pread to Linux asynchronous `io_uring` SQE/CQE ring buffer for lower latency tile dispatch.
+- [ ] **Run Long-Context Retrieval Evaluation (Needle-in-a-Haystack)**:
+  Run evaluation of Neural Cache KV compression up to 32K context to characterize recall accuracy degradation boundaries.
 
 ---
 
@@ -103,3 +105,4 @@ When starting the next session, here is our queued roadmap:
 |:---|:---|:---|
 | **2026-09-14** | Audit & Verification | Eliminated all mock files; executed real non-synthetic test of Qwen2.5-Coder-32B; proved 4.88× parameter ceiling lift (6GB VRAM); verified pure-CPU SIMD fallback; implemented zero-disk ephemeral streaming harness. |
 | **2026-09-15** | Repository Structure | Restructured documentation system: established Concept Map, Progress Dashboard, Changelog, ADR Decision Log, auto-updating Testing Ledger, and Daily Workboard. |
+| **2026-09-15** | Ground Truth Remediation | Completed PHANTOM Ground Truth Remediation Brief across Phases 0–7: solved 32B PCIe paradox (10 KB activation copy + in-place DDR5 SIMD), built atomic byte counter & hardware fingerprinting, rewrote benchmark suite (N>=10, ablations, `latest.json`), deleted `audit.md`, generated canonical `RESULTS.md`, updated `README.md` & `ARCHITECTURE.md`, enforced 100% PASS `scripts/check_claims.py` CI gate, authored `REPRODUCING.md`, `CONTRIBUTING.md`, `SECURITY.md`. |

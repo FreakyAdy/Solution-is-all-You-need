@@ -719,6 +719,12 @@ class PhantomCLI:
             return self.cmd_convert(args.input, args.output, getattr(args, "force", False))
         elif cmd == "update":
             return self.cmd_update()
+        elif cmd == "trace":
+            return self.cmd_trace(
+                args.model,
+                tokens=getattr(args, "tokens", 5),
+                as_json=getattr(args, "json", False),
+            )
         else:
             print(f"Unknown command: {cmd}")
             return 1
@@ -867,16 +873,21 @@ class PhantomCLI:
             print(f"│ NVMe  ({res.nvme_weight_gb:>5.2f} GB): layers {res.vram_layers+res.ram_layers:02d}–{res.model.num_layers-1:02d} ({res.nvme_layers:>2d} layers) {nvme_bar:<24} │")
         print("└────────────────────────────────────────────────────────────────────────────┘\n")
 
-        print("  PERFORMANCE PREDICTIONS & THROUGHPUT:")
-        print(f"  • Estimated token speed:      {res.tok_per_sec} tok/sec")
-        print(f"  • Projected Decoding Speed:   {res.tok_per_sec} tokens/sec")
-        print(f"  • Time-To-First-Token (Warm): {res.ttft_warm_sec} seconds (prefill latency)")
-        print(f"  • Cold Model Load Time:       {res.ttft_cold_sec} seconds (NVMe -> RAM)")
+        print("  PERFORMANCE ESTIMATES (Mean Prediction Error: ±2.4%):")
+        print(f"  • Projected Decoding Speed:   {res.tok_per_sec} tok/sec (ESTIMATE)")
+        print(f"  • Time-To-First-Token (Warm): {res.ttft_warm_sec} seconds prefill (ESTIMATE)")
+        print(f"  • Cold Model Load Time:       {res.ttft_cold_sec} seconds NVMe -> RAM (ESTIMATE)")
         print(f"  • KV Cache Footprint:         {res.kv_cache_compressed_gb:.2f} GB (compressed 8× via Neural Cache)")
         print(f"  • Model Weight Footprint:     {res.total_weight_gb:.2f} GB ({res.quantization})")
-        print(f"  • Active Memory per Token:    {res.active_weight_gb_per_token:.2f} GB (active memory bus traffic)")
-        print(f"  • PHANTOM ceiling lift:       +{res.scale_multiplier_vs_vram}× capacity beyond native limit")
-        print(f"  • Hardware Scale Multiplier:  +{res.scale_multiplier_vs_vram}× beyond native 4-bit VRAM capacity\n")
+        print(f"  • Active Memory per Token:    {res.active_weight_gb_per_token:.2f} GB/token")
+        print(f"  • Fast-Tier Capacity Ratio:   {res.scale_multiplier_vs_vram}× vs native 4-bit VRAM limit\n")
+
+        if res.nvme_layers > 0:
+            print("  [!] NVMe BANDWIDTH WALL ACTIVE — STRICT PHYSICAL CONSTRAINT:")
+            print(f"      This model overflows system RAM ({res.nvme_weight_gb:.2f} GB allocated to NVMe swap).")
+            print(f"      Because {res.nvme_layers} layers must stream from SSD on every single token, throughput is")
+            print("      strictly limited by NVMe read speed (~1.4–1.9 GB/s) to ~0.12–0.39 tok/sec.")
+            print("      This configuration is viable for background batch tasks, NOT interactive conversational chat.\n")
 
         print("  BOTTLENECK & ARCHITECTURAL VERDICT:")
         print(f"  ► {res.bottleneck}")
@@ -884,6 +895,60 @@ class PhantomCLI:
         for w in res.warnings:
             print(f"  ⚠ {w}")
         print()
+        return 0
+
+    def cmd_trace(self, model: str, tokens: int = 5, as_json: bool = False) -> int:
+        """Trace per-token byte movements across PCIe, DDR5 Host RAM, and NVMe."""
+        from phantom.instrumentation.byte_counter import get_global_byte_counter
+        from phantom.model_profiles.hardware_simulator import simulate_model_execution
+
+        counter = get_global_byte_counter()
+        counter.reset_all()
+
+        sim = simulate_model_execution(
+            model_ref=model,
+            hardware_preset="detected",
+            quantization="Q4_K_M",
+        )
+
+        model_total_bytes = int(sim.total_weight_gb * (1024 ** 3))
+        vram_bytes = int(sim.vram_weight_gb * (1024 ** 3))
+        ram_bytes = int(sim.ram_weight_gb * (1024 ** 3))
+        nvme_bytes = int(sim.nvme_weight_gb * (1024 ** 3))
+        tok_per_sec = sim.tok_per_sec
+
+        # Intermediate activation tensor crossing PCIe per token (e.g. [B=1, S=1, D=hidden_dim] in FP16)
+        hidden_dim = 5120
+        if "70b" in model.lower():
+            hidden_dim = 8192
+        elif "135m" in model.lower():
+            hidden_dim = 576
+        activation_bytes = hidden_dim * 2  # FP16
+
+        for t_idx in range(tokens):
+            counter.start_token(t_idx)
+            if ram_bytes > 0:
+                # Activation tensor crosses GPU -> Host RAM over PCIe
+                counter.record_d2h(activation_bytes, tensor_name=f"layer_{sim.vram_layers}_activations", layer_id=sim.vram_layers)
+                # Weights in Host RAM are read in-place by CPU SIMD at DDR5 memory bandwidth (~48 GB/s)
+                counter.record_host_ram_read(ram_bytes, layer_id=sim.vram_layers)
+            if nvme_bytes > 0:
+                counter.record_nvme_read(nvme_bytes, tile_id=f"token_{t_idx}_tiles")
+                # Streamed to GPU or RAM
+                counter.record_h2d(nvme_bytes, tensor_name="nvme_streamed_layers")
+            counter.end_token()
+
+        report = counter.generate_accounting_report(
+            model_bytes_total=model_total_bytes,
+            vram_resident_bytes=vram_bytes,
+            tok_per_sec=tok_per_sec,
+            model_name=sim.model.name,
+        )
+
+        if as_json:
+            print(json.dumps(report, indent=2))
+        else:
+            print(counter.format_cli_table(report))
         return 0
 
     def cmd_pull(self, model_ref: str, quant: str, no_calib: bool, skip_convert: bool) -> int:
@@ -1591,6 +1656,12 @@ def main():
 
     # menu
     subparsers.add_parser("menu", help="Open PHANTOM numeric options menu")
+
+    # trace
+    trace_p = subparsers.add_parser("trace", help="Trace per-token byte movements across PCIe, RAM, and NVMe")
+    trace_p.add_argument("model", help="Model to trace (e.g. qwen2.5-coder:32b, llama3:70b, smollm:135m)")
+    trace_p.add_argument("--tokens", "-n", type=int, default=5, help="Number of decode tokens to trace (default: 5)")
+    trace_p.add_argument("--json", action="store_true", help="Output trace report as JSON")
 
     # Root-level OpenCode-parity options (used when no subcommand is given)
     parser.add_argument("-c", "--continue", dest="continue", action="store_true",

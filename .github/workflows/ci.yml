@@ -1,4 +1,4 @@
-name: Audit Suite
+name: CI
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ "main", "master" ]
 
 jobs:
-  audit-and-benchmarks:
-    name: Audit & Benchmarks (${{ matrix.os }} - Py ${{ matrix.python-version }})
+  cpu-verification-gate:
+    name: CPU CI Gate (${{ matrix.os }} - Py ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -30,30 +30,31 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install numpy pytest fastapi uvicorn httpx structlog pillow rich
+          pip install numpy pytest fastapi uvicorn httpx structlog pillow rich pyyaml
           pip install -e python/
 
-      - name: Run Master Audit Suite (Sections 1–7)
+      - name: Run Numerical Reference Parity Gate (CPU)
         run: |
-          python tests/audit_suite.py
+          python tests/correctness/test_reference_parity.py --quick
         env:
           PYTHONPATH: python
 
-      - name: Run CLI Innovations Benchmark
+      - name: Run Quantitative Claims Consistency Gate
         run: |
-          python python/phantom/phantom_cli.py benchmark
+          python scripts/check_claims.py
+
+      - name: Verify RESULTS.md Sync with latest.json
+        run: |
+          python scripts/generate_results.py --check
+
+      - name: Run Unit Tests
+        run: |
+          python -m pytest tests/unit/
         env:
           PYTHONPATH: python
 
-      - name: Run Standalone Benchmarks
+      - name: Run Benchmark Suite Smoke Test
         run: |
-          python tests/benchmarks/bench_spectral_quant.py
-          python tests/benchmarks/bench_wraith_prefetch.py
-          python tests/benchmarks/bench_neural_cache.py
-          python tests/benchmarks/bench_sparse_routing.py
-          python tests/benchmarks/bench_phantom_pages.py
-          python tests/benchmarks/bench_chronos.py
-          python tests/benchmarks/bench_full_pipeline.py
-          python tests/benchmarks/bench_calibration.py
+          python benchmarks/run_all.py
         env:
           PYTHONPATH: python

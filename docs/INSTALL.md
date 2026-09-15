@@ -1,15 +1,11 @@
 # PHANTOM Installation Guide
 
 ## Quickstart
-
-### Linux / macOS / WSL2
+ 
 ```bash
-curl -fsSL https://phantom-core.org/install.sh | bash
-```
-
-### Windows (PowerShell)
-```powershell
-irm https://phantom-core.org/install.ps1 | iex
+git clone https://github.com/FreakyAdy/phantom.git
+cd phantom
+pip install -e python/
 ```
 
 ## Manual Installation
