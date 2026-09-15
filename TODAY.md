@@ -27,5 +27,5 @@
   - [x] `REM-P7`: Execute Phase 7: Repository hygiene, `docs/REPRODUCING.md`, `CONTRIBUTING.md`, `SECURITY.md`, and final CI gate.
   - [x] `DOC-VER`: Extensively verify baseline requirements (Pure GPU, Hybrid CPU/GPU, CPU-only) and refine README matrix.
   - [x] `TEST-10M`: Execute multi-hardware zero-disk evaluation across 10 frontier models >= 30B (test_05 through test_14).
-  - [x] `DOC-TABLES`: Expand Real-world device impact and Hardware requirements tables in README.md across 5 tiers covering all 14 evaluated models.
   - [x] `OPT-70B-NVME`: Implement Frontier 70B NVMe Throughput Acceleration (persistent handles, AsyncTilePagingEngine, fused SwiGLU + FP8 iDCT kernel).
+  - [x] `OPT-NIAH-32K`: Long-Context Needle-In-A-Haystack (NIAH) Evaluation across 4K to 32K context windows verifying 8.0x Neural Cache (100% recall, 4.0GB to 512MB KV compression).

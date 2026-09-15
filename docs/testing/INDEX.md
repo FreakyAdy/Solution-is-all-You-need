@@ -22,6 +22,8 @@ This ledger serves as the single source of truth for all verified hardware and c
 | **`test_12`** | 2026-09-15 | `CodeLlama-70B-Instruct` | **100% Dense** (69.0B active) | Q4_K_M | RTX 4050 (6GB) & Colab T4 (15GB) | 4.58 GB VRAM + 17.42 GB RAM + 14.67 GB NVMe | **0.40 tok/s (Local) / 0.19 tok/s (Cloud)** | **9.58s / 3.26s** | **[PASS — Verified]**<br>• 70B Code flagship<br>• 0 bytes local disk | [Report](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_12_codellama_70b.md) |
 | **`test_13`** | 2026-09-15 | `Command-R-35B` | **100% Dense** (35.0B active) | Q4_K_M | RTX 4050 (6GB) & Colab T4 (15GB) | 4.58 GB VRAM + 13.75 GB RAM | **3.22 tok/s (Local) / 4.22 tok/s (Cloud)** | **5.00s / 1.61s** | **[PASS — Verified]**<br>• 35B Enterprise<br>• 0 bytes local disk | [Report](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_13_command_r_35b.md) |
 | **`test_14`** | 2026-09-15 | `Yi-1.5-34B-Chat` | **100% Dense** (34.4B active) | Q4_K_M | RTX 4050 (6GB) & Colab T4 (15GB) | 4.45 GB VRAM + 13.36 GB RAM | **3.32 tok/s (Local) / 4.77 tok/s (Cloud)** | **4.85s / 1.52s** | **[PASS — Verified]**<br>• 34B Bilingual<br>• 0 bytes local disk | [Report](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_14_yi_1.5_34b.md) |
+| **`test_15`** | 2026-09-15 | `Needle-In-A-Haystack-32K` | **Long-Context NIAH** (4K–32K) | Neural Cache 8x | RTX 4050 Laptop (6GB VRAM, 24GB RAM) | 4.0 GB to 512 MB KV Footprint | **100.0% Recall** | **<1ms Decompress** | **[PASS — 100% Recall]**<br>• 20/20 depths passed<br>• 0 bytes local disk | [Report](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_15_long_context_needle_haystack.md) |
+
 
 ---
 

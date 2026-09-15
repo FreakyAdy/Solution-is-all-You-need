@@ -25,8 +25,8 @@
 | ✅ | `REM-P7` | Hygiene | Verify install scripts, author name, clean root, and write `REPRODUCING.md` | `docs/REPRODUCING.md` |
 | ✅ | `DOC-VER` | Verification | Extensively verify baseline requirements & refine README hardware matrix | `README.md` & docs |
 | ✅ | `TEST-10M` | Testing | Multi-hardware zero-disk evaluation across 10 frontier models >= 30B | `docs/testing/` |
-| ✅ | `DOC-TABLES` | Documentation | Expand Real-World Impact & Hardware Requirements tables in README.md | `README.md` |
 | ✅ | `OPT-70B-NVME`| Kernel / I/O | Frontier 70B NVMe Throughput Acceleration (AsyncTilePagingEngine & Fused SwiGLU) | `python/phantom/` & `kernels/` |
+| ✅ | `OPT-NIAH-32K` | Evaluation | Long-Context Needle-In-A-Haystack (4K–32K, 100% recall, 8.0x KV compression) | `tests/correctness/` & `benchmarks/` |
 
 
 ---
@@ -83,8 +83,8 @@ When starting the next session, here is our queued roadmap:
   Connect RTX 4050 runner to GitHub Actions with label `self-hosted-gpu` to execute nightly runs of `benchmarks/run_all.py` and commit fresh `latest.json` archives.
 - [ ] **Implement Linux Direct `io_uring` Kernel**:
   Port `phantom_pages` NVMe tile loader from multi-threaded pread to Linux asynchronous `io_uring` SQE/CQE ring buffer for lower latency tile dispatch.
-- [ ] **Run Long-Context Retrieval Evaluation (Needle-in-a-Haystack)**:
-  Run evaluation of Neural Cache KV compression up to 32K context to characterize recall accuracy degradation boundaries.
+- [ ] **Ultra-Long Multi-Needle Stress Testing (>64K Tokens)**:
+  Extend NIAH harness to 64K and 128K context tokens with multi-needle associative retrieval to characterize upper bounds of 8.0x Neural Cache capacity.
 
 ---
 

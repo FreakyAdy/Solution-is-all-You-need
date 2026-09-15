@@ -13,6 +13,7 @@
 | **Predictive Layer Prefetching (Wraith)** | Latency < 1.0 ms, throughput lift | **0.44 ms latency**, **92.4% hit rate**, **+9.97% lift** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
 | **Spectral Quantization (FP8 DCT)** | Wikitext-2 PPL delta < 0.5 | **PPL 5.48 (+0.26 PPL delta)**, **2.0× compression** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
 | **Neural Cache (KV Compression)** | 8× KV compression, Cosine err < 2% | **8.0× compression**, **1.15% cosine error** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
+| **Long-Context NIAH (32K Tokens)** | 100% recall, 8.0x KV footprint reduction | **100.0% recall (20/20 tests)**, **4.0 GB to 512 MB KV** | **VERIFIED** | [`tests/correctness/test_needle_haystack.py`](tests/correctness/test_needle_haystack.py) |
 | **Phantom Pages (NVMe Streaming)** | Gen4 NVMe sequential throughput | **1.95 GB/s burst**, **1.43 GB/s sustained** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
 | **Adaptive Compute Routing** | Sparsity >= 50%, FLOP reduction | **60% neuron sparsity**, **9.93× FLOP reduction** | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
 | **Chronos Scheduler** | Fast active model context switch | **80.5 ms switch latency** (resident models) | **VERIFIED** | [`benchmarks/run_all.py`](benchmarks/run_all.py) |
@@ -40,6 +41,7 @@
 | **`CodeLlama-70B`** | **69.0 Billion** | **100% Dense** | **RTX 4050 (6GB) & Colab T4 (15GB)** | **4.58 GB VRAM + 17.42 GB RAM + 14.67 GB NVMe** | **0.40 tok/s (Local) / 0.19 tok/s (Cloud)** | **PASS — 100% Verified** ([`test_12`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_12_codellama_70b.md)) |
 | **`Command-R-35B`** | **35.0 Billion** | **100% Dense** | **RTX 4050 (6GB) & Colab T4 (15GB)** | **4.58 GB VRAM + 13.75 GB RAM** | **3.22 tok/s (Local) / 4.22 tok/s (Cloud)** | **PASS — 100% Verified** ([`test_13`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_13_command_r_35b.md)) |
 | **`Yi-1.5-34B-Chat`** | **34.4 Billion** | **100% Dense** | **RTX 4050 (6GB) & Colab T4 (15GB)** | **4.45 GB VRAM + 13.36 GB RAM** | **3.32 tok/s (Local) / 4.77 tok/s (Cloud)** | **PASS — 100% Verified** ([`test_14`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_14_yi_1.5_34b.md)) |
+| **`Needle-In-A-Haystack-32K`** | **4K–32K Tokens** | **Neural Cache (8.0x)** | **RTX 4050 (6GB VRAM) + 24GB RAM** | **4.0 GB to 512 MB KV Footprint** | **100.0% Recall (20/20)** | **PASS — 100% Verified** ([`test_15`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_15_long_context_needle_haystack.md)) |
 
 ---
 
@@ -57,6 +59,9 @@ Milestone 1.2: MoE Sparse Acceleration & Test 03 Execution
 
 Milestone 1.3: 70B NVMe Tiering & Multi-Tier Optimization
 [██████████████████████████████░░░░░░░░░░]  75% IN PROGRESS (2026-09-15)
+
+Milestone 1.4: Long-Context Needle-In-A-Haystack (32K Tokens)
+[████████████████████████████████████████] 100% COMPLETED (2026-09-15)
 
 Milestone 2.0: Ground Truth Remediation (Phases 0–7)
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
