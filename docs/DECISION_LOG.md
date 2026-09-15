@@ -12,6 +12,8 @@ This document catalogs critical architectural decisions, engineering trade-offs,
 * **ADR-004**: Dense 32B vs MoE 30B Active Compute & Memory Bandwidth Reality
 * **ADR-005**: Zero-Disk Testing Architecture — Virtual Simulation + Ephemeral Cloud Execution vs Local Disk Hoarding
 * **ADR-006**: In-Place Host RAM Evaluation via CPU SIMD vs PCIe Bus Weight Streaming
+* **ADR-007**: Deprecation of Web UI in Favor of Pure, Zero-Overhead Terminal UI (TUI)
+* **ADR-008**: Testing Policy — Restricting Verification Exclusively to Scale Models ≥ 30B via Cloud Testbed
 
 ---
 
@@ -88,3 +90,26 @@ This document catalogs critical architectural decisions, engineering trade-offs,
 * **Decision**: Standardize on in-place hybrid offloading for RAM layers. Reserve PCIe streaming exclusively for dynamic layer swapping from NVMe SSD.
 * **Consequences**:
   * Enables ~3 tok/s interactive generation on a 32B model, matching real empirical measurements.
+
+---
+
+### ADR-007: Deprecation of Web UI in Favor of Pure, Zero-Overhead Terminal UI (TUI)
+* **Context**: The platform initially contemplated a React SPA Web UI (`ui/web`) served at `http://localhost:11411/ui`, requiring Node.js build processes, web server background daemons, and browser WebSocket polling.
+* **Decision**: Formally deprecate and remove the Web UI requirement. Focus 100% of front-end engineering effort on the Terminal User Interface (TUI) (`phantom run`, `phantom menu`, `phantom profile`, `phantom plan`).
+* **Rationale**: PHANTOM is a low-level systems runtime. A rich terminal interface (powered by `rich`, ANSI sequences, ASCII layer residency heatmaps, and live token-streaming bars) delivers an instant, zero-latency developer experience without consuming system memory for web engines or Node daemons.
+* **Consequences**:
+  * Positive: Zero browser memory consumption, instantaneous boot times, eliminates Node/npm dependencies.
+  * Negative: No graphical browser dashboard.
+
+---
+
+### ADR-008: Testing Policy — Restricting Verification Exclusively to Scale Models ≥ 30B via Cloud Testbed
+* **Context**: Small models (<10B, such as SmolLM-135M, Llama-3.2-1B, 3B) fit inside consumer 6GB VRAM natively and do not test PHANTOM's core purpose ("running models that don't fit your GPU"). Meanwhile, downloading 20GB–40GB models directly onto the user's laptop causes disk space exhaustion.
+* **Decision**:
+  1. Cease all testing of sub-30B models. Restrict all future platform benchmarks strictly to scale models **≥ 30B parameters** (`Qwen3-30B-A3B` MoE, `Qwen2.5-Coder-32B` Dense, `Llama-3-70B` Dense).
+  2. Standardize on the **Google Colab Cloud Hardware Testbed** ([`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb)) as the primary platform for physical inference testing:
+     - Leverages free 15 GB Nvidia GPU (T4/L4) and 100 GB ephemeral scratch cloud SSD.
+     - Guarantees **0 bytes of local disk usage** on the user's physical laptop.
+* **Consequences**:
+  * Protects local disk integrity completely while benchmarking true hardware-transcendent workloads (30B–70B).
+

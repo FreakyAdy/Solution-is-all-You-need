@@ -7,7 +7,7 @@
 ## 🎯 Active Session Workboard: Today
 
 - **Session Date**: September 15, 2026
-- **Session Objective**: Execute zero-disk live model benchmarks, validate automated testing ledger registration, and build the MoE Sparse Router profiler.
+- **Session Objective**: Focus strictly on scale models ≥ 30B (MoE 30B, Dense 32B, 70B), deprecate Web UI in favor of high-performance TUI (ADR-007), and standardize on Google Colab Cloud Testbed (ADR-008).
 - **Hardware Profile**: NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM) | 16 GB DDR5 System RAM | Zero Local Model Storage Policy.
 
 ### 📋 Today's Action Checklist
@@ -17,7 +17,8 @@
 | ✅ | `RUN-01` | Live Testing | Execute real zero-disk inference on SmolLM-135M and verify auto-ledger insertion | [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) (`test_02`) |
 | ✅ | `RUN-02` | Zero-Disk | Mathematical profiling on 1B, 30B MoE, 70B across RTX 4050 & Colab T4 (0 bytes disk) | `phantom profile` & [`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb) |
 | ✅ | `MOE-01` | Benchmarks | Build MoE Sparse Routing profiler proving 10× FLOP reduction for 30B MoE on 6GB VRAM | [`tests/test_moe_routing.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/test_moe_routing.py) |
-| ⏳ | `UI-01` | UI & Telemetry| Validate Web UI dark glassmorphism dashboard & live WebSocket telemetry | `http://localhost:11411/ui` |
+| ✅ | `ARCH-01`| Strategy | Record ADR-007 (Pure TUI focus) & ADR-008 (Strict ≥ 30B testing policy) | [`docs/DECISION_LOG.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DECISION_LOG.md) |
+| ⏳ | `CLOUD-30B`| Cloud Testing| Deploy & execute ≥ 30B model run on Google Colab 15GB GPU + 100GB Cloud SSD | [`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb) |
 | ⏳ | `SOP-SYNC`| Documentation | Auto-synchronize the 5 documentation ledgers and commit clean state | Git Remote `origin/main` |
 
 ---

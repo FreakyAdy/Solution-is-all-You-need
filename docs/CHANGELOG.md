@@ -29,6 +29,12 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Confirmed 1.0B model runs 100% in VRAM at **366.5 tok/sec** on RTX 4050.
   * Confirmed Qwen3-30B-A3B runs at **12.95 tok/sec** on RTX 4050 and **24.79 tok/sec** on Colab T4 cloud GPU.
   * Verified Llama-3-70B 3-tier offload (VRAM 29 layers, RAM 22 layers, NVMe 29 layers).
+* **Architecture Pivot: Pure TUI Focus & Deprecation of Web UI (`ADR-007`)**:
+  * Formally deprecated Web UI requirement to eliminate browser memory consumption, Node.js background daemons, and WebSocket polling overhead.
+  * Focused 100% of interface engineering on high-performance Rich Terminal User Interface (TUI).
+* **Testing Policy: Restriction to Scale Models ≥ 30B via Cloud Testbed (`ADR-008`)**:
+  * Ceased testing on sub-30B models; restricted future benchmarks strictly to 30B MoE, 32B Dense, and 70B Dense models.
+  * Standardized on Google Colab Cloud Testbed (`notebooks/phantom_cloud_tester.ipynb`) with 15GB GPU + 100GB ephemeral SSD (0 bytes on local laptop).
 
 ---
 
