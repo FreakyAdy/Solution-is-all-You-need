@@ -57,6 +57,14 @@ How PHANTOM changes what runs on consumer hardware (measured on reference RTX 40
 | **Interactive Assistant**<br>`Qwen3-30B-A3B` (MoE) | **High Latency**: Dense offload reads all weights every token (< 3.0 tok/s). | **MoE Acceleration**: 4.66 GB VRAM + 11.32 GB RAM. 9.93x FLOP reduction on active experts. | **12.95 tok/s** on laptop (**24.79 tok/s** on cloud). Smooth interactive conversation. |
 | **Frontier Scale**<br>`Llama-3-70B` (70.6B) | **Immediate Crash**: Cannot load 37.0 GB working set on consumer laptops. | **3-Tier Swap**: 4.62 GB VRAM + 17.1 GB RAM + 15.3 GB NVMe SSD swap. | **0.39 tok/s** (~2.5s per token). Usable for background batch synthesis. *Interactive chat not achieved yet — we are working on it.* |
 
+### Hardware requirements: Baseline vs PHANTOM
+
+| Model & Parameter Scale | Standard Baseline Requirements (vLLM / Native GPU) | PHANTOM Tiered Minimum | PHANTOM Recommended |
+|---|---|---|---|
+| **`Qwen2.5-Coder-32B`** (32.8B) | **24.0 GB VRAM** (RTX 3090/4090) or 32.0 GB Host RAM (CPU-only) | **6.0 GB VRAM** + 16.0 GB Host RAM | **6.0 GB VRAM** + 24.0 GB Host RAM (DDR5) |
+| **`Qwen3-30B-A3B`** (30.5B MoE) | **16.0 GB to 24.0 GB VRAM** for interactive speeds | **6.0 GB VRAM** + 16.0 GB Host RAM | **6.0 GB VRAM** + 24.0 GB Host RAM |
+| **`Llama-3-70B`** (70.6B) | **40.0 GB to 48.0 GB VRAM** (e.g. A100 or 2x 24.0 GB GPUs) | **6.0 GB VRAM** + 24.0 GB RAM + NVMe swap | **12.0 GB VRAM** + 32.0 GB Host RAM |
+
 ### What is achieved vs what we are working on
 
 - **Achieved (Production Ready)**:
