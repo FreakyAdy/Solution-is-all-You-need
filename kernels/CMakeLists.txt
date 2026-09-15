@@ -109,6 +109,21 @@ set_target_properties(phantom_attention PROPERTIES
 )
 
 # ============================================================================
+# Phantom Pages NVMe Streaming Kernels (Innovation 4)
+# ============================================================================
+add_library(phantom_pages STATIC
+    phantom_pages/fused_swiglu_idct.cu
+)
+target_include_directories(phantom_pages PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/phantom_pages
+)
+set_target_properties(phantom_pages PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    POSITION_INDEPENDENT_CODE ON
+)
+
+# ============================================================================
 # Unified PHANTOM CORE kernel library
 # ============================================================================
 add_library(phantom_kernels INTERFACE)
@@ -117,6 +132,7 @@ target_link_libraries(phantom_kernels INTERFACE
     phantom_neural_cache
     phantom_sparse_moe
     phantom_attention
+    phantom_pages
     CUDA::cublas
     CUDA::curand
 )
@@ -129,6 +145,7 @@ install(TARGETS
     phantom_neural_cache
     phantom_sparse_moe
     phantom_attention
+    phantom_pages
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
 )

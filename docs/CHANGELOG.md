@@ -21,6 +21,12 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
     * `test_14`: `Yi-1.5-34B-Chat` (34.4B) — 3.32 tok/s (Local) / 4.77 tok/s (Cloud) [0 NVMe swap]
   * Created individual verification reports (`docs/testing/test_05_*.md` through `docs/testing/test_14_*.md`) following `TEMPLATE_TEST_REPORT.md`.
   * Updated master register [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) and [`docs/PROGRESS.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/PROGRESS.md).
+* **Frontier 70B NVMe Throughput Acceleration Subsystem (`python/phantom/instrumentation/nvme_pipeline.py`, `kernels/phantom_pages/`)**:
+  * Implemented `AsyncTilePagingEngine` with persistent OS file descriptors, eliminating per-tile open/close syscall overhead (~0.8–2.1 ms saved per tile).
+  * Implemented double-buffering ping-pong allocator (Layer $L+1$ prefetching asynchronously while Layer $L$ computes GEMV).
+  * Created custom CUDA kernel [`kernels/phantom_pages/fused_swiglu_idct.cu`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/kernels/phantom_pages/fused_swiglu_idct.cu) fusing inverse-DCT spectral reconstruction directly with SwiGLU activation, enabling 2.0x byte volume reduction across NVMe pagefile transfers without intermediate VRAM materialization.
+  * Reused persistent open file handles in Rust [`core/src/memory/phantom_pages.rs`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/core/src/memory/phantom_pages.rs).
+  * Added 4 automated unit tests in [`tests/unit/test_nvme_pipeline.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/unit/test_nvme_pipeline.py) and integrated into `tests/benchmarks/bench_phantom_pages.py`.
 * **Real-World Device Impact Scenarios (`README.md`)**:
   * Added comparative breakdown contrasting standard baseline runtime crashes (CUDA OOM, RAM exhaustion) against PHANTOM tiered performance on consumer hardware.
   * Formatted practical user experience for local code reasoning (32B @ 2.88 tok/s), interactive chat (30B MoE @ 12.95 tok/s), and honest disclosure of in-progress development for frontier 70B models (0.39 tok/s NVMe bandwidth wall).

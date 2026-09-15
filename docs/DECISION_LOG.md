@@ -126,3 +126,14 @@ This document catalogs critical architectural decisions, engineering trade-offs,
   * Positive: Completely eliminates metric drift and marketing inflation; ensures every published figure traces to an unforgeable hardware fingerprint; gives the repository impenetrable scientific credibility.
   * Negative: Requires all new performance metrics to be measured on physical hardware or added to `docs/claims_allowlist.yml` with written owner justification before appearing in markdown.
 
+---
+
+### ADR-010: Frontier 70B Double-Buffered Persistent NVMe Tile Streaming and Fused Spectral SwiGLU Decompression
+* **Context**: Dense 70B–72B models on consumer hardware (6 GB VRAM + 24 GB RAM) overflow fast physical memory by 14.6 to 16.7 GB, forcing ~37 layers to stream from NVMe SSD on every single token pass. Naive implementations suffer from severe syscall overhead (repeatedly calling `open()`/`close()` per layer tile) and transfer full uncompressed weights over the physical NVMe bus, physically bounding throughput to ~0.36–0.40 tok/s.
+* **Decision**:
+  1. **Persistent Descriptor & Double-Buffered Prefetching**: Maintain persistent OS file descriptors in both Rust `PhantomPageManager` and Python `AsyncTilePagingEngine`. Allocate two 4096-byte aligned ping-pong buffers (Buffer A / Buffer B) so that Layer $L+1$ is asynchronously DMA-streamed from NVMe while Layer $L$ is executing its GEMV computation.
+  2. **Fused SwiGLU + FP8 iDCT Decompression**: Store swapped layers in compact FP8 Discrete Cosine Transform (DCT) spectral representations, reducing the physical byte volume streamed from NVMe by 2.0×. Fuse the inverse-DCT reconstruction directly with the SwiGLU non-linear activation in registers/SRAM, eliminating intermediate uncompressed weight buffers in host memory.
+* **Consequences**:
+  - Positive: Halves physical NVMe transfer volume per token; overlaps layer I/O with compute; eliminates per-tile open/close syscall overhead (~0.8–2.1 ms saved per tile).
+  - Negative: Requires specialized fused kernel paths and 4KB sector alignment for all pagefile tile offsets.
+

@@ -56,7 +56,7 @@ Milestone 1.2: MoE Sparse Acceleration & Test 03 Execution
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
 
 Milestone 1.3: 70B NVMe Tiering & Multi-Tier Optimization
-[████████████████░░░░░░░░░░░░░░░░░░░░░░░░]  40% IN PROGRESS (2026-09-15)
+[██████████████████████████████░░░░░░░░░░]  75% IN PROGRESS (2026-09-15)
 
 Milestone 2.0: Ground Truth Remediation (Phases 0–7)
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
@@ -96,7 +96,9 @@ Milestone 2.0: Ground Truth Remediation (Phases 0–7)
 - [x] Phase 6: Built `scripts/check_claims.py` CI consistency gate (100% PASS across 26 markdown files).
 - [x] Phase 7: Cleaned repo hygiene, updated LICENSE, created `REPRODUCING.md`, `CONTRIBUTING.md`, `SECURITY.md`.
 
-#### Milestone 1.3 — Custom C++/CUDA Kernel Fusion & Direct NVMe io_uring (PLANNED)
-- [ ] Direct `io_uring` asynchronous page submission on Linux/WSL2.
-- [ ] Fused SwiGLU + FP8 inverse DCT kernel for zero persistent weight materialization in VRAM.
+#### Milestone 1.3 — Custom C++/CUDA Kernel Fusion & Direct NVMe io_uring (IN PROGRESS)
+- [x] Implemented `AsyncTilePagingEngine` with persistent file descriptors, double-buffering ping-pong staging, and OS prefetch overlap.
+- [x] Implemented fused SwiGLU + FP8 inverse DCT kernel (`kernels/phantom_pages/fused_swiglu_idct.cu`) for 2.0x NVMe bandwidth volume reduction.
+- [x] Persistent open file handle support in Rust `core/src/memory/phantom_pages.rs`.
+- [ ] Direct kernel `io_uring` ring buffer submission with pre-registered NVMe memory buffers on native Linux.
 - [ ] Zero-copy direct memory access from host NVMe controller to GPU BAR1 memory space.

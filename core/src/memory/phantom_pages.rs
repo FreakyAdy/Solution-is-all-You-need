@@ -63,6 +63,8 @@ pub struct PhantomPageManager {
     prefetch_tx: mpsc::Sender<Vec<u32>>,
     /// LRU state path (persisted across restarts)
     lru_state_path: PathBuf,
+    /// Persistent open file handle to eliminate per-tile open/close syscall latency
+    file_handle: Arc<tokio::sync::Mutex<Option<fs::File>>>,
 }
 
 impl PhantomPageManager {
@@ -120,6 +122,7 @@ impl PhantomPageManager {
         // Load existing page table if available
         let page_table = Arc::new(Mutex::new(HashMap::new()));
         let next_offset = Arc::new(Mutex::new(0u64));
+        let file_handle = Arc::new(tokio::sync::Mutex::new(None));
 
         let manager = Self {
             swap_path: nvme_path,
@@ -128,6 +131,7 @@ impl PhantomPageManager {
             next_offset,
             prefetch_tx,
             lru_state_path,
+            file_handle,
         };
 
         // Try to load persisted LRU state
@@ -238,12 +242,17 @@ impl PhantomPageManager {
     /// # Returns
     /// Raw decompressed tensor bytes.
     pub async fn load_layer(&self, handle: &PageHandle) -> PhantomResult<Vec<u8>> {
-        let mut file = fs::OpenOptions::new()
-            .read(true)
-            .open(&self.swap_path)
-            .await
-            .map_err(|e| PhantomError::NvmeError(format!("Failed to open swap file: {}", e)))?;
+        let mut handle_guard = self.file_handle.lock().await;
+        if handle_guard.is_none() {
+            let file = fs::OpenOptions::new()
+                .read(true)
+                .open(&self.swap_path)
+                .await
+                .map_err(|e| PhantomError::NvmeError(format!("Failed to open swap file: {}", e)))?;
+            *handle_guard = Some(file);
+        }
 
+        let file = handle_guard.as_mut().unwrap();
         file.seek(std::io::SeekFrom::Start(handle.offset))
             .await
             .map_err(|e| PhantomError::NvmeError(format!("Seek failed: {}", e)))?;
@@ -261,7 +270,7 @@ impl PhantomPageManager {
         debug!(
             layer_id = handle.layer_id,
             size_mb = decompressed.len() / (1024 * 1024),
-            "Layer loaded from NVMe"
+            "Layer loaded from NVMe via persistent file handle"
         );
 
         Ok(decompressed)

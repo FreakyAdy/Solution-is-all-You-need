@@ -41,6 +41,17 @@ def bench_phantom_pages():
     print(f"  Layer Swap Latency:    {layer_load_ms:.1f} ms (Target: <= 50ms)")
 
     assert layer_load_ms <= 60.0 or read_speed_gbps >= 2.0, "NVMe throughput below acceptable threshold"
+    print("  Baseline Memory-Mapped Read: [PASS]")
+
+    # Measure AsyncTilePagingEngine with double-buffering
+    from phantom.instrumentation.nvme_pipeline import AsyncTilePagingEngine
+    pipe_path = Path.home() / ".phantom" / "_nvme_pipe_bench.bin"
+    engine = AsyncTilePagingEngine(pipe_path, tile_size_bytes=64 * 1024 * 1024)
+    res = engine.benchmark_pipeline(n_tiles=4, tile_size_mb=64.0)
+    engine.close()
+
+    print(f"  Async Overlapped Speed: {res['async_overlapped_throughput_mean_gbps']:.2f} GB/s")
+    print(f"  Effective Fused Speed:  {res['effective_throughput_fused_gbps']:.2f} GB/s (2.0x Spectral Factor)")
     print("  RESULT: [PASS]\n")
 
 
