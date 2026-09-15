@@ -47,6 +47,28 @@ For complete benchmark distributions (mean, stddev, min, max, p50, p95), baselin
 
 ---
 
+## Real-world device impact: PHANTOM vs Baseline
+
+How PHANTOM changes what runs on consumer hardware (measured on reference RTX 4050 6.0 GB Laptop GPU, 24.0 GB RAM):
+
+| Task & Model | Standard Baseline Runtimes | PHANTOM Tiered Runtime | Practical User Experience |
+|---|---|---|---|
+| **Local Code Reasoning**<br>`Qwen2.5-Coder-32B` (32.8B) | **Immediate Crash**: CUDA OOM (requires ~20.0 GB VRAM). Naive host loaders exhaust RAM. | **Runs Stable**: 4.56 GB VRAM + 14.50 GB RAM. Evaluates host layers in-place via CPU SIMD. | **2.88 tok/s** (~170 words/min). Complete 150-token function generates in ~52s without crashes. |
+| **Interactive Assistant**<br>`Qwen3-30B-A3B` (MoE) | **High Latency**: Dense offload reads all weights every token (< 3.0 tok/s). | **MoE Acceleration**: 4.66 GB VRAM + 11.32 GB RAM. 9.93x FLOP reduction on active experts. | **12.95 tok/s** on laptop (**24.79 tok/s** on cloud). Smooth interactive conversation. |
+| **Frontier Scale**<br>`Llama-3-70B` (70.6B) | **Immediate Crash**: Cannot load 37.0 GB working set on consumer laptops. | **3-Tier Swap**: 4.62 GB VRAM + 17.1 GB RAM + 15.3 GB NVMe SSD swap. | **0.39 tok/s** (~2.5s per token). Usable for background batch synthesis. *Interactive chat not achieved yet — we are working on it.* |
+
+### What is achieved vs what we are working on
+
+- **Achieved (Production Ready)**:
+  - Models up to 32B dense (`Qwen2.5-Coder-32B`) running at **2.88 tok/s** without crashing on a 6.0 GB laptop GPU.
+  - MoE architectures up to 30B (`Qwen3-30B-A3B`) running at **12.95 tok/s** for interactive chat.
+  - Zero-disk ephemeral execution and capacity planning with mean prediction error of ±2.4%.
+- **What we are working on (In Progress)**:
+  - **Conversational 70B throughput**: Running 70B models at 0.39 tok/s is physically bound by NVMe sequential read speeds (~1.4–1.8 GB/s). *We are actively working on* Linux direct `io_uring` kernel submission and fused FP8 inverse DCT decompression to minimize physical SSD page reads.
+  - **Non-NVIDIA Backends**: Support for Apple Silicon (Metal) and AMD (ROCm) is planned.
+
+---
+
 ## Supported hardware envelope
 
 Empirically verified performance boundaries on 6 GB VRAM + 24 GB DDR5 RAM:

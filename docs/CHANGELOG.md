@@ -7,6 +7,9 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
 ## [Unreleased] — 2026-09-15
 
 ### Added
+* **Real-World Device Impact Scenarios (`README.md`)**:
+  * Added comparative breakdown contrasting standard baseline runtime crashes (CUDA OOM, RAM exhaustion) against PHANTOM tiered performance on consumer hardware.
+  * Formatted practical user experience for local code reasoning (32B @ 2.88 tok/s), interactive chat (30B MoE @ 12.95 tok/s), and honest disclosure of in-progress development for frontier 70B models (0.39 tok/s NVMe bandwidth wall).
 * **Ground Truth Remediation Brief (Phases 0 through 7 Completed)**:
   * **32B Bandwidth Paradox Solved (`byte_counter.py`, `phantom trace`)**: Proved mathematically and empirically that Qwen2.5-Coder-32B does not stream 15 GB of weights over PCIe every token. Layers 0–13 run on GPU; layer 13 intermediate activation tensor ($[1, 1, 5120]$ FP16 $\approx 10\text{ KB}$, $1.3\ \mu\text{s}$) copies over PCIe 4.0 x8; layers 14–63 run in-place on CPU directly out of dual-channel DDR5 RAM at ~44–48 GB/s ($0.31\text{ s} \implies \sim 3.2\text{ tok/s}$). Implemented atomic byte counter in [`python/phantom/instrumentation/byte_counter.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/python/phantom/instrumentation/byte_counter.py) and unforgeable environment fingerprinting in [`python/phantom/instrumentation/fingerprint.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/python/phantom/instrumentation/fingerprint.py). Added `phantom trace <model> --tokens N` to [`python/phantom/phantom_cli.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/python/phantom/phantom_cli.py).
   * **Numerical Reference Parity Gate (`tests/correctness/test_reference_parity.py`)**: Built 6-row architectural ablation matrix comparing PHANTOM output against HuggingFace CPU FP32 reference logits. Verified 100.0% top-1 agreement and KL divergence 0.0000 on baseline configuration.
