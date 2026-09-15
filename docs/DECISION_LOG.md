@@ -162,3 +162,18 @@ This document catalogs critical architectural decisions, engineering trade-offs,
 * **Consequences**:
   - Positive: Enables 1-click end-to-end cloud reproducibility on standard Google Colab T4 runtimes; produces publication-ready benchmark reports automatically; enforces strict zero-disk local storage invariants.
   - Negative: Live inference mode in Colab is subject to Google Colab T4 VRAM and session disconnect limits; frontier 70B models in live mode require high-RAM cloud instances or fall back to virtual hardware simulation mode.
+
+---
+
+### ADR-013: Deprioritization of Frontier 70B NVMe Paging and Realignment on 30B–35B High-Speed Real-Time Tier
+* **Context**: Dense 70B–72B models on consumer hardware (6.0 GB VRAM + 24.0 GB RAM) overflow fast memory by 14.6 to 16.7 GB, requiring continuous streaming from NVMe SSD on every autoregressive token. Although numerically verified and physically correct, physical Gen4 SSD read bandwidth (~1.4–1.8 GB/s) physically limits decoding throughput to ~0.36–0.40 tok/s (~2.5s per token). Promoting 70B on consumer laptops creates false user expectations of real-time conversational chat, inviting cynicism and "100 tokens per year" criticism.
+* **Decision**:
+  1. **Deprioritize 70B Interactive Promotion**: Remove dense 70B models from recommended front-page hardware matrices and promotional positioning in `README.md`. Retain existing raw empirical benchmarks (`test_04`, `test_06`, `test_09`, `test_12`) strictly as historical cold-tier reference benchmarks in `docs/testing/`.
+  2. **Core Realignment on 30B–35B High-Speed Tier**: Focus PHANTOM's primary production envelope on workloads delivering genuine real-time utility without NVMe swap:
+     - Sparse MoE models (`Qwen3-30B-A3B`) executing at **12.95 tok/s (Local)** and **24.79 tok/s (Cloud)**.
+     - Dense frontier coding models (`Qwen2.5-Coder-32B`, `DeepSeek-R1-32B`, `Command-R-35B`) executing at **2.88 to 3.63 tok/s (Local)** with in-place DDR5 CPU SIMD evaluation.
+  3. **Publish Transparent Baseline Multipliers**: Quantify verified achievements against standard baseline limits: 4.88x median (5.15x average) parameter ceiling expansion over 6.0 GB GPU limits, 4.50x VRAM footprint reduction, 1.8x median speedup on dense models, 10.0x MoE speedup over CPU baseline, and 8.0x KV cache compression.
+  4. **Active Engineering Pivot**: Prioritize in-VRAM Speculative Decoding (drafting tokens at 80+ tok/s to multiply 32B speed to 8–10 tok/s) and streaming chunked prefill over SSD tile optimizations.
+* **Consequences**:
+  - Positive: Eliminates marketing hype and aligns user expectations with physical reality; establishes impenetrable technical credibility; focuses roadmap on high-speed interactive techniques.
+  - Negative: Shifts 70B from an active interactive target to an offline/background research milestone.

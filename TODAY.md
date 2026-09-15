@@ -30,3 +30,4 @@
   - [x] `OPT-70B-NVME`: Implement Frontier 70B NVMe Throughput Acceleration (persistent handles, AsyncTilePagingEngine, fused SwiGLU + FP8 iDCT kernel).
   - [x] `OPT-NIAH-32K`: Long-Context Needle-In-A-Haystack (NIAH) Evaluation across 4K to 32K context windows verifying 8.0x Neural Cache (100% recall, 4.0GB to 512MB KV compression).
   - [x] `COLAB-PKG`: Automated 1-Click Cloud Testbed & Colab Packaging (scripts/colab_runner.py, tests/unit/test_colab_runner.py, interactive phantom_cloud_tester.ipynb with zero-disk ephemeral scratch auto-purge).
+  - [x] `README-PITCH-REALIGN`: Add anti-bullshit realistic pitch to README.md, publish verified baseline multipliers (4.88x median parameter ceiling lift, 4.50x VRAM reduction, 1.8x/10.0x throughput speedup, 8.0x KV compression), deprioritize 70B NVMe paging to eliminate "100 tokens per year" troll criticism, and log ADR-013.

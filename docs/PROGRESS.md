@@ -58,14 +58,17 @@ Milestone 1.1: Zero-Disk Testing & Multi-Hardware Simulator
 Milestone 1.2: MoE Sparse Acceleration & Test 03 Execution
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
 
-Milestone 1.3: 70B NVMe Tiering & Multi-Tier Optimization
-[██████████████████████████████░░░░░░░░░░]  75% IN PROGRESS (2026-09-15)
+Milestone 1.3: 70B NVMe Tiering (DEPRIORITIZED / ARCHIVED per ADR-013)
+[██████████████████████████████░░░░░░░░░░]  75% ARCHIVED (2026-09-15)
 
 Milestone 1.4: Long-Context Needle-In-A-Haystack (32K Tokens)
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
 
 Milestone 1.5: Automated 1-Click Cloud Testbed & Colab Packaging
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
+
+Milestone 1.6: In-VRAM Speculative Decoding & 30B–35B Real-Time Acceleration
+[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0% PLANNED (NEXT QUEUE)
 
 Milestone 2.0: Ground Truth Remediation (Phases 0–7)
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
@@ -112,9 +115,9 @@ Milestone 2.0: Ground Truth Remediation (Phases 0–7)
 - [x] Added unit test suite `tests/unit/test_colab_runner.py` (4/4 passing).
 - [x] Overhauled `notebooks/phantom_cloud_tester.ipynb` with interactive `#@param` dropdowns, hardware preset picker, inline Markdown report rendering, and auto-purge ephemeral scratch drive.
 
-#### Milestone 1.3 — Custom C++/CUDA Kernel Fusion & Direct NVMe io_uring (IN PROGRESS)
+#### Milestone 1.3 — Custom C++/CUDA Kernel Fusion & 70B NVMe Paging (DEPRIORITIZED / ARCHIVED per ADR-013)
 - [x] Implemented `AsyncTilePagingEngine` with persistent file descriptors, double-buffering ping-pong staging, and OS prefetch overlap.
 - [x] Implemented fused SwiGLU + FP8 inverse DCT kernel (`kernels/phantom_pages/fused_swiglu_idct.cu`) for 2.0x NVMe bandwidth volume reduction.
 - [x] Persistent open file handle support in Rust `core/src/memory/phantom_pages.rs`.
-- [ ] Direct kernel `io_uring` ring buffer submission with pre-registered NVMe memory buffers on native Linux.
-- [ ] Zero-copy direct memory access from host NVMe controller to GPU BAR1 memory space.
+- [x] Concluded empirical evaluation: physical Gen4 NVMe sequential throughput (~1.4–1.8 GB/s) bounds dense 70B generation to 0.36–0.40 tok/s.
+- [x] Officially deprioritized interactive 70B promotion per ADR-013 to refocus on high-speed 30B–35B real-time tier.

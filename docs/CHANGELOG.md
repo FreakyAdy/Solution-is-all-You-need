@@ -47,6 +47,11 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Added minimum and recommended hardware requirements matrix comparing native GPU requirements (24.0 GB to 48.0 GB VRAM) against PHANTOM tiered requirements (6.0 GB VRAM + 16.0 GB to 24.0 GB Host RAM).
 
 ### Changed
+* **Public Realignment: Realistic Anti-Hype README Pitch, Baseline Multipliers, and 70B Deprioritization (`README.md`, `docs/claims_allowlist.yml`, `docs/DECISION_LOG.md`)**:
+  * Added transparent, anti-hype positioning at the top of `README.md` clarifying that PHANTOM rejects the vaporware claim of interactive 70B chat over consumer SSDs (which physical flash bandwidth limits to ~0.39 tok/s).
+  * Realigned core product envelope strictly on high-performance 30B–35B models: interactive 12.95 tok/s on 30B Sparse MoE (`Qwen3-30B-A3B`) and 2.88 to 3.63 tok/s on 32B–35B frontier coding models (`Qwen2.5-Coder-32B`, `DeepSeek-R1-32B`, `Command-R-35B`).
+  * Published verified baseline achievement scorecard: 4.88x median (5.15x average) parameter ceiling expansion over 6.0 GB GPU limits, 4.50x VRAM footprint reduction, 1.8x median speedup on dense models, 10.0x MoE speedup over CPU baseline, and 8.0x KV cache compression.
+  * Formally logged **ADR-013** (*Deprioritization of Frontier 70B NVMe Paging and Realignment on 30B–35B High-Speed Real-Time Tier*) in `docs/DECISION_LOG.md`.
 * **Comprehensive Real-World Impact & Hardware Requirements Overhaul (`README.md`)**:
   * Expanded `Real-world device impact: PHANTOM vs Baseline` from 3 individual models to 5 multi-model functional tiers covering all 14 evaluated models: Mathematical & Deep Reasoning (32B @ 3.63 tok/s), Local Code Reasoning (32B–33B @ 2.88–3.47 tok/s), Interactive MoE (30.5B–46.7B @ 2.80–12.95 tok/s), General Text & Multilingual (32B–35B @ 3.22–3.63 tok/s), and Frontier Scale Deep Synthesis (69B–72.7B @ 0.36–0.40 tok/s).
   * Redesigned `Hardware requirements: Baseline vs PHANTOM` into a 5-column architecture separating Pure GPU Baseline, Hybrid / CPU Baseline, PHANTOM Minimum Tested, and PHANTOM Recommended Config across 30B–35B Dense, 30.5B–46.7B MoE, and 70B–72B Dense tiers.

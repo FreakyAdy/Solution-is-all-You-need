@@ -28,6 +28,7 @@
 | ✅ | `OPT-70B-NVME`| Kernel / I/O | Frontier 70B NVMe Throughput Acceleration (AsyncTilePagingEngine & Fused SwiGLU) | `python/phantom/` & `kernels/` |
 | ✅ | `OPT-NIAH-32K` | Evaluation | Long-Context Needle-In-A-Haystack (4K–32K, 100% recall, 8.0x KV compression) | `tests/correctness/` & `benchmarks/` |
 | ✅ | `COLAB-PKG` | Cloud Testbed | Automated 1-Click Cloud Testbed & Colab Packaging (dual-mode, auto-report, purge) | `scripts/colab_runner.py` & `notebooks/` |
+| ✅ | `README-REALIGN` | Messaging / Realignment | Realistic README pitch, baseline multipliers (4.88x lift), and 70B deprioritization (ADR-013) | `README.md` & `docs/` |
 
 
 ---
