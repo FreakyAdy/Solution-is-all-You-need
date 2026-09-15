@@ -24,6 +24,7 @@
 | ✅ | `REM-P6` | CI Guardrails | Build `scripts/check_claims.py` & automated CI parity gates (100% PASS) | `scripts/check_claims.py` |
 | ✅ | `REM-P7` | Hygiene | Verify install scripts, author name, clean root, and write `REPRODUCING.md` | `docs/REPRODUCING.md` |
 | ✅ | `DOC-VER` | Verification | Extensively verify baseline requirements & refine README hardware matrix | `README.md` & docs |
+| ✅ | `TEST-10M` | Testing | Multi-hardware zero-disk evaluation across 10 frontier models >= 30B | `docs/testing/` |
 
 
 ---

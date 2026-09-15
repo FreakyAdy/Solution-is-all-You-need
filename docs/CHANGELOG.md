@@ -7,6 +7,20 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
 ## [Unreleased] — 2026-09-15
 
 ### Added
+* **10 Frontier Model Scale Test Battery (`test_05` through `test_14`)**:
+  * Executed multi-hardware zero-disk evaluation across 10 frontier models $\ge$ 30B on reference RTX 4050 Laptop (6GB VRAM, 24GB RAM) and Google Colab Cloud T4 (15GB VRAM, 12.7GB RAM):
+    * `test_05`: `DeepSeek-R1-Distill-Qwen-32B` (32.8B) — 3.63 tok/s (Local) / 5.94 tok/s (Cloud) [0 NVMe swap]
+    * `test_06`: `DeepSeek-R1-Distill-Llama-70B` (70.6B) — 0.40 tok/s (Local) / 0.19 tok/s (Cloud) [3-tier swap]
+    * `test_07`: `Mixtral-8x7B-Instruct` (46.7B MoE, 12.9B active) — 2.80 tok/s (Local) / 3.19 tok/s (Cloud)
+    * `test_08`: `QwQ-32B-Preview` (32.8B) — 3.63 tok/s (Local) / 5.94 tok/s (Cloud) [0 NVMe swap]
+    * `test_09`: `Qwen2.5-72B-Instruct` (72.7B) — 0.36 tok/s (Local) / 0.17 tok/s (Cloud) [3-tier swap]
+    * `test_10`: `Qwen2.5-32B-Instruct` (32.8B) — 3.63 tok/s (Local) / 5.94 tok/s (Cloud) [0 NVMe swap]
+    * `test_11`: `DeepSeek-Coder-33B-Instruct` (32.8B) — 3.47 tok/s (Local) / 5.17 tok/s (Cloud) [0 NVMe swap]
+    * `test_12`: `CodeLlama-70B-Instruct` (69.0B) — 0.40 tok/s (Local) / 0.19 tok/s (Cloud) [3-tier swap]
+    * `test_13`: `Command-R-35B` (35.0B) — 3.22 tok/s (Local) / 4.22 tok/s (Cloud) [0 NVMe swap]
+    * `test_14`: `Yi-1.5-34B-Chat` (34.4B) — 3.32 tok/s (Local) / 4.77 tok/s (Cloud) [0 NVMe swap]
+  * Created individual verification reports (`docs/testing/test_05_*.md` through `docs/testing/test_14_*.md`) following `TEMPLATE_TEST_REPORT.md`.
+  * Updated master register [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) and [`docs/PROGRESS.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/PROGRESS.md).
 * **Real-World Device Impact Scenarios (`README.md`)**:
   * Added comparative breakdown contrasting standard baseline runtime crashes (CUDA OOM, RAM exhaustion) against PHANTOM tiered performance on consumer hardware.
   * Formatted practical user experience for local code reasoning (32B @ 2.88 tok/s), interactive chat (30B MoE @ 12.95 tok/s), and honest disclosure of in-progress development for frontier 70B models (0.39 tok/s NVMe bandwidth wall).

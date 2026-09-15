@@ -26,3 +26,4 @@
   - [x] `REM-P6`: Execute Phase 6: Build `scripts/check_claims.py` and enforce CI guardrails (100% PASS).
   - [x] `REM-P7`: Execute Phase 7: Repository hygiene, `docs/REPRODUCING.md`, `CONTRIBUTING.md`, `SECURITY.md`, and final CI gate.
   - [x] `DOC-VER`: Extensively verify baseline requirements (Pure GPU, Hybrid CPU/GPU, CPU-only) and refine README matrix.
+  - [x] `TEST-10M`: Execute multi-hardware zero-disk evaluation across 10 frontier models >= 30B (test_05 through test_14).
