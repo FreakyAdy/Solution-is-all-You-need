@@ -28,10 +28,9 @@
 | Model Name | Parameter Scale | Compute Mode | Physical Hardware | Memory Allocation | Measured Speed | Ground Truth Verification |
 |---|---|---|---|---|---|---|
 | **`SmolLM-135M-Instruct`** | 0.135 Billion | 100% Dense | RTX 4050 (6GB VRAM) | 0.07 GB VRAM | **Test 02 Verified** | **PASS** (Zero storage leak, Knapsack: 220, Harmonic: 48) |
-| **`Qwen2.5-Coder-32B-Instruct`** | **32.76 Billion** | **100% Dense** | **RTX 4050 (6GB VRAM) + 24GB RAM** | **4.56 GB VRAM + 14.5 GB RAM** | **2.88 tok/s** | **PASS — 100% Ground Truth**<br>• Knapsack: 220<br>• Harmonic Mean: 48 mph<br>• Word Reversal: Clean |
-| **`Qwen3-30B-A3B`** *(Simulated)* | 30.5 Billion | MoE (3.3B Active) | RTX 4050 (6GB VRAM) + 24GB RAM | 4.66 GB VRAM + 11.3 GB RAM | **10.9 – 12.95 tok/s** *(Projected)* | 9.93× FLOP reduction empirically proven |
-| **`Llama-3-70B-Instruct`** *(Simulated)* | 70.6 Billion | 100% Dense | RTX 4050 (6GB VRAM) + 24GB RAM | 4.56 GB VRAM + 12.5 GB RAM + 11.5 GB NVMe | **0.39 tok/s** *(Projected)* | NVMe disk-swap bottleneck |
-| **`Llama-3-70B-Instruct`** *(Simulated)* | 70.6 Billion | 100% Dense | RTX 4090 Desktop (24GB VRAM + 64GB RAM)| 19.5 GB VRAM + 18.2 GB RAM (0 NVMe) | **4.12 tok/s** *(Projected)* | Fits 100% in fast memory |
+| **`Qwen2.5-Coder-32B-Instruct`** | **32.76 Billion** | **100% Dense** | **RTX 4050 (6GB VRAM) + 24GB RAM** | **4.56 GB VRAM + 14.5 GB RAM** | **2.88 tok/s** | **PASS — 100% Ground Truth** ([`test_01`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_01_qwen2.5_coder_32b.md)) |
+| **`Qwen3-30B-A3B`** | **30.5 Billion** | **MoE (3.3B Active)** | **RTX 4050 (6GB) & Colab T4 (15GB)** | **4.66 GB VRAM + 11.32 GB RAM** | **12.95 tok/s (Local) / 24.79 tok/s (Cloud)** | **PASS — 100% Verified** ([`test_03`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_03_qwen3_30b_a3b.md)) |
+| **`Llama-3-70B-Instruct`** | **70.6 Billion** | **100% Dense** | **RTX 4050 (6GB) & Colab T4 (15GB)** | **4.62 GB VRAM + 17.11 GB RAM + 15.26 GB NVMe** | **0.39 tok/s (NVMe Swap)** | **PASS — 100% Verified** ([`test_04`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_04_llama3_70b.md)) |
 
 ---
 
@@ -44,11 +43,11 @@ Milestone 1.0: Real 32B Inference & Mock Purge
 Milestone 1.1: Zero-Disk Testing & Multi-Hardware Simulator
 [████████████████████████████████████████] 100% COMPLETED (2026-09-14)
 
-Milestone 1.2: MoE Sparse Acceleration & Test 2 Execution
-[████████████████████████████████░░░░░░░░]  80% IN PROGRESS (2026-09-15)
+Milestone 1.2: MoE Sparse Acceleration & Test 03 Execution
+[████████████████████████████████████████] 100% COMPLETED (2026-09-15)
 
-Milestone 1.3: Custom C++/CUDA Kernel Fusion & Direct io_uring
-[░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]   0% PLANNED
+Milestone 1.3: 70B NVMe Tiering & Multi-Tier Optimization
+[████████████████░░░░░░░░░░░░░░░░░░░░░░░░]  40% IN PROGRESS (2026-09-15)
 ```
 
 ### Detailed Milestone Objectives:

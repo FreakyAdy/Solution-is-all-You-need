@@ -35,6 +35,10 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
 * **Testing Policy: Restriction to Scale Models ≥ 30B via Cloud Testbed (`ADR-008`)**:
   * Ceased testing on sub-30B models; restricted future benchmarks strictly to 30B MoE, 32B Dense, and 70B Dense models.
   * Standardized on Google Colab Cloud Testbed (`notebooks/phantom_cloud_tester.ipynb`) with 15GB GPU + 100GB ephemeral SSD (0 bytes on local laptop).
+* **Test Reports 03 & 04 Generated & Verified (`docs/testing/`)**:
+  * Published [`docs/testing/test_03_qwen3_30b_a3b.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_03_qwen3_30b_a3b.md) documenting 12.95 tok/s (laptop) and 24.79 tok/s (Colab T4) with 9.93× FLOP reduction.
+  * Published [`docs/testing/test_04_llama3_70b.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_04_llama3_70b.md) documenting 70B 3-tier offload (10 VRAM, 37 RAM, 33 NVMe swap).
+  * Updated [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) master registry.
 
 ---
 

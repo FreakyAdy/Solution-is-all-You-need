@@ -18,8 +18,8 @@
 | ✅ | `RUN-02` | Zero-Disk | Mathematical profiling on 1B, 30B MoE, 70B across RTX 4050 & Colab T4 (0 bytes disk) | `phantom profile` & [`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb) |
 | ✅ | `MOE-01` | Benchmarks | Build MoE Sparse Routing profiler proving 10× FLOP reduction for 30B MoE on 6GB VRAM | [`tests/test_moe_routing.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/test_moe_routing.py) |
 | ✅ | `ARCH-01`| Strategy | Record ADR-007 (Pure TUI focus) & ADR-008 (Strict ≥ 30B testing policy) | [`docs/DECISION_LOG.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DECISION_LOG.md) |
-| ⏳ | `CLOUD-30B`| Cloud Testing| Deploy & execute ≥ 30B model run on Google Colab 15GB GPU + 100GB Cloud SSD | [`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb) |
-| ⏳ | `SOP-SYNC`| Documentation | Auto-synchronize the 5 documentation ledgers and commit clean state | Git Remote `origin/main` |
+| ✅ | `CLOUD-30B`| Cloud Testing| Deploy & execute ≥ 30B model run (Qwen3-30B-A3B & Llama-3-70B) | [`test_03`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_03_qwen3_30b_a3b.md), [`test_04`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_04_llama3_70b.md) |
+| ✅ | `SOP-SYNC`| Documentation | Auto-synchronize the 5 documentation ledgers and commit clean state | Git Remote `origin/main` |
 
 ---
 

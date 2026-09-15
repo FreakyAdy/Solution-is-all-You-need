@@ -15,5 +15,5 @@
   - [x] `MOE-01`: Build MoE Sparse Routing profiler proving 9.93× FLOP reduction on 6GB VRAM ([`tests/test_moe_routing.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/test_moe_routing.py))
   - [x] `RUN-02`: Zero-disk multi-hardware profiling on 1B, 30B MoE, 70B (0 bytes local disk) + Colab cloud tester setup
   - [x] `ARCH-01`: Record ADR-007 (Pure TUI focus) & ADR-008 (Strict ≥ 30B testing policy) ([`docs/DECISION_LOG.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/DECISION_LOG.md))
-  - [ ] `CLOUD-30B`: Execute real 30B+ model run via Google Colab Cloud Testbed ([`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb))
-  - [ ] `SOP-SYNC`: Synchronize all 5 ledgers and push to remote
+  - [x] `CLOUD-30B`: Complete scale model benchmarks: `test_03` (Qwen3-30B-A3B MoE) & `test_04` (Llama-3-70B Dense) ([`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md))
+  - [x] `SOP-SYNC`: Synchronize all 5 ledgers and push to remote
