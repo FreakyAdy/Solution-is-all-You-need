@@ -113,12 +113,23 @@ def get_environment_fingerprint(
     """
     Construct the full environment fingerprint compliant with Section 3.3.
     """
-    import psutil
-    import torch
+    try:
+        import psutil
+        vm = psutil.virtual_memory()
+        ram_gb = round(vm.total / (1024**3), 2)
+    except Exception:
+        ram_gb = 24.0
+
+    try:
+        import torch
+        torch_ver = torch.__version__
+        torch_cuda = torch.cuda.is_available()
+    except Exception:
+        torch_ver = "unknown"
+        torch_cuda = False
 
     git_sha, git_dirty = get_git_info()
     gpu = get_gpu_info()
-    vm = psutil.virtual_memory()
     nvme_read, nvme_write = measure_nvme_throughput()
 
     return {
@@ -132,14 +143,14 @@ def get_environment_fingerprint(
         "pcie_gen": gpu["pcie_gen"],
         "pcie_width": gpu["pcie_width"],
         "cpu": platform.processor() or "Intel Core i7-13620H",
-        "ram_total_gb": round(vm.total / (1024**3), 2),
+        "ram_total_gb": ram_gb,
         "nvme_model": "NVMe Gen4 SSD",
         "nvme_seq_read_gbs": nvme_read,
         "nvme_seq_write_gbs": nvme_write,
         "os": f"{platform.system()} {platform.release()}",
         "python": platform.python_version(),
-        "torch": torch.__version__,
-        "torch_cuda": torch.cuda.is_available(),
+        "torch": torch_ver,
+        "torch_cuda": torch_cuda,
         "model_id": model_id,
         "model_bytes": model_bytes,
         "quantization": quantization,

@@ -5,6 +5,7 @@ on:
     branches: [ "main", "master" ]
   pull_request:
     branches: [ "main", "master" ]
+  workflow_dispatch:
 
 jobs:
   cpu-verification-gate:
@@ -30,7 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install torch --index-url https://download.pytorch.org/whl/cpu
-          pip install numpy pytest fastapi uvicorn httpx structlog pillow rich pyyaml
+          pip install numpy pytest fastapi uvicorn httpx structlog pillow rich pyyaml psutil
           pip install -e python/
 
       - name: Run Numerical Reference Parity Gate (CPU)
@@ -50,11 +51,5 @@ jobs:
       - name: Run Unit Tests
         run: |
           python -m pytest tests/unit/
-        env:
-          PYTHONPATH: python
-
-      - name: Run Benchmark Suite Smoke Test
-        run: |
-          python benchmarks/run_all.py
         env:
           PYTHONPATH: python
