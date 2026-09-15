@@ -25,6 +25,7 @@
 | ✅ | `REM-P7` | Hygiene | Verify install scripts, author name, clean root, and write `REPRODUCING.md` | `docs/REPRODUCING.md` |
 | ✅ | `DOC-VER` | Verification | Extensively verify baseline requirements & refine README hardware matrix | `README.md` & docs |
 | ✅ | `TEST-10M` | Testing | Multi-hardware zero-disk evaluation across 10 frontier models >= 30B | `docs/testing/` |
+| ✅ | `DOC-TABLES` | Documentation | Expand Real-World Impact & Hardware Requirements tables in README.md | `README.md` |
 
 
 ---

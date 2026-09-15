@@ -27,6 +27,10 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Added minimum and recommended hardware requirements matrix comparing native GPU requirements (24.0 GB to 48.0 GB VRAM) against PHANTOM tiered requirements (6.0 GB VRAM + 16.0 GB to 24.0 GB Host RAM).
 
 ### Changed
+* **Comprehensive Real-World Impact & Hardware Requirements Overhaul (`README.md`)**:
+  * Expanded `Real-world device impact: PHANTOM vs Baseline` from 3 individual models to 5 multi-model functional tiers covering all 14 evaluated models: Mathematical & Deep Reasoning (32B @ 3.63 tok/s), Local Code Reasoning (32B–33B @ 2.88–3.47 tok/s), Interactive MoE (30.5B–46.7B @ 2.80–12.95 tok/s), General Text & Multilingual (32B–35B @ 3.22–3.63 tok/s), and Frontier Scale Deep Synthesis (69B–72.7B @ 0.36–0.40 tok/s).
+  * Redesigned `Hardware requirements: Baseline vs PHANTOM` into a 5-column architecture separating Pure GPU Baseline, Hybrid / CPU Baseline, PHANTOM Minimum Tested, and PHANTOM Recommended Config across 30B–35B Dense, 30.5B–46.7B MoE, and 70B–72B Dense tiers.
+  * Updated `What is achieved vs what we are working on` and `Supported hardware envelope` sections to reflect verified benchmarks across all evaluated 30B to 72B models.
 * **README Verified Results Expansion (`README.md`)**:
   * Expanded verified results matrix on repository frontpage to showcase all 14 evaluated models (across MoE sparse, 32B-35B dense fast-tier, and 70B-72B 3-tier NVMe swap). Linked directly to the continuous testing ledger [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md).
 * **Extensive Baseline Requirements Verification & Table Refinement (`README.md`, `docs/claims_allowlist.yml`)**:

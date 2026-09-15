@@ -60,30 +60,33 @@ All 14 evaluated models are indexed with raw telemetries in the [`Continuous Tes
 
 How PHANTOM changes what runs on consumer hardware (measured on reference RTX 4050 6.0 GB Laptop GPU, 24.0 GB RAM):
 
-| Task & Model | Standard Baseline Runtimes | PHANTOM Tiered Runtime | Practical User Experience |
+| Task & Model Tier | Standard Baseline Runtimes | PHANTOM Tiered Runtime | Practical User Experience |
 |---|---|---|---|
-| **Local Code Reasoning**<br>`Qwen2.5-Coder-32B` (32.8B) | **Immediate Crash**: CUDA OOM (requires ~20.0 GB VRAM). Naive host loaders exhaust RAM. | **Runs Stable**: 4.56 GB VRAM + 14.50 GB RAM. Evaluates host layers in-place via CPU SIMD. | **2.88 tok/s** (~170 words/min). Complete 150-token function generates in ~52s without crashes. |
-| **Interactive Assistant**<br>`Qwen3-30B-A3B` (MoE) | **High Latency**: Dense offload reads all weights every token (< 3.0 tok/s). | **MoE Acceleration**: 4.66 GB VRAM + 11.32 GB RAM. 9.93x FLOP reduction on active experts. | **12.95 tok/s** on laptop (**24.79 tok/s** on cloud). Smooth interactive conversation. |
-| **Frontier Scale**<br>`Llama-3-70B` (70.6B) | **Immediate Crash**: Cannot load 37.0 GB working set on consumer laptops. | **3-Tier Swap**: 4.62 GB VRAM + 17.1 GB RAM + 15.3 GB NVMe SSD swap. | **0.39 tok/s** (~2.5s per token). Usable for background batch synthesis. *Interactive chat not achieved yet — we are working on it.* |
+| **Mathematical & Deep Reasoning**<br>`DeepSeek-R1-Distill-Qwen-32B`<br>`QwQ-32B-Preview` (32.8B) | **Immediate Crash**: CUDA OOM (requires 20.7 GB VRAM). Naive host loaders exhaust RAM. | **Runs Stable**: 4.71 GB VRAM + 12.05 GB RAM (0 GB NVMe). Evaluates host layers in-place via CPU SIMD. | **3.63 tok/s** on laptop (**5.94 tok/s** on cloud). Multi-step reasoning chains generate smoothly without thrashing. |
+| **Local Code Reasoning**<br>`Qwen2.5-Coder-32B` (32.8B)<br>`DeepSeek-Coder-33B` (32.8B) | **Immediate Crash**: CUDA OOM (requires ~20.0 GB VRAM). Naive host loaders exhaust RAM. | **Runs Stable**: 4.56–4.59 GB VRAM + 12.70–14.50 GB RAM. In-place CPU SIMD evaluation. | **2.88 to 3.47 tok/s** (~170–210 words/min). Complete 150-token function generates in ~45–52s without crashes. |
+| **Interactive MoE Assistants**<br>`Qwen3-30B-A3B` (30.5B, 3.3B act)<br>`Mixtral-8x7B` (46.7B, 12.9B act) | **High Latency**: Dense offload reads all weights every token (< 3.0 tok/s). | **MoE Acceleration**: 4.59–4.66 GB VRAM + 11.32–16.82 GB RAM. 9.93x FLOP reduction on active experts. | **12.95 tok/s** on laptop (**24.79 tok/s** on cloud) for Qwen3-30B; **2.80 tok/s** for Mixtral. Smooth interactive conversation. |
+| **General Text & Multilingual**<br>`Qwen2.5-32B` (32.8B)<br>`Yi-1.5-34B` (34.4B) / `Command-R-35B` | **Immediate Crash / Thrash**: Requires >= 32.0 GB RAM or 24.0 GB VRAM. | **Runs Stable**: 4.45–4.71 GB VRAM + 12.05–13.75 GB RAM (0 GB NVMe). Zero swap penalty. | **3.22 to 3.63 tok/s** on laptop (**4.22 to 5.94 tok/s** on cloud). Fluid everyday chat and instruction following. |
+| **Frontier Scale Deep Synthesis**<br>`DeepSeek-R1-70B` / `Llama-3-70B`<br>`Qwen2.5-72B` / `CodeLlama-70B` | **Immediate Crash**: Cannot load 37.0 to 42.0 GB working set on consumer laptops. | **3-Tier Swap**: 4.28–4.62 GB VRAM + 17.1–17.42 GB RAM + 14.67–16.66 GB NVMe SSD swap. | **0.36 to 0.40 tok/s** (~2.5s per token). Usable for background batch synthesis. *Interactive chat not achieved yet — we are working on it.* |
 
 ### Hardware requirements: Baseline vs PHANTOM
 
 Breakdown of memory and hardware requirements across standard runtimes in 4-bit precision (Q4_K_M / AWQ):
 
-| Model & Parameter Scale | Pure GPU Baseline (vLLM / TensorRT-LLM) | Hybrid / CPU Baseline (Ollama / llama.cpp) | PHANTOM Tiered (Minimum Tested) |
-|---|---|---|---|
-| **`Qwen2.5-Coder-32B`** (32.8B) | **24.0 GB VRAM** (Requires RTX 3090/4090 or A10G; 20.7 GB min footprint; OOM on 16GB) | **32.0 GB Host RAM** (CPU-only) or 24.0 GB RAM + 6.0 GB VRAM (OOM/swap thrash on 16GB) | **6.0 GB VRAM** + 24.0 GB Host RAM (**2.88 tok/s**, zero-swap)<br>*Runs on 16.0 GB RAM with NVMe paging* |
-| **`Qwen3-30B-A3B`** (30.5B MoE) | **24.0 GB VRAM** (Whole 16.0 GB model in VRAM; OOM on 16GB) | **24.0 GB combined** (High latency without expert routing) | **6.0 GB VRAM** + 16.0 GB Host RAM (**12.95 tok/s**) |
-| **`Llama-3-70B`** (70.6B) | **48.0 GB VRAM** (Requires RTX 6000 Ada or 2x 24.0 GB GPUs; OOM on A100-40GB) | **64.0 GB Host RAM** (CPU-only) or > 48.0 GB fast RAM (OOM/hard freeze on 24GB) | **6.0 GB VRAM** + 24.0 GB RAM + NVMe swap (**0.39 tok/s**) |
+| Model & Parameter Scale | Pure GPU Baseline (vLLM / TensorRT-LLM) | Hybrid / CPU Baseline (Ollama / llama.cpp) | PHANTOM Minimum Tested | PHANTOM Recommended Config |
+|---|---|---|---|---|
+| **30B to 35B Dense Models**<br>(`Qwen2.5-Coder-32B`, `DeepSeek-R1-32B`, `QwQ-32B`, `DeepSeek-Coder-33B`, `Yi-34B`, `Command-R-35B`) | **24.0 GB VRAM** (Requires RTX 3090/4090 or A10G; 20.7 GB min footprint; OOM on 16GB) | **32.0 GB Host RAM** (CPU-only) or 24.0 GB RAM + 6.0 GB VRAM (OOM/swap thrash on 16GB) | **6.0 GB VRAM** + **16.0 GB RAM**<br>*(with NVMe paging)* | **6.0 GB VRAM** + **24.0 GB RAM**<br>(**2.88 to 3.63 tok/s**, zero NVMe swap) |
+| **30.5B to 46.7B MoE Models**<br>(`Qwen3-30B-A3B`, `Mixtral-8x7B`) | **24.0 to 32.0 GB VRAM** (Whole model in VRAM; OOM on 16GB) | **24.0 to 32.0 GB combined** (High latency without expert routing) | **6.0 GB VRAM** + **16.0 GB RAM**<br>(**12.95 tok/s** for Qwen3-30B) | **6.0 GB VRAM** + **24.0 GB RAM**<br>(**24.79 tok/s** cloud / **2.80 tok/s** Mixtral) |
+| **70B to 72B Dense Models**<br>(`DeepSeek-R1-70B`, `Llama-3-70B`, `Qwen2.5-72B`, `CodeLlama-70B`) | **48.0 GB VRAM** (Requires RTX 6000 Ada or 2x 24.0 GB GPUs; OOM on A100-40GB) | **64.0 GB Host RAM** (CPU-only) or > 48.0 GB fast RAM (OOM/hard freeze on 24GB) | **6.0 GB VRAM** + **24.0 GB RAM** + 16.0 GB NVMe swap (**0.36 to 0.40 tok/s**) | **12.0 GB VRAM** + **32.0 GB RAM**<br>*(Reduced NVMe swap pressure)* |
 
 ### What is achieved vs what we are working on
 
 - **Achieved (Production Ready)**:
-  - Models up to 32B dense (`Qwen2.5-Coder-32B`) running at **2.88 tok/s** without crashing on a 6.0 GB laptop GPU.
-  - MoE architectures up to 30B (`Qwen3-30B-A3B`) running at **12.95 tok/s** for interactive chat.
+  - Dense models up to 35B (`Qwen2.5-Coder-32B`, `DeepSeek-R1-32B`, `Command-R-35B`) running at **2.88 to 3.63 tok/s** without crashing on a 6.0 GB laptop GPU (**4.22 to 5.94 tok/s** on cloud).
+  - MoE architectures up to 46.7B (`Qwen3-30B-A3B` at **12.95 tok/s**; `Mixtral-8x7B` at **2.80 tok/s**) with dynamic sparse expert routing.
+  - Frontier 70B to 72B scale execution (`DeepSeek-R1-70B`, `Llama-3-70B`, `Qwen2.5-72B`, `CodeLlama-70B`) running stably via 3-tier dynamic swap.
   - Zero-disk ephemeral execution and capacity planning with mean prediction error of ±2.4%.
 - **What we are working on (In Progress)**:
-  - **Conversational 70B throughput**: Running 70B models at 0.39 tok/s is physically bound by NVMe sequential read speeds (~1.4–1.8 GB/s). *We are actively working on* Linux direct `io_uring` kernel submission and fused FP8 inverse DCT decompression to minimize physical SSD page reads.
+  - **Conversational 70B throughput**: Running 70B models at 0.36 to 0.40 tok/s is physically bound by NVMe sequential read speeds (~1.4–1.8 GB/s). *We are actively working on* Linux direct `io_uring` kernel submission and fused FP8 inverse DCT decompression to minimize physical SSD page reads.
   - **Non-NVIDIA Backends**: Support for Apple Silicon (Metal) and AMD (ROCm) is planned.
 
 ---
@@ -93,9 +96,9 @@ Breakdown of memory and hardware requirements across standard runtimes in 4-bit 
 Empirically verified performance boundaries on 6 GB VRAM + 24 GB DDR5 RAM:
 
 - **>= 5.0 tok/sec (Conversational)**: Models <= 14B Dense and Mixture-of-Experts up to 30B (`Qwen3-30B-A3B` runs at 12.95 tok/s).
-- **>= 2.5 tok/sec (Interactive Reading)**: Dense models up to 32B (`Qwen2.5-Coder-32B` runs at 2.88 tok/s).
+- **>= 2.5 tok/sec (Interactive Reading)**: Dense models up to 35B (`Qwen2.5-Coder-32B` runs at 2.88 tok/s, `DeepSeek-R1-32B` runs at 3.63 tok/s).
 - **>= 1.0 tok/sec (Usable)**: Dense models up to 40B fitting within fast VRAM + RAM.
-- **< 1.0 tok/sec (NVMe Bandwidth Bound)**: Dense models >= 70B requiring SSD paging (`Llama-3-70B` runs at 0.39 tok/s).
+- **< 1.0 tok/sec (NVMe Bandwidth Bound)**: Dense models >= 70B requiring SSD paging (`Llama-3-70B` at 0.39 tok/s, `DeepSeek-R1-70B` at 0.40 tok/s, `Qwen2.5-72B` at 0.36 tok/s).
 
 ---
 
