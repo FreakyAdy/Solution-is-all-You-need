@@ -1,469 +1,253 @@
 <div align="center">
 
-# phantom
+# ⚡ PHANTOM
 
-**Run the model that doesn't fit your GPU.**
+### **Run the model that doesn't fit your GPU.**
 
-PHANTOM is a hardware-transcendent local LLM runtime. It orchestrates VRAM, system RAM, and NVMe as a single memory tier — so a 6 GB laptop GPU can run 70B models at conversational speed.
+*A hardware-transcendent local LLM runtime that breaks VRAM barriers by orchestrating GPU VRAM, System RAM, and NVMe SSD into a single unified compute continuum.*
 
-[![CI](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml/badge.svg)](https://github.com/FreakyAdy/phantom/actions/workflows/ci.yml)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/FreakyAdy/phantom/blob/main/notebooks/phantom_cloud_tester.ipynb)
-[![Tests Passing](https://img.shields.io/badge/tests-100%25%20PASS-brightgreen.svg)](tests/audit_suite.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org)
-[![Ollama API Compatible](https://img.shields.io/badge/Ollama%20API-drop--in-purple.svg)](docs/OLLAMA_MIGRATION.md)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://python.org)
+[![PyTorch CUDA](https://img.shields.io/badge/PyTorch-CUDA%2012.x-76B900.svg)](https://pytorch.org)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/FreakyAdy/phantom/blob/main/notebooks/phantom_cloud_tester.ipynb)
+[![Audit Status](https://img.shields.io/badge/Master%20Audit-100%25%20SHIP%20IT-brightgreen.svg)](tests/audit_suite.py)
+[![Tested Scale](https://img.shields.io/badge/Verified%20Scale-30B%20%7C%2032B%20%7C%2070B-orange.svg)](docs/testing/INDEX.md)
+[![Zero-Disk Policy](https://img.shields.io/badge/Zero--Disk-Cloud%20Testbed-purple.svg)](notebooks/phantom_cloud_tester.ipynb)
 
-[Install](#quick-start) · [Documentation](#-project-architecture--operations-hub) · [Basic commands](#basic-commands) · [Quick demo](#quick-demo) · [Why PHANTOM](#why-phantom) · [How it works](#how-it-works) · [Adding models](#adding-models) · [CLI reference](#cli-reference) · [Benchmarks](#benchmarks) · [FAQ](#faq)
+<br/>
+
+> *"Ollama runs the model that fits your GPU. **PHANTOM runs the model that doesn't.***"
+
+<br/>
+
+[Key Benchmarks](#-verified-empirical-benchmarks) · [How It Works](#-the-3-tier-architecture) · [Quick Start](#-quick-start) · [Zero-Disk Testing](#-zero-disk-testing-framework) · [CLI & TUI](#-cli--terminal-ui-tui-reference) · [Documentation Hub](#-project-architecture--operations-hub) · [Contributing](#-contributing)
 
 </div>
 
 ---
 
-## 📚 Project Architecture & Operations Hub
+## 💡 Why PHANTOM?
 
-| Document | Direct Link | Purpose |
-|:---|:---|:---|
-| 📌 **Today's Workboard** | [`TODAY.md`](TODAY.md) / [`docs/DAILY_WORKBOARD.md`](docs/DAILY_WORKBOARD.md) | Active session checklist, "start with today" workflow & tomorrow's queue |
-| 🗺️ **Concept Map & Roadmap** | [`docs/CONCEPT_MAP.md`](docs/CONCEPT_MAP.md) | North Star, Phase 0 $\to$ Phase 2 journey, and 4 strategic evolutionary branches |
-| 📊 **Living Progress Tracker** | [`docs/PROGRESS.md`](docs/PROGRESS.md) | Subsystem readiness matrix (8/8 green), tested model registry & scorecards |
-| 🧪 **Testing Ledger & Reports** | [`docs/testing/INDEX.md`](docs/testing/INDEX.md) | Verified real model test runs, latency, throughput & hardware telemetry |
-| 📝 **Engineering Changelog** | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Granular reverse-chronological record of all updates, fixes, and commits |
-| ⚖️ **Decision Log (ADR)** | [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md) | Architecture Decision Records (ADRs 001–006) for core engineering choices |
-| 📑 **Platform Specifications** | [`docs/specs/`](docs/specs/) | Master platform prompts, engine specifications, and developer guides |
+Modern open-weight LLMs have reached staggering intelligence, but their memory requirements exclude most developers:
+* A **32B Dense model** (`Qwen2.5-Coder-32B`) requires **~20 GB** of fast memory.
+* A **30B MoE model** (`Qwen3-30B-A3B`) requires **~16 GB** of resident weights.
+* A **70B model** (`Llama-3-70B`) requires **~37 GB** in 4-bit quantization.
+
+Standard runtimes force you to either purchase a $2,000+ workstation GPU (RTX 4090 / A6000) or settle for tiny 7B–8B models. When you attempt to offload larger models on standard tools, they crash with **CUDA Out-Of-Memory (OOM)** or exhaust system pagefiles due to 65 GB float-dequantization explosions ([`ADR-001`](docs/DECISION_LOG.md#adr-001-hugging-face-automodel-65gb-ram-explosion-vs-native-quantized-gpu-offloading)).
+
+**PHANTOM solves this at the systems level.** By pairing GPU VRAM with in-place dual-channel DDR5 SIMD computation and asynchronous NVMe tile paging, PHANTOM allows an entry-level **6 GB laptop GPU (RTX 4050)** to run **30B MoE models at 13 tokens/sec** and **32B dense models at interactive speeds** with zero synthetic mocks and zero storage leaks.
 
 ---
 
-## Quick Start
+## 📊 Verified Empirical Benchmarks
 
-### Requirements
+All metrics below reflect **real, physical execution runs** with ground-truth mathematical verification (Knapsack DP: 220, Harmonic Mean: 48 mph, Python code synthesis). No synthetic benchmarks or simulated fallbacks.
 
-| Requirement | Detail |
-|---|---|
-| **Python** | 3.10+ |
-| **GPU (optional)** | NVIDIA Pascal or newer + CUDA 12.x. PHANTOM auto-detects hardware: it uses the GPU when a CUDA PyTorch is present and transparently falls back to CPU otherwise. |
-| **Disk** | Enough free space for your model; NVMe recommended for large tiers. |
+| Target Model | Parameter Scale | Architecture | Physical Hardware | Memory Hierarchy Split | Decoding Speed | Warm TTFT | Verification Status | Full Test Audit |
+|---|:---:|:---:|---|---|:---:|:---:|:---:|:---:|
+| **`Qwen3-30B-A3B`** | **30.5B** | **MoE Sparse** (~3.3B active) | **Google Colab Cloud (T4 15GB)** | **13.65 GB VRAM + 2.33 GB RAM** | **24.79 tok/s** | **0.30s** | **[PASS — 100%]** | [`test_03`](docs/testing/test_03_qwen3_30b_a3b.md) |
+| **`Qwen3-30B-A3B`** | **30.5B** | **MoE Sparse** (~3.3B active) | **RTX 4050 Laptop (6GB VRAM)** | **4.66 GB VRAM + 11.32 GB RAM** | **12.95 tok/s** | **0.56s** | **[PASS — 100%]** | [`test_03`](docs/testing/test_03_qwen3_30b_a3b.md) |
+| **`Qwen2.5-Coder-32B`** | **32.8B** | **100% Dense** (32.8B active) | **RTX 4050 Laptop (6GB VRAM)** | **4.56 GB VRAM + 14.50 GB RAM** | **2.88 tok/s** | **2.35s** | **[PASS — 100%]** | [`test_01`](docs/testing/test_01_qwen2.5_coder_32b.md) |
+| **`Llama-3-70B`** | **70.6B** | **100% Dense** (70.6B active) | **RTX 4050 Laptop (6GB VRAM)** | **4.62 GB VRAM + 17.1 GB RAM + 15.3 GB NVMe** | **0.39 tok/s** | **9.64s** | **[PASS — 100%]** | [`test_04`](docs/testing/test_04_llama3_70b.md) |
 
-### 1. Install PyTorch with GPU support (recommended)
+```
+                                DECODING THROUGHPUT (TOKENS / SECOND)
+Qwen3-30B-A3B (Cloud T4 15GB):  [████████████████████                    ] 24.79 tok/s  <-- Fluent Conversational
+Qwen3-30B-A3B (Laptop RTX 4050):[██████████                              ] 12.95 tok/s  <-- Real-Time Interactive
+Qwen2.5-Coder-32B (Dense 32B):  [██                                      ] 2.88 tok/s   <-- Reading Speed (Dense)
+Llama-3-70B (NVMe 3-Tier Swap): [░                                       ] 0.39 tok/s   <-- Background Batch
+```
 
-The default `pip install torch` is CPU-only on Windows/macOS, so on an NVIDIA GPU install the CUDA build **before** PHANTOM:
+### Key Architectural Takeaways:
+1. **The MoE Velocity Breakthrough**: While a 32B Dense model executes 65.5 GFLOPs on every single token, `Qwen3-30B-A3B` activates only 8 of 128 experts (~3.3B active weights), reducing math overhead by **9.93×** and achieving **12.95 tokens/sec** on a 6 GB GPU.
+2. **Beyond-VRAM Capacity Lift**: Running a 32.8B model on a 6GB GPU delivers a **4.68× capacity multiplier** over native 4-bit VRAM limits and a **10.9× multiplier** over standard FP16 capacity.
+3. **True 3-Tier NVMe Paging**: The 70.6B dense model requires 36.99 GB of weights. Because 37 GB exceeds total laptop RAM (24GB) + VRAM (6GB), standard tools cannot boot it. PHANTOM streams 33 layers directly through fast NVMe swap without crashing.
+
+---
+
+## 🧠 The 3-Tier Architecture
+
+PHANTOM dynamically partitions transformer layers across three physical hardware tiers based on bandwidth latency profiling:
+
+```mermaid
+flowchart TD
+    subgraph T1["Tier 1: GPU VRAM (192 GB/s Bandwidth)"]
+        A["Active Compute Core<br/>• Attention Layers & KV Cache<br/>• Top-K Active MoE Experts<br/>• Initial Heavy Input Embeddings"]
+    end
+
+    subgraph T2["Tier 2: Host System RAM (48 GB/s Bandwidth)"]
+        B["In-Place SIMD Offload<br/>• Cold Intermediate Layers<br/>• Dormant MoE Expert Weights<br/>• Zero-Copy Activation Passing"]
+    end
+
+    subgraph T3["Tier 3: NVMe SSD Swap (3.5 – 7.0 GB/s Direct I/O)"]
+        C["Phantom Pages Engine<br/>• Extreme Parameter Spillover (70B+)<br/>• DCT-Compressed FP8 Weight Tiles<br/>• Asynchronous Prefetch Pipeline"]
+    end
+
+    Input[Token Input] --> A
+    A <-->|PCIe Gen4 Transfers<br/>Activations Only| B
+    B <-->|Direct I/O Asynchronous Tile Paging| C
+    A --> Output[Generated Token Stream]
+```
+
+### Core Innovations:
+* **In-Place SIMD Evaluation ([`ADR-006`](docs/DECISION_LOG.md#adr-006-in-place-host-ram-evaluation-via-cpu-simd-vs-pcie-bus-weight-streaming))**: Unlike naive offloaders that saturate the PCIe bus copying 15 GB of weights back and forth every token, PHANTOM executes RAM layers *directly on the host CPU* using AVX2/AVX-512 SIMD kernels, transferring only tiny activation vectors ($O(d_{\text{model}}) \approx 10\text{ KB}$).
+* **Neural Cache**: Compresses KV cache memory footprint by **8.0×** with $<1.2\%$ cosine error, preserving precious GPU VRAM for active layer weights.
+* **Pure TUI Focus ([`ADR-007`](docs/DECISION_LOG.md#adr-007-deprecation-of-web-ui-in-favor-of-pure-zero-overhead-terminal-ui-tui))**: Completely eliminates Web/Node daemons and browser memory consumption in favor of a lightning-fast, zero-overhead terminal user interface.
+
+---
+
+## ⚡ Zero-Disk Testing Framework
+
+Testing 20 GB to 70 GB models should never destroy your local hard drive. PHANTOM includes two zero-disk solutions:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. 1-Click Google Colab Cloud Testbed (Real Execution)                     │
+│    Runs full physical model weights in a free cloud sandbox:                │
+│    • Free 15 GB Nvidia T4 GPU + 100 GB Cloud Ephemeral SSD                  │
+│    • 0 bytes downloaded to your laptop SSD                                  │
+│    • Launch: https://colab.research.google.com/github/FreakyAdy/phantom     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│ 2. Mathematical Hardware Profiler (Instant Terminal Simulation)             │
+│    phantom profile <model> --preset rtx4050-laptop                          │
+│    • Models memory split, bus traffic, FLOPs, and tokens/sec instantly      │
+│    • 0 bytes of disk overhead                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+Try the instant hardware simulator in your terminal:
+```bash
+# Profile 30B MoE on a 6GB Laptop GPU (0 bytes downloaded)
+phantom profile qwen3-30b-a3b --preset rtx4050-laptop
+
+# Profile 70B Dense model on a 15GB Colab GPU
+phantom profile llama-3-70b --preset colab-t4
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1. Requirements
+* **Python**: 3.10, 3.11, 3.12, 3.13, or 3.14
+* **GPU**: NVIDIA GPU (Pascal or newer) with CUDA 12.x recommended. *(CPU SIMD fallback is transparently activated if no CUDA device is present)*.
+* **Operating System**: Linux, macOS, or Windows 10/11.
+
+### 2. Install PyTorch with GPU Support
+Install the matching CUDA build for your platform:
 
 ```bash
 # Linux / WSL2
 pip install torch --index-url https://download.pytorch.org/whl/cu126
+
+# Windows PowerShell
+pip install torch --index-url https://download.pytorch.org/whl/cu126
 ```
 
-```powershell
-# Windows PowerShell (Python 3.14 example)
-pip install torch==2.10.0+cu126 --index-url https://download.pytorch.org/whl/cu126
-```
-
-> Pick the CUDA wheel matching your Python version at [pytorch.org/get-started/locally](https://pytorch.org/get-started/locally), then confirm it took effect with `phantom doctor` — you should see `PyTorch CUDA Runtime: Active`.
->
-> No GPU? No problem. PHANTOM runs on CPU (SIMD engine) and spreads layers across RAM/NVMe instead.
-
-### 2. Install PHANTOM
-
-Choose the method that fits your setup:
-
+### 3. Install PHANTOM
 ```bash
-# Method 1: One-line installer (Linux / macOS)
-curl -fsSL https://phantom-core.org/install.sh | bash
-```
-
-```bash
-# Method 2: Install from source (adds `phantom` to your PATH)
+# Clone the repository
 git clone https://github.com/FreakyAdy/phantom.git
 cd phantom
+
+# Install editable package
 pip install -e python/
 ```
 
-### 3. Verify
-
+### 4. Verify System Diagnostic
 ```bash
 phantom doctor
 ```
-
-You should see `All checks passed.` with your GPU, VRAM, and NVMe throughput detected.
-
----
-
-## Basic Commands
-
-```bash
-phantom                      # open the interactive terminal UI (TUI)
-phantom plan llama3:70b      # estimate VRAM / RAM / NVMe layout before downloading
-phantom pull llama3:70b      # download + convert a model from Hugging Face
-phantom pull <hf-repo> --quant Q4_K_M
-phantom run llama3:70b       # run a model in the TUI / REPL
-phantom serve --port 11411   # start the OpenAI + Ollama compatible API daemon
-phantom convert model.gguf -o ~/.phantom/models/model-id/
-phantom list                 # show installed models
-phantom benchmark            # run the 8-innovation benchmark suite
-```
-
-> **If `phantom` is not recognized**, run `python -m phantom.phantom_cli <command>` instead.
+*Detects your GPU compute capability, dedicated VRAM, available Host RAM, and SIMD instruction sets.*
 
 ---
 
-## Quick Demo
+## 💻 CLI & Terminal UI (TUI) Reference
 
-Assess your hardware and plan a huge model — before pulling 40 GB:
-
-```bash
-phantom doctor
-```
-
-```
-PHANTOM SYSTEM DIAGNOSTICS
-  [PASS] Python 3.10+ environment
-  [PASS] NVIDIA RTX 4050 Laptop — 6.0 GB VRAM detected
-  [PASS] NVMe write speed: 0.93 GB/s
-  [PASS] ~/.phantom directory ready
-
-All checks passed.
-```
+PHANTOM provides a streamlined terminal developer experience:
 
 ```bash
-phantom plan llama3:70b
-```
+# Launch interactive Terminal UI (TUI)
+phantom
 
-```
-PHANTOM PLANNER — llama3:70b (70.6B parameters)
-Hardware: RTX 4050 | 6 GB VRAM | 24 GB RAM | 500 GB NVMe
+# Pre-flight Hardware Plan (estimate layer distribution without downloading)
+phantom plan qwen3-30b-a3b
 
-  VRAM  (6 GB):   layers  0–17  (18 layers)  ████
-  RAM  (24 GB):   layers 18–79  (62 layers)  ████████████████
-  NVMe (500 GB):  overflow buffer             ░░░░
+# Profile any model scale across hardware presets (0 bytes downloaded)
+phantom profile qwen2.5-coder-32b --preset rtx4050-laptop
+phantom profile llama-3-70b --preset colab-t4 --json
 
-  Estimated speed:     ~3.5 tok/sec
-  Context ceiling:     96K tokens (Neural Cache active)
-  Native ceiling:      ~7B parameters
-  PHANTOM ceiling:     70B+  (+10.1× lift)
+# Run an ephemeral test with guaranteed auto-cleanup on exit
+python tests/ephemeral_test_runner.py --model smollm-135m
+
+# Run the live MoE Sparse Router benchmark
+python tests/test_moe_routing.py
+
+# Start the OpenAI / Ollama compatible API daemon
+phantom serve --port 11411
 ```
 
 ---
 
-## Why PHANTOM
+## 📚 Project Architecture & Operations Hub
 
-Ollama, llama.cpp, and vLLM share the same constraint: **the model must fit in GPU VRAM.** A 70B model in Q4 needs ~40 GB. An RTX 4050 has 6 GB. It crashes.
+PHANTOM follows a strict documentation ledger protocol governed by [`AGENTS.md`](AGENTS.md) and [`docs/SOP.md`](docs/SOP.md). Every test run, architecture decision, and code modification is synchronized in real-time across specialized ledgers:
 
-CPU offloading exists, but it makes the GPU wait while the CPU computes — generation drops to 0.1–0.3 tok/sec, which is unusable.
+| Document | Direct Link | Purpose |
+|:---|:---|:---|
+| 📌 **Today's Mission Workboard** | [`TODAY.md`](TODAY.md) / [`docs/DAILY_WORKBOARD.md`](docs/DAILY_WORKBOARD.md) | Active session checklist, "start with today" protocol & queued milestones |
+| 🗺️ **Evolutionary Concept Map** | [`docs/CONCEPT_MAP.md`](docs/CONCEPT_MAP.md) | North Star vision, Phase 0 $\to$ Phase 2 journey, and 4 strategic branching paths |
+| 📊 **Living Progress Scorecard** | [`docs/PROGRESS.md`](docs/PROGRESS.md) | Subsystem readiness matrix (8/8 green), tested model registry & scorecards |
+| 🧪 **Central Testing Ledger** | [`docs/testing/INDEX.md`](docs/testing/INDEX.md) | Single source of truth for verified test runs, latency, throughput & telemetry |
+| 📋 **Standardized Test Template**| [`docs/testing/TEMPLATE_TEST_REPORT.md`](docs/testing/TEMPLATE_TEST_REPORT.md) | Universal template for logging new model benchmarks |
+| 📝 **Engineering Changelog** | [`docs/CHANGELOG.md`](docs/CHANGELOG.md) | Granular reverse-chronological record of all updates, fixes, and commits |
+| ⚖️ **Decision Log (ADR)** | [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md) | Architecture Decision Records (ADRs 001–008) explaining core trade-offs |
+| 📑 **Platform Specifications** | [`docs/specs/`](docs/specs/) | Master platform specifications, engineering blueprints, and prompt guides |
 
-PHANTOM takes a different approach. **The GPU computes everything.** VRAM, RAM, and NVMe are treated as one tiered memory pool, and a lightweight CPU predictor streams the next required weights over PCIe while the GPU is still working on the current layer.
-
-```
-Without PHANTOM         With PHANTOM
-RTX 4050 (6 GB)         RTX 4050 (6 GB)
-
-Max model: ~7B           Max model: 70B+
-Context:   4K tokens     Context:   96K tokens
-Speed:     —             Speed:     ~3.5 tok/sec
+Audit all documentation ledgers at any time:
+```bash
+python scripts/verify_tracking.py
 ```
 
 ---
 
-## How It Works
+## 🗺️ Project Roadmap & Milestones
 
-PHANTOM runs seven inference innovations as a coordinated stack. Each one addresses a specific physical bottleneck.
-
-| Innovation | What it does | Measured |
-|---|---|---|
-| **Wraith Layers** | A 116K-parameter LSTM on CPU predicts which layers the GPU will need 2–3 steps ahead, hiding PCIe transfer latency behind GPU compute. | 0.487 ms prediction · 88%+ prefetch hit rate |
-| **Spectral Quantization** | 1D Type-II DCT across MLP weights; top-K frequency coefficients (~94% of signal energy) stored in FP8, the rest discarded. Weights reconstruct in SRAM at compute time. | 4.0× compression · 0.42 PPL delta vs FP16 |
-| **Neural Cache** | Per-model autoencoder compresses KV-cache entries before storage; the decoder fuses with the attention kernel at retrieval. | 8.0× compression · 1.18% cosine error · 96K context on 6 GB |
-| **Phantom Pages** | Layers outside VRAM are serialized to a pre-allocated swap file as LZ4-compressed BF16 tensors in 64 MB sequential tiles, with a persistent LRU map. | 43.6 ms per 64 MB tile · 1.43 GB/s |
-| **Adaptive Compute Routing** | A per-MLP sigmoid gate predicts active neuron clusters and skips the rest via masked sparse GEMM; falls back to dense cuBLAS below 30% sparsity. | 60% neurons skipped · 89.4% gate precision · 6.9× MLP speedup |
-| **Chronos Scheduler** | Multiple models coexist in one memory hierarchy; context switches swap mapped pointers and KV slots, no re-transfers over PCIe. | 80.2 ms context switch |
-| **Resonance Sampler** | Reads GPU junction temperature via NVML and adapts beam width per token, sustaining quality while thermal-throttled. | Sustained generation under throttle |
-
-### Architecture
-
-```
-┌─────────────────────────────────────────────────────────┐
-│  Clients                                                │
-│  Web Studio · Terminal REPL · Open WebUI · Python SDK  │
-└──────────────────────┬──────────────────────────────────┘
-                       │ HTTP / WebSocket
-┌──────────────────────▼──────────────────────────────────┐
-│  API Gateway  (FastAPI :11411)                          │
-│  Bearer auth · rate limiting · OpenAI + Ollama compat   │
-│  Plugin pipeline: RAG · MCP Tool Router · Context Cache │
-└──────────────────────┬──────────────────────────────────┘
-                       │ IPC
-┌──────────────────────▼──────────────────────────────────┐
-│  PHANTOM CORE  (Rust + CUDA)                            │
-│                                                         │
-│  Wraith LSTM ──────────────► Phantom Pages              │
-│  (prefetch hints)            (NVMe async I/O)           │
-│                                                         │
-│  Spectral Quant ◄──────────► Neural Cache               │
-│  (DCT FP8 weights)           (8× KV compression)        │
-│                                                         │
-│  Adaptive Routing ─────────► Chronos Scheduler          │
-│  (60% neuron skip)           (multi-model swap)         │
-│                                                         │
-│  Resonance Sampler                                      │
-│  (thermal-adaptive decoding)                            │
-└─────────────────────────────────────────────────────────┘
-```
+* [x] **Milestone 1.0 — Real 32B Inference & Mock Purge**: 100% non-synthetic run of `Qwen2.5-Coder-32B` on RTX 4050 Laptop (2.88 tok/s).
+* [x] **Milestone 1.1 — Zero-Disk Multi-Hardware Profiler**: Instant mathematical simulation across arbitrary hardware (`phantom profile`).
+* [x] **Milestone 1.2 — MoE Sparse Routing Acceleration**: Verified 9.93× FLOP reduction on `Qwen3-30B-A3B` (12.95 tok/s local, 24.79 tok/s cloud).
+* [ ] **Milestone 1.3 — 70B NVMe Streaming Optimization**: Custom C++/CUDA kernel fusion with direct `io_uring` layer prefetching to lift 70B throughput.
+* [ ] **Milestone 1.4 — Multi-Node Local Mesh**: Pooling VRAM across two laptops over Wi-Fi 6 / 2.5GbE LAN to run 70B models at native speed.
 
 ---
 
-## Adding Models
+## 🤝 Contributing
 
-PHANTOM runs any standard `.gguf` file — pulled from Hugging Face, opened from a browser download, or imported from an existing Ollama install.
+We welcome contributions from systems engineers, CUDA kernel hackers, and machine learning researchers!
 
-### Where to find GGUF models
-
-* **[`bartowski`](https://huggingface.co/bartowski)** — Highest-quality daily quants of frontier models with complete metadata *(recommended)*
-* **[`TheBloke`](https://huggingface.co/TheBloke)** — Classic archive of thousands of open-source models
-* **[`Qwen`](https://huggingface.co/Qwen)** — Official Qwen2.5 general and coder GGUFs
-* **[`unsloth`](https://huggingface.co/unsloth)** — Fast, memory-optimized quants for LLaMA-3.3, DeepSeek-R1, Mistral
-
-### Quantization cheat sheet
-
-| Quant | Best for |
-|---|---|
-| `Q4_K_M` *(recommended)* | Best speed/perplexity/memory balance; runs 70B models on 6–8 GB GPUs |
-| `Q5_K_M` | Higher fidelity; needs 32 GB+ system RAM |
-| `Q8_0` | Near-FP16 quality for math and code on high-memory systems |
-| `Q3_K_M` | Low-RAM setups (<16 GB system RAM) |
-
-### Method A — one-command pull
-
-```bash
-phantom pull bartowski/DeepSeek-R1-Distill-Llama-70B-GGUF --quant Q4_K_M
-phantom run DeepSeek-R1-Distill-Llama-70B-Q4_K_M
-```
-
-Popular aliases work out of the box:
-
-| Model | Pull command |
-|---|---|
-| Meta LLaMA 3.3 70B | `phantom pull llama3:70b` |
-| Qwen 2.5 Coder 32B | `phantom pull bartowski/Qwen2.5-Coder-32B-Instruct-GGUF --quant Q4_K_M` |
-| Mistral NeMo | `phantom pull mistral:22b` |
-| Meta LLaMA 3.1 8B | `phantom pull llama3:8b` |
-| Phi 3.5 Mini | `phantom pull phi3:3.8b` |
-| SmolLM2 135M (fast test) | `phantom pull smollm:135m` |
-
-### Method B — local GGUF, zero-copy passthrough
-
-```bash
-phantom run ./models/DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf --skip-convert
-```
-
-Or compile once to native `.phantomw` format for maximum execution speed:
-
-```bash
-phantom convert ./models/DeepSeek-R1-Distill-Llama-70B-Q4_K_M.gguf --output ~/.phantom/models/deepseek-70b/
-phantom run deepseek-70b
-```
-
-### Method C — import existing Ollama models (zero download)
-
-```bash
-# Linux / macOS
-phantom convert ~/.ollama/models/blobs/sha256-<hash> --output ~/.phantom/models/llama3-70b/
-
-# Windows PowerShell
-phantom convert $env:USERPROFILE\.ollama\models\blobs\sha256-<hash> --output $env:USERPROFILE\.phantom\models\llama3-70b\
-```
-
-### 100% offline & air-gapped
-
-PHANTOM has zero telemetry and never calls home during inference. Convert models on an internet-connected machine, copy the `~/.phantom/models/<model-id>/` folder to an encrypted USB drive, paste it on the air-gapped PC, and run it with the network cable unplugged.
+1. Fork the repository: [`https://github.com/FreakyAdy/phantom`](https://github.com/FreakyAdy/phantom)
+2. Create your feature branch: `git checkout -b feat/cuda-kernel-fusion`
+3. Commit your changes following semantic commits: `git commit -m "feat: add fused FP8 dequant kernel"`
+4. Run verification tests:
+   ```bash
+   python tests/audit_suite.py
+   python -m pytest tests/unit
+   python scripts/verify_tracking.py
+   ```
+5. Push to your branch and open a Pull Request.
 
 ---
 
-## CLI Reference
+## 📜 License
 
-### Model management
-
-```bash
-phantom plan  <model>                    # estimate memory distribution before downloading
-phantom pull  <model> [--quant Q4_K_M]  # download and convert from HuggingFace
-phantom catalog [filter]                # browse the curated catalog of 60+ models
-phantom run   <model> [--skip-convert]  # start interactive TUI / REPL (or just `phantom`)
-phantom list                             # show installed models
-phantom show  <model>                    # show architecture and calibration profile
-phantom rm    <model>                    # remove model and free disk space
-phantom convert <file.gguf> -o <dir>    # convert local GGUF to .phantomw format
-phantom create <name> -f Phantomfile    # create a model from a Phantomfile
-```
-
-### Server
-
-```bash
-phantom serve [--port 11411] [--token <secret>]   # OpenAI & Ollama compatible API daemon
-```
-
-### Diagnostics and benchmarks
-
-```bash
-phantom doctor       # check hardware, CUDA, NVMe throughput
-phantom benchmark    # run all 8 innovation benchmarks and print results
-phantom status       # live metrics: tok/sec, VRAM, prefetch accuracy, thermal state
-```
-
-### In-REPL slash commands
-
-Available in the interactive TUI and the piped-stdin REPL:
-
-| Category | Commands |
-|---|---|
-| **OpenCode-style** | `/help` · `/connect` · `/compact` · `/details` · `/editor` · `/exit` · `/export` · `/init` · `/models` · `/new` · `/redo` · `/sessions` · `/share` · `/themes` · `/thinking` · `/undo` |
-| **PHANTOM** | `/layers` · `/stats` · `/status` · `/set temperature 0.5` · `/system <prompt>` · `/plan <model>` · `/doctor` · `/benchmark` · `/pull <model>` · `/install` · `/show <model>` · `/search <query>` · `/rm <model>` · `/save` · `/load` · `/serve` · `/convert <in.gguf> <out-dir>` |
-
-`!command` runs a shell command inline; `@file` attaches a project file.
+PHANTOM is released under the open-source [MIT License](LICENSE). Free for academic, personal, and commercial use.
 
 ---
 
-## Integrations
+<div align="center">
 
-PHANTOM exposes both OpenAI- and Ollama-compatible endpoints on the same port — most tools work by changing the base URL.
+**Built with pride for developers who refuse to let hardware limits define their intelligence.**
 
-### Open WebUI (Docker)
+⭐ **Star this repository if you believe 30B+ models should run on consumer hardware!**
 
-```bash
-docker run -d -p 3000:8080 \
-  -e OLLAMA_BASE_URL=http://host.docker.internal:11411 \
-  ghcr.io/open-webui/open-webui:main
-```
-
-### Continue.dev (VS Code / JetBrains)
-
-```json
-{
-  "models": [{
-    "title": "PHANTOM llama3:70b",
-    "provider": "ollama",
-    "model": "llama3:70b",
-    "apiBase": "http://localhost:11411"
-  }]
-}
-```
-
-### Python (openai SDK)
-
-```python
-from openai import OpenAI
-
-client = OpenAI(base_url="http://localhost:11411/v1", api_key="phantom")
-response = client.chat.completions.create(
-    model="llama3:70b",
-    messages=[{"role": "user", "content": "Explain NVMe paging in one paragraph."}]
-)
-print(response.choices[0].message.content)
-```
-
-### Observability
-
-```bash
-GET http://localhost:11411/metrics    # Prometheus scrape endpoint
-```
-
-Import [docs/grafana_dashboard.json](docs/grafana_dashboard.json) for a pre-configured dashboard tracking tok/sec, tiered memory, prefetch accuracy, and KV compression ratio.
-
----
-
-## Benchmarks
-
-All benchmarks run against real model weights. Source: [`tests/benchmarks/`](tests/benchmarks/)
-
-```bash
-phantom benchmark
-```
-
-| Innovation | Target | Measured | Result |
-|---|---|---|---|
-| Spectral Quantization | ≤ 1.2 PPL delta | 0.42 PPL · 0.99997 cosine sim · 4.0× compression | PASS |
-| Wraith Prefetch | < 1 ms · ≥ 80% hit rate | 0.487 ms · 100% hit rate (warm) | PASS |
-| Neural Cache | 8× ratio · ≤ 2% error | 8.0× · 1.18% cosine error | PASS |
-| Adaptive Routing | ≥ 85% precision · > 40% sparsity | 89.4% precision · 60% sparsity · 6.9× speedup | PASS |
-| Phantom Pages | ≤ 50 ms per tile | 43.6 ms per 64 MB tile · 1.43 GB/s | PASS |
-| Chronos Scheduler | < 400 ms switch | 80.2 ms context switch | PASS |
-| Full Pipeline | ≥ 5× ceiling lift | 9.6B native → 101.3B PHANTOM = +10.6× | PASS |
-| Calibration | < 10 min | 7.2 minutes (5 steps) | PASS |
-
-### Comparison
-
-| | PHANTOM | Ollama | llama.cpp | vLLM |
-|---|---|---|---|---|
-| 70B on 6 GB VRAM | Yes, ~3.5 tok/sec | No (OOM) | No (< 0.3 tok/sec, CPU) | No (OOM) |
-| Memory tiers | VRAM + RAM + NVMe | VRAM + RAM | VRAM + RAM | VRAM only |
-| Predictive prefetch | Yes (LSTM, 0.487 ms) | No | No | No |
-| KV compression | Yes (8x autoencoder) | No | No | PagedAttention |
-| Context on 6 GB | 96K tokens | 4-8K | 4-8K | OOM |
-| Multi-model hot-swap | Yes (< 400 ms) | No (reload) | No (reload) | No |
-| Local GGUF / air-gapped | Yes | Partial | Yes | No |
-| Ollama API drop-in | Yes (100%) | Native | No | No |
-| llama.cpp dependency | None | Required | Native | None |
-
----
-
-## FAQ
-
-**Can I really run a 70B model on a 6 GB GPU?**
-Yes. The GPU computes every layer. VRAM holds the active layers; RAM and NVMe hold the rest. The Wraith predictor streams upcoming layers into VRAM while current ones execute, so the GPU never stalls waiting for memory.
-
-**How fast is it actually?**
-On a laptop RTX 4050 (6 GB VRAM, 24 GB RAM, Gen4 NVMe): ~3.5 tok/sec for llama3:70b with all innovations active. A desktop RTX 4090 runs 200B+ models at ~12 tok/sec.
-
-**Does NVMe paging wear out my SSD?**
-No. Phantom Pages reads large sequential 64 MB blocks; inference is read-dominant with no random writes during generation.
-
-**Can I run completely offline?**
-Yes. No telemetry, no network calls at inference time. `phantom run ./model.gguf --skip-convert` works fully offline.
-
-**I already have models in Ollama. Do I need to re-download?**
-No. `phantom convert ~/.ollama/models/blobs/sha256-<hash>` imports them in-place.
-
-**Does it work on AMD GPUs or Apple Silicon?**
-Not in v1. PHANTOM's kernels are CUDA-specific (NVIDIA Pascal+); ROCm and Metal backends are planned for v2.
-
-**What about Mixtral and other MoE models?**
-Supported, with one constraint: disable `PHANTOM_PARAM sparsity_routing` for MoE models (their expert routing conflicts with neuron gating). Add `PHANTOM_PARAM sparsity_routing off` to your Phantomfile.
-
----
-
-## Troubleshooting
-
-| Symptom | Cause | Fix |
-|---|---|---|
-| `[WARN] PyTorch CUDA: False` | CPU-only PyTorch | Expected without CUDA. CPU orchestration still works; on NVIDIA GPUs, install a CUDA torch build first. |
-| `Input file does not exist` | Wrong path to `phantom convert` | Use the full path to your `.gguf` file. |
-| `404` on `http://localhost:11411/` | Visiting root instead of `/ui` | Go to `http://localhost:11411/ui`. |
-| `KeyboardInterrupt` during `phantom pull` | Cancelled download | Partial file is preserved; re-run to resume. |
-| `ModuleNotFoundError: No module named 'phantom'` | Package not installed | Run `pip install -e python/` from the repo root. |
-
----
-
-## Documentation
-
-- [Install](docs/INSTALL.md) — full build instructions (Rust, CUDA, Python)
-- [Architecture](docs/ARCHITECTURE.md) — 3-tier memory pipeline and IPC design
-- [Innovations](docs/INNOVATIONS.md) — mathematical derivations for all 7 innovations
-- [API Reference](docs/API.md) — REST, WebSocket, Ollama, and Prometheus endpoints
-- [Phantomfile](docs/PHANTOMFILE.md) — persona syntax and Modelfile migration table
-- [Plugins](docs/PLUGINS.md) — writing custom middleware interceptors
-- [Ollama Migration](docs/OLLAMA_MIGRATION.md) — command-by-command migration guide
-- [GGUF Support](docs/GGUF_SUPPORT.md) — quantization compatibility matrix
-
----
-
-## Contributing
-
-Issues, pull requests, and kernel optimizations are welcome. The audit suite is the entry point for contributors:
-
-```bash
-python tests/audit_suite.py   # must pass S1–S8 before any PR
-```
-
-CI runs on Ubuntu and Windows across Python 3.10 and 3.11. See [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
-
----
-
-## License
-
-MIT — Copyright (c) 2025–2026 PHANTOM Core Contributors.
+</div>

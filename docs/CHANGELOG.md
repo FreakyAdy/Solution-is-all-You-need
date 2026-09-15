@@ -39,6 +39,9 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Published [`docs/testing/test_03_qwen3_30b_a3b.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_03_qwen3_30b_a3b.md) documenting 12.95 tok/s (laptop) and 24.79 tok/s (Colab T4) with 9.93× FLOP reduction.
   * Published [`docs/testing/test_04_llama3_70b.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_04_llama3_70b.md) documenting 70B 3-tier offload (10 VRAM, 37 RAM, 33 NVMe swap).
   * Updated [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) master registry.
+* **Production README Complete Rewrite ([`README.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/README.md))**:
+  * Rebuilt entire project documentation frontpage: incorporated real verified benchmarks across 30B MoE, 32B Dense, and 70B models.
+  * Showcased 3-tier architecture (VRAM $\to$ in-place SIMD RAM $\to$ NVMe swap), zero-disk testing paradigm, pure TUI developer experience, and contributor call-to-action.
 
 ---
 
