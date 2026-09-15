@@ -25,4 +25,4 @@
   - [x] `REM-P5`: Execute Phase 5: Rewrite `README.md` (honest prose), `ARCHITECTURE.md` (10 sections), and `AGENTS.md`.
   - [x] `REM-P6`: Execute Phase 6: Build `scripts/check_claims.py` and enforce CI guardrails (100% PASS).
   - [x] `REM-P7`: Execute Phase 7: Repository hygiene, `docs/REPRODUCING.md`, `CONTRIBUTING.md`, `SECURITY.md`, and final CI gate.
-
+  - [x] `DOC-VER`: Extensively verify baseline requirements (Pure GPU, Hybrid CPU/GPU, CPU-only) and refine README matrix.

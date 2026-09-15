@@ -23,6 +23,7 @@
 | ✅ | `REM-P5` | Documentation | Rewrite `README.md` (honest prose), `ARCHITECTURE.md` (10-sections), `AGENTS.md` | `README.md` & `docs/` |
 | ✅ | `REM-P6` | CI Guardrails | Build `scripts/check_claims.py` & automated CI parity gates (100% PASS) | `scripts/check_claims.py` |
 | ✅ | `REM-P7` | Hygiene | Verify install scripts, author name, clean root, and write `REPRODUCING.md` | `docs/REPRODUCING.md` |
+| ✅ | `DOC-VER` | Verification | Extensively verify baseline requirements & refine README hardware matrix | `README.md` & docs |
 
 
 ---

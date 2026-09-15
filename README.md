@@ -63,9 +63,9 @@ Breakdown of memory and hardware requirements across standard runtimes in 4-bit 
 
 | Model & Parameter Scale | Pure GPU Baseline (vLLM / TensorRT-LLM) | Hybrid / CPU Baseline (Ollama / llama.cpp) | PHANTOM Tiered (Minimum Tested) |
 |---|---|---|---|
-| **`Qwen2.5-Coder-32B`** (32.8B) | **24.0 GB VRAM** (Requires RTX 3090/4090 or A10G; OOM on 16GB) | **32.0 GB Host RAM** (CPU) or 24.0 GB RAM + 6.0 GB VRAM (OOM on 16GB) | **6.0 GB VRAM** + 16.0 GB Host RAM (**2.88 tok/s**) |
-| **`Qwen3-30B-A3B`** (30.5B MoE) | **18.0 to 24.0 GB VRAM** (Whole model in VRAM) | **16.0 to 24.0 GB combined** (High latency without expert routing) | **6.0 GB VRAM** + 16.0 GB Host RAM (**12.95 tok/s**) |
-| **`Llama-3-70B`** (70.6B) | **40.0 to 48.0 GB VRAM** (Requires A100-40GB or 2x 24.0 GB GPUs) | **64.0 GB Host RAM** (CPU) or > 40.0 GB fast RAM (OOM/crash on 24GB) | **6.0 GB VRAM** + 24.0 GB RAM + NVMe swap (**0.39 tok/s**) |
+| **`Qwen2.5-Coder-32B`** (32.8B) | **24.0 GB VRAM** (Requires RTX 3090/4090 or A10G; 20.7 GB min footprint; OOM on 16GB) | **32.0 GB Host RAM** (CPU-only) or 24.0 GB RAM + 6.0 GB VRAM (OOM/swap thrash on 16GB) | **6.0 GB VRAM** + 24.0 GB Host RAM (**2.88 tok/s**, zero-swap)<br>*Runs on 16.0 GB RAM with NVMe paging* |
+| **`Qwen3-30B-A3B`** (30.5B MoE) | **24.0 GB VRAM** (Whole 16.0 GB model in VRAM; OOM on 16GB) | **24.0 GB combined** (High latency without expert routing) | **6.0 GB VRAM** + 16.0 GB Host RAM (**12.95 tok/s**) |
+| **`Llama-3-70B`** (70.6B) | **48.0 GB VRAM** (Requires RTX 6000 Ada or 2x 24.0 GB GPUs; OOM on A100-40GB) | **64.0 GB Host RAM** (CPU-only) or > 48.0 GB fast RAM (OOM/hard freeze on 24GB) | **6.0 GB VRAM** + 24.0 GB RAM + NVMe swap (**0.39 tok/s**) |
 
 ### What is achieved vs what we are working on
 
