@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-09-15T04:42:29Z",
+  "model": "smollm-135m",
+  "parameters_b": 0.135,
+  "active_params_b": 0.135,
+  "is_moe": false,
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 4050 Laptop GPU",
+    "vram_gb": 6.0,
+    "ram_gb": 23.8
+  },
+  "simulation": {
+    "projected_tok_per_sec": 1000.0,
+    "vram_layers": 30,
+    "ram_layers": 0,
+    "nvme_layers": 0,
+    "bottleneck": "VRAM Bandwidth Bound (100% Native GPU Residency - Peak Speed)"
+  },
+  "execution": [
+    {
+      "test_id": "task_1_knapsack",
+      "name": "Algorithmic Dynamic Programming (0/1 Knapsack)",
+      "status": "PASS",
+      "target_verified": "220"
+    },
+    {
+      "test_id": "task_2_harmonic_mean",
+      "name": "Mathematical Deduction (Harmonic Mean Velocity)",
+      "status": "PASS",
+      "target_verified": "48"
+    },
+    {
+      "test_id": "task_3_word_reversal",
+      "name": "Code Synthesis & Whitespace Normalization",
+      "status": "PASS",
+      "target_verified": "reversed"
+    }
+  ]
+}

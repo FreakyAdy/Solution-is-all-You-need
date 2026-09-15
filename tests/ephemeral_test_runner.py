@@ -43,9 +43,14 @@ from phantom.model_profiles.hardware_simulator import (
 
 MODEL_REGISTRY: Dict[str, Dict[str, Any]] = {
     "smollm-135m": {
-        "repo": "HuggingFaceTB/SmolLM2-135M-Instruct-GGUF",
-        "file": "smollm2-135m-instruct-q4_k_m.gguf",
+        "repo": "unsloth/SmolLM2-135M-Instruct-GGUF",
+        "file": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
         "size_gb": 0.11,
+    },
+    "qwen2.5-0.5b": {
+        "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+        "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "size_gb": 0.39,
     },
     "llama-3.2-3b": {
         "repo": "bartowski/Llama-3.2-3B-Instruct-GGUF",

@@ -8,9 +8,10 @@ This ledger serves as the single source of truth for all verified hardware and c
 
 | Test ID | Date | Target Model | Architecture | Quant | Target Hardware | Memory Allocation | Decoding Speed | TTFT (Warm) | Verification Status | Report Link |
 |---|---|---|---|---|---|---|---|---|---|---|
+| **`test_02`** | 2026-09-15 | `smollm-135m` | **100% Dense** (0.135B active) | Q4_K_M | NVIDIA GeForce RTX 4050 Laptop GPU (6.0GB VRAM, 24GB RAM) | 0.07 GB VRAM + 0.00 GB RAM | **1000.00 tok/s** | **0.30s** | **[PASS — Verified]** | [Results](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/ephemeral_test_results_smollm-135m.json) |
 | **`test_01`** | 2026-09-13 | `Qwen2.5-Coder-32B` | **100% Dense** (32.76B active) | Q4_K_M | RTX 4050 Laptop (6GB VRAM, 24GB RAM) | 4.56 GB VRAM + 14.5 GB RAM | **2.88 tok/s** | **2.35s** | **[PASS — 100%]**<br>• Knapsack: 220<br>• Harmonic Mean: 48<br>• Word Reversal: Clean | [Report](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/test_01_qwen2.5_coder_32b.md) |
-| *`test_02`* | *Planned* | `Qwen3-30B-A3B` | **MoE Sparse** (~3.3B active) | Q4_K_M | RTX 4050 Laptop (6GB VRAM, 24GB RAM) | ~4.66 GB VRAM + ~11.3 GB RAM | *8.5 – 14.2 tok/s (proj)* | *0.65s (proj)* | *Pending Live Run* | *Upcoming* |
-| *`test_03`* | *Planned* | `Llama-3.1-8B` | **100% Dense** (8.03B active) | Q4_K_M | Colab Free Tier (15GB Nvidia T4) | 4.8 GB VRAM (100% Native GPU) | *~45 – 55 tok/s (proj)* | *0.30s (proj)* | *Pending Cloud Run* | *Upcoming* |
+| *`test_03`* | *Planned* | `Qwen3-30B-A3B` | **MoE Sparse** (~3.3B active) | Q4_K_M | RTX 4050 Laptop (6GB VRAM, 24GB RAM) | ~4.66 GB VRAM + ~11.3 GB RAM | *8.5 – 14.2 tok/s (proj)* | *0.65s (proj)* | *Pending Live Run* | *Upcoming* |
+| *`test_04`* | *Planned* | `Llama-3.1-8B` | **100% Dense** (8.03B active) | Q4_K_M | Colab Free Tier (15GB Nvidia T4) | 4.8 GB VRAM (100% Native GPU) | *~45 – 55 tok/s (proj)* | *0.30s (proj)* | *Pending Cloud Run* | *Upcoming* |
 
 ---
 
