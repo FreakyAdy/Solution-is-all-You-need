@@ -149,3 +149,16 @@ This document catalogs critical architectural decisions, engineering trade-offs,
   - Positive: Proves empirically and mathematically that 8.0x KV cache compression maintains 100.0% needle retrieval recall across 32768 tokens while reducing KV memory footprint from 4096 MB (4.0 GB) to 512 MB (0.50 GB).
   - Negative: Compression is specialized to the intrinsic low-rank manifold geometry of transformer representations.
 
+---
+
+### ADR-012: Automated 1-Click Cloud Testbed Packaging and Ephemeral Cloud Scratch Policy
+* **Context**: Reproducing benchmarks on consumer hardware constraints previously required manual CLI setup, dependency configuration, and access to local GPU environments. External reviewers and open-source contributors required an instant 1-click cloud verification pathway across the evaluated model suite without violating the strict Zero-Disk Model Storage mandate on local machines.
+* **Decision**:
+  1. **Dual-Mode Cloud Harness (`scripts/colab_runner.py`)**: Implement an automated cloud runner supporting two explicit execution modes:
+     - *Virtual Hardware Simulation Mode*: Instant, zero-disk parameter modeling and memory residency calculation across target profiles (`colab-t4`, `rtx4050-laptop`, `rtx4070-desktop`, `rtx4090-desktop`, `apple-m3-pro`).
+     - *Live Ephemeral Inference Mode*: Streaming weights directly to cloud ephemeral VM storage (`/content/scratch/`), executing non-synthetic verification battery, and immediately auto-purging the directory post-run.
+  2. **Standardized Report Automation**: Generate standardized markdown reports conforming byte-for-byte to `docs/testing/TEMPLATE_TEST_REPORT.md` and dual-export raw JSON telemetry alongside markdown artifacts directly to the user's browser.
+  3. **Colab Interactive Form Packaging (`notebooks/phantom_cloud_tester.ipynb`)**: Overhaul the notebook with interactive `#@param` dropdowns for evaluated models, inline telemetry visualization, automatic package dependency bootstrapping, and automatic cleanup hooks.
+* **Consequences**:
+  - Positive: Enables 1-click end-to-end cloud reproducibility on standard Google Colab T4 runtimes; produces publication-ready benchmark reports automatically; enforces strict zero-disk local storage invariants.
+  - Negative: Live inference mode in Colab is subject to Google Colab T4 VRAM and session disconnect limits; frontier 70B models in live mode require high-RAM cloud instances or fall back to virtual hardware simulation mode.

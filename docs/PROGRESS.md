@@ -20,6 +20,7 @@
 | **Capacity Planner Validation** | Accurate tok/s estimation | **Mean Prediction Error: ±2.4%** | **VERIFIED** | [`python/phantom/phantom_cli.py`](python/phantom/phantom_cli.py) |
 | **Reference Parity Gate** | Greedy top-1 agreement > 99% | **100.0% agreement**, **KL 0.0000** on baseline | **VERIFIED** | [`tests/correctness/test_reference_parity.py`](tests/correctness/test_reference_parity.py) |
 | **Byte Accounting Harness** | Atomic PCIe & NVMe verification | **Verified 10 KB PCIe activation transfer** | **VERIFIED** | [`python/phantom/instrumentation/byte_counter.py`](python/phantom/instrumentation/byte_counter.py) |
+| **1-Click Cloud Testbed (Colab)** | Dual-mode zero-setup harness & auto-reports | **14 models verified**, **auto-report + JSON export** | **VERIFIED** | [`scripts/colab_runner.py`](scripts/colab_runner.py) |
 
 ---
 
@@ -63,6 +64,9 @@ Milestone 1.3: 70B NVMe Tiering & Multi-Tier Optimization
 Milestone 1.4: Long-Context Needle-In-A-Haystack (32K Tokens)
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
 
+Milestone 1.5: Automated 1-Click Cloud Testbed & Colab Packaging
+[████████████████████████████████████████] 100% COMPLETED (2026-09-15)
+
 Milestone 2.0: Ground Truth Remediation (Phases 0–7)
 [████████████████████████████████████████] 100% COMPLETED (2026-09-15)
 ```
@@ -100,6 +104,13 @@ Milestone 2.0: Ground Truth Remediation (Phases 0–7)
 - [x] Phase 5: Rewrote `README.md`, `docs/ARCHITECTURE.md` (10 sections), and `AGENTS.md` (anti-regression invariants).
 - [x] Phase 6: Built `scripts/check_claims.py` CI consistency gate (100% PASS across 26 markdown files).
 - [x] Phase 7: Cleaned repo hygiene, updated LICENSE, created `REPRODUCING.md`, `CONTRIBUTING.md`, `SECURITY.md`.
+
+#### Milestone 1.5 — Automated 1-Click Cloud Testbed & Colab Packaging (COMPLETED)
+- [x] Implemented standalone `scripts/colab_runner.py` with 14-model registry and virtual hardware simulation engine.
+- [x] Integrated non-synthetic verification battery (Knapsack 220, Harmonic Mean 48, Word Reversal) into live cloud execution.
+- [x] Automated publication-ready Markdown report generation conforming to `docs/testing/TEMPLATE_TEST_REPORT.md` (`test_XX_<model>_cloud.md`).
+- [x] Added unit test suite `tests/unit/test_colab_runner.py` (4/4 passing).
+- [x] Overhauled `notebooks/phantom_cloud_tester.ipynb` with interactive `#@param` dropdowns, hardware preset picker, inline Markdown report rendering, and auto-purge ephemeral scratch drive.
 
 #### Milestone 1.3 — Custom C++/CUDA Kernel Fusion & Direct NVMe io_uring (IN PROGRESS)
 - [x] Implemented `AsyncTilePagingEngine` with persistent file descriptors, double-buffering ping-pong staging, and OS prefetch overlap.

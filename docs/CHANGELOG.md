@@ -7,6 +7,14 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
 ## [Unreleased] — 2026-09-15
 
 ### Added
+* **Automated 1-Click Cloud Testbed & Colab Packaging Subsystem (`scripts/colab_runner.py`, `notebooks/phantom_cloud_tester.ipynb`)**:
+  * Implemented standalone zero-setup cloud harness (`scripts/colab_runner.py`) packaging all 14 evaluated models in an explicit model registry.
+  * Added dual-mode execution:
+    * *Virtual Simulation Mode*: Instant, zero-disk profile modeling and memory residency calculation across target profiles (`colab-t4`, `rtx4050-laptop`, `rtx4070-desktop`, `rtx4090-desktop`, `apple-m3-pro`).
+    * *Live Ephemeral Inference Mode*: Streams weights directly to cloud ephemeral VM storage (`/content/scratch/`), executes non-synthetic task battery (Knapsack 220, Harmonic Mean 48, Word Reversal), and purges weights post-execution.
+  * Automated standardized Markdown report generation matching `docs/testing/TEMPLATE_TEST_REPORT.md` (`test_XX_<model>_cloud.md`) and raw JSON telemetry dual export.
+  * Added automated unit test suite [`tests/unit/test_colab_runner.py`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/tests/unit/test_colab_runner.py) (4/4 passing).
+  * Upgraded [`notebooks/phantom_cloud_tester.ipynb`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/notebooks/phantom_cloud_tester.ipynb) with interactive `#@param` model selection, hardware preset picker, inline Markdown report rendering, and 1-click browser download of test reports.
 * **Long-Context Needle-In-A-Haystack (NIAH) Evaluation Suite (`tests/correctness/test_needle_haystack.py`, `tests/benchmarks/bench_needle_haystack.py`)**:
   * Implemented zero-disk, long-context NIAH benchmark testing context windows across 4096, 8192, 16384, and 32768 tokens at 10.0%, 25.0%, 50.0%, 75.0%, and 90.0% insertion depths.
   * Verified 8.0x Neural Cache KV compression ($D=128 \to 16$ latent dimension) reduces 32768-token KV footprint from 4096 MB (4.0 GB) to 512 MB (0.50 GB), eliminating VRAM exhaustion on 6.0 GB GPUs.
