@@ -27,6 +27,8 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Added minimum and recommended hardware requirements matrix comparing native GPU requirements (24.0 GB to 48.0 GB VRAM) against PHANTOM tiered requirements (6.0 GB VRAM + 16.0 GB to 24.0 GB Host RAM).
 
 ### Changed
+* **README Verified Results Expansion (`README.md`)**:
+  * Expanded verified results matrix on repository frontpage to showcase all 14 evaluated models (across MoE sparse, 32B-35B dense fast-tier, and 70B-72B 3-tier NVMe swap). Linked directly to the continuous testing ledger [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md).
 * **Extensive Baseline Requirements Verification & Table Refinement (`README.md`, `docs/claims_allowlist.yml`)**:
   * Extensively verified memory footprint and failure mechanics across pure GPU (vLLM / TensorRT-LLM), hybrid CPU/GPU (Ollama / llama.cpp), and CPU-only baseline runtimes.
   * Proved exact pure GPU VRAM requirements: 32B 4-bit requires 20.7 GB minimum VRAM (18.5 GB weights + 1.0 GB 4K KV + 1.2 GB CUDA overhead), strictly requiring a 24.0 GB GPU and throwing immediate CUDA OOM on 16GB GPUs. 70B 4-bit requires 42.0 GB minimum VRAM, strictly requiring a 48.0 GB GPU or 2x 24.0 GB GPUs (fails on single 24GB GPUs and A100-40GB).

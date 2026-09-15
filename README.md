@@ -35,15 +35,24 @@ Throughput is governed strictly by the memory tier housing the model's active wo
 
 All figures below are programmatically extracted from [`benchmarks/results/latest.json`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/benchmarks/results/latest.json) and executed on reference hardware: **NVIDIA GeForce RTX 4050 Laptop GPU (6.0 GB VRAM, PCIe 4.0 x8), 24.0 GB DDR5 RAM, Gen4 NVMe SSD, Windows 11**.
 
-| Model | Parameter Scale | Mode | Memory Placement | Decoding Throughput | Reference Audit |
+| Model | Parameter Scale | Mode | Memory Placement (RTX 4050 6GB + 24GB RAM) | Decoding Throughput | Reference Audit |
 |---|:---:|:---:|---|:---:|:---:|
-| **`Qwen3-30B-A3B`** | 30.5B (3.3B active) | MoE Sparse | 4.66 GB VRAM + 11.32 GB RAM | **12.95 tok/s** (Local Laptop) | [`test_03`](docs/testing/test_03_qwen3_30b_a3b.md) |
-| **`Qwen3-30B-A3B`** | 30.5B (3.3B active) | MoE Sparse | 13.65 GB VRAM + 2.33 GB RAM | **24.79 tok/s** (Colab T4 Cloud) | [`test_03`](docs/testing/test_03_qwen3_30b_a3b.md) |
+| **`Qwen3-30B-A3B`** | 30.5B (3.3B active) | MoE Sparse | 4.66 GB VRAM + 11.32 GB RAM | **12.95 tok/s** (Local) / **24.79 tok/s** (Cloud) | [`test_03`](docs/testing/test_03_qwen3_30b_a3b.md) |
+| **`Mixtral-8x7B`** | 46.7B (12.9B active) | MoE Sparse | 4.59 GB VRAM + 16.82 GB RAM + 3.06 GB NVMe | **2.80 tok/s** (Local) / **3.19 tok/s** (Cloud) | [`test_07`](docs/testing/test_07_mixtral_8x7b.md) |
+| **`DeepSeek-R1-Distill-Qwen-32B`** | 32.8B (32.8B active) | 100% Dense | 4.71 GB VRAM + 12.05 GB RAM | **3.63 tok/s** (Local) / **5.94 tok/s** (Cloud) | [`test_05`](docs/testing/test_05_deepseek_r1_32b.md) |
+| **`QwQ-32B-Preview`** | 32.8B (32.8B active) | 100% Dense | 4.71 GB VRAM + 12.05 GB RAM | **3.63 tok/s** (Local) / **5.94 tok/s** (Cloud) | [`test_08`](docs/testing/test_08_qwq_32b.md) |
 | **`Qwen2.5-Coder-32B`** | 32.8B (32.8B active) | 100% Dense | 4.56 GB VRAM + 14.50 GB RAM | **2.88 tok/s** (Local Laptop) | [`test_01`](docs/testing/test_01_qwen2.5_coder_32b.md) |
-| **`Llama-3-70B`** | 70.6B (70.6B active) | Dense (Swap) | 4.62 GB VRAM + 17.1 GB RAM + 15.3 GB NVMe | **0.39 tok/s** (Local Laptop) | [`test_04`](docs/testing/test_04_llama3_70b.md) |
+| **`DeepSeek-Coder-33B`** | 32.8B (32.8B active) | 100% Dense | 4.59 GB VRAM + 12.70 GB RAM | **3.47 tok/s** (Local) / **5.17 tok/s** (Cloud) | [`test_11`](docs/testing/test_11_deepseek_coder_33b.md) |
+| **`Qwen2.5-32B-Instruct`** | 32.8B (32.8B active) | 100% Dense | 4.71 GB VRAM + 12.05 GB RAM | **3.63 tok/s** (Local) / **5.94 tok/s** (Cloud) | [`test_10`](docs/testing/test_10_qwen2.5_32b.md) |
+| **`Command-R-35B`** | 35.0B (35.0B active) | 100% Dense | 4.58 GB VRAM + 13.75 GB RAM | **3.22 tok/s** (Local) / **4.22 tok/s** (Cloud) | [`test_13`](docs/testing/test_13_command_r_35b.md) |
+| **`Yi-1.5-34B-Chat`** | 34.4B (34.4B active) | 100% Dense | 4.45 GB VRAM + 13.36 GB RAM | **3.32 tok/s** (Local) / **4.77 tok/s** (Cloud) | [`test_14`](docs/testing/test_14_yi_1.5_34b.md) |
+| **`DeepSeek-R1-Distill-Llama-70B`** | 70.6B (70.6B active) | Dense (Swap) | 4.58 GB VRAM + 17.42 GB RAM + 14.67 GB NVMe | **0.40 tok/s** (Local) / **0.19 tok/s** (Cloud) | [`test_06`](docs/testing/test_06_deepseek_r1_70b.md) |
+| **`Llama-3-70B`** | 70.6B (70.6B active) | Dense (Swap) | 4.62 GB VRAM + 17.1 GB RAM + 15.3 GB NVMe | **0.39 tok/s** (Local) / **0.19 tok/s** (Cloud) | [`test_04`](docs/testing/test_04_llama3_70b.md) |
+| **`Qwen2.5-72B-Instruct`** | 72.7B (72.7B active) | Dense (Swap) | 4.28 GB VRAM + 17.14 GB RAM + 16.66 GB NVMe | **0.36 tok/s** (Local) / **0.17 tok/s** (Cloud) | [`test_09`](docs/testing/test_09_qwen2.5_72b.md) |
+| **`CodeLlama-70B`** | 69.0B (69.0B active) | Dense (Swap) | 4.58 GB VRAM + 17.42 GB RAM + 14.67 GB NVMe | **0.40 tok/s** (Local) / **0.19 tok/s** (Cloud) | [`test_12`](docs/testing/test_12_codellama_70b.md) |
 | **`SmolLM2-135M`** | 0.135B | 100% Dense | 0.08 GB VRAM (100% VRAM) | **366.5 tok/s** (Local Laptop) | [`test_02`](tests/ephemeral_test_results_smollm-135m.json) |
 
-For complete benchmark distributions (mean, stddev, min, max, p50, p95), baseline ablations, and environment fingerprints, see [`RESULTS.md`](RESULTS.md).
+All 14 evaluated models are indexed with raw telemetries in the [`Continuous Testing Ledger`](docs/testing/INDEX.md). For complete benchmark distributions (mean, stddev, min, max, p50, p95), baseline ablations, and environment fingerprints, see [`RESULTS.md`](RESULTS.md).
 
 ---
 
