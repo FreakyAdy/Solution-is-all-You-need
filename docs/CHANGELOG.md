@@ -41,6 +41,7 @@ All notable changes, bug fixes, architectural refactors, and performance calibra
   * Updated [`docs/testing/INDEX.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/docs/testing/INDEX.md) master registry.
 * **Production README Complete Rewrite ([`README.md`](file:///c:/Work/Projects/Solution%20is%20all%20You%20need/README.md))**:
   * Rebuilt entire project documentation frontpage: incorporated real verified benchmarks across 30B MoE, 32B Dense, and 70B models.
+  * Added **Comparative Audit Section** contrasting original industry runtimes (Ollama, vLLM, HuggingFace) vs. what PHANTOM achieved on consumer hardware (crashes vs. real-time interactive generation).
   * Showcased 3-tier architecture (VRAM $\to$ in-place SIMD RAM $\to$ NVMe swap), zero-disk testing paradigm, pure TUI developer experience, and contributor call-to-action.
 
 ---
